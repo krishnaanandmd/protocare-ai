@@ -1,0 +1,7 @@
+[phases.setup]
+# System packages required for OCR of scanned PDFs
+# poppler_utils provides the `pdftoppm` binary used by pdf2image
+# tesseract provides the OCR engine used by pytesseract
+nixPkgs = ["poppler_utils", "tesseract"]
+
+
