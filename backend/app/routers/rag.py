@@ -6,6 +6,34 @@ from app.services import retrieval
 
 router = APIRouter()
 
+@router.get("/debug/env")
+async def debug_environment():
+    """Check which Qdrant the API is connected to."""
+    return {
+        "qdrant_url": settings.qdrant_url,
+        "s3_bucket": settings.s3_bucket
+    }
+
+@router.get("/debug/collections")  
+async def list_collections():
+    """List all collections."""
+    try:
+        c = retrieval.client()
+        collections = c.get_collections().collections
+        return {
+            "total": len(collections),
+            "collections": [
+                {"name": col.name, "vectors": col.vectors_count}
+                for col in collections
+            ]
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+
+
+
 # Sample doctor profiles (in production, this would be a database)
 DOCTORS = {
     "joshua_dines": {
