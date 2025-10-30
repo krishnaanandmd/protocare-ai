@@ -13,7 +13,7 @@ _oa: Optional[OpenAI] = None
 def client() -> QdrantClient:
     global _client
     if _client is None:
-        _client = QdrantClient(host=settings.qdrant_url, api_key=settings.qdrant_api_key)
+        _client = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key)
     return _client
 
 def openai_client() -> OpenAI:
