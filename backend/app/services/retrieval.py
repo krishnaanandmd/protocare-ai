@@ -13,7 +13,25 @@ _oa: Optional[OpenAI] = None
 def client() -> QdrantClient:
     global _client
     if _client is None:
-        _client = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key)
+        try:
+            # Simple initialization - let Qdrant client handle the details
+            if settings.qdrant_api_key:
+                _client = QdrantClient(
+                    url=settings.qdrant_url,
+                    api_key=settings.qdrant_api_key,
+                    timeout=60,
+                    prefer_grpc=False  # Use HTTP instead of gRPC to avoid connection issues
+                )
+            else:
+                _client = QdrantClient(
+                    url=settings.qdrant_url,
+                    timeout=60,
+                    prefer_grpc=False
+                )
+            logger.info("qdrant_client_initialized", url=settings.qdrant_url)
+        except Exception as e:
+            logger.error("qdrant_client_init_failed", error=str(e))
+            raise
     return _client
 
 def openai_client() -> OpenAI:
