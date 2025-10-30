@@ -9,15 +9,20 @@ from qdrant_client.http.models import Distance, VectorParams, PointStruct
 from openai import OpenAI
 from app.core.config import settings
 
-# OCR imports
-try:
-    import pytesseract
-    from pdf2image import convert_from_path
-    from PIL import Image
-    OCR_AVAILABLE = True
-except ImportError:
-    OCR_AVAILABLE = False
-    print("Warning: OCR libraries not available. Install: pip install pytesseract pdf2image pillow")
+# OCR imports - check dynamically to avoid caching issues
+def _check_ocr_available():
+    try:
+        import pytesseract
+        from pdf2image import convert_from_path
+        from PIL import Image
+        print("✅ OCR libraries successfully imported in _check_ocr_available()")
+        return True
+    except ImportError as e:
+        print(f"❌ OCR import failed: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ OCR check unexpected error: {e}")
+        return False
 
 log = logging.getLogger("ingestion")
 log.setLevel(logging.INFO)
@@ -56,8 +61,12 @@ def _download(bucket: str, key: str) -> str:
 
 def _ocr_pdf(path: str) -> List[NS]:
     """Extract text from scanned PDF using OCR."""
-    if not OCR_AVAILABLE:
+    if not _check_ocr_available():
         raise RuntimeError("OCR libraries not installed. Run: pip install pytesseract pdf2image pillow")
+    
+    # Import here to avoid issues if not installed
+    import pytesseract
+    from pdf2image import convert_from_path
     
     log.info("Running OCR on scanned PDF...")
     elements = []
@@ -101,11 +110,17 @@ def _parse_pdf_fast(path: str) -> List[NS]:
     
     # If very little text extracted (likely scanned), use OCR
     if total_text_length < 100 and len(r.pages) > 0:
-        log.warning(f"Only {total_text_length} chars extracted from {len(r.pages)} pages - PDF appears to be scanned")
-        if OCR_AVAILABLE:
-            log.info("Attempting OCR extraction...")
-            return _ocr_pdf(path)
+        print(f"⚠️  Only {total_text_length} chars extracted from {len(r.pages)} pages - PDF appears to be scanned")
+        ocr_available = _check_ocr_available()
+        print(f"🔍 OCR check result: {ocr_available}")
+        
+        if ocr_available:
+            print("🚀 Starting OCR extraction...")
+            result = _ocr_pdf(path)
+            print(f"✅ OCR extracted {len(result)} elements")
+            return result
         else:
+            print("❌ OCR not available")
             raise RuntimeError("PDF appears to be scanned but OCR is not available. Install: pip install pytesseract pdf2image pillow")
     
     return out
@@ -195,7 +210,13 @@ def process_document(s3_key: str, source_type: str = "OTHER", org_id: str = "dem
             }
             points.append(PointStruct(id=pid, vector=v, payload=payload))
         
-        cli.upsert(collection_name=collection_name, points=points)
+        print(f"📤 Attempting to upsert {len(points)} points to {collection_name}")
+        try:
+            cli.upsert(collection_name=collection_name, points=points)
+            print(f"✅ Successfully upserted {len(points)} points")
+        except Exception as e:
+            print(f"❌ Upsert failed: {type(e).__name__}: {e}")
+            raise
         STATUS[doc_id] = {"state":"done","chunks":len(chunks),"vectors":len(vecs)}
         log.info("INGEST done %s chunks=%d", s3_key, len(chunks))
         
