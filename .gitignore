@@ -1,0 +1,66 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/venv/
+backend/.venv/
+
+# Build outputs
+frontend/.next/
+frontend/dist/
+backend/__pycache__/
+backend/app/__pycache__/
+backend/app/*/__pycache__/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+backend/.env
+frontend/.env
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Dependencies
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Database
+*.db
+*.sqlite
+
+# Temporary
+tmp/
+temp/
