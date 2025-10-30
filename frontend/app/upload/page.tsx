@@ -48,7 +48,7 @@ export default function UploadPage() {
 
         set("Publishing…");
         const pub = await fetch(
-          `${API_BASE}/documents/${encodeURIComponent(init.key)}/publish?source_type=AAOS`,
+          `${API_BASE}/documents/${encodeURIComponent(init.key)}/publish?source_type=AAOS&org_id=${encodeURIComponent(orgId)}`,
           { method: "POST" }
         );
         if (!pub.ok) throw new Error(`publish ${it.file.name}: ${await pub.text()}`);
