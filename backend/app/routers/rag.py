@@ -7,6 +7,82 @@ from app.services import retrieval
 
 router = APIRouter()
 
+@router.get("/debug/check-collection/{collection_name}")
+async def check_specific_collection(collection_name: str):
+    """Check if a specific collection exists and has points."""
+    try:
+        c = retrieval.client()
+        col_info = c.get_collection(collection_name)
+        
+        # Try a test search
+        try:
+            test_results = retrieval.search("test", top_k=3, collection_name=collection_name)
+            search_works = True
+            num_results = len(test_results)
+        except Exception as search_error:
+            search_works = False
+            num_results = 0
+            
+        return {
+            "collection_name": collection_name,
+            "exists": True,
+            "points_count": col_info.points_count,
+            "vectors_count": col_info.vectors_count,
+            "search_works": search_works,
+            "test_search_results": num_results
+        }
+    except Exception as e:
+        return {
+            "collection_name": collection_name,
+            "exists": False,
+            "error": str(e)
+        }
+
+@router.get("/debug/test-query")
+async def test_query_logic():
+    """Test the exact query logic."""
+    try:
+        doctor_id = "joshua_dines"
+        doctor_slug = slugify(doctor_id)
+        doctor_prefix = f"dr_{doctor_slug}_"
+        
+        c = retrieval.client()
+        all_collections_response = c.get_collections()
+        all_collection_names = [col.name for col in all_collections_response.collections]
+        
+        matching_collections = [
+            name for name in all_collection_names 
+            if name.startswith(doctor_prefix)
+        ]
+        
+        # Try searching
+        search_results = []
+        if matching_collections:
+            for col_name in matching_collections:
+                try:
+                    hits = retrieval.search("UCL repair precautions", top_k=3, collection_name=col_name)
+                    search_results.append({
+                        "collection": col_name,
+                        "hits": len(hits),
+                        "works": True
+                    })
+                except Exception as e:
+                    search_results.append({
+                        "collection": col_name,
+                        "error": str(e)
+                    })
+        
+        return {
+            "doctor_id": doctor_id,
+            "search_prefix": doctor_prefix,
+            "all_collections": all_collection_names,
+            "matching_collections": matching_collections,
+            "search_results": search_results
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @router.get("/debug/env")
 async def debug_environment():
     """Check which Qdrant the API is connected to."""
