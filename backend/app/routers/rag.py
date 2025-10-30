@@ -2,6 +2,7 @@ import time
 from fastapi import APIRouter, HTTPException
 from app.models.schemas import QueryRequest, Answer, Citation, DoctorProfile
 from app.core.logging import logger
+from app.core.config import settings
 from app.services import retrieval
 
 router = APIRouter()
@@ -14,22 +15,27 @@ async def debug_environment():
         "s3_bucket": settings.s3_bucket
     }
 
-@router.get("/debug/collections")  
+@router.get("/debug/collections")
 async def list_collections():
-    """List all collections."""
+    """List all Qdrant collections."""
     try:
         c = retrieval.client()
         collections = c.get_collections().collections
-        return {
-            "total": len(collections),
-            "collections": [
-                {"name": col.name, "vectors": col.vectors_count}
-                for col in collections
-            ]
-        }
+        
+        result = []
+        for col in collections:
+            try:
+                col_info = c.get_collection(col.name)
+                result.append({
+                    "name": col.name,
+                    "points_count": col_info.points_count
+                })
+            except Exception as e:
+                result.append({"name": col.name, "error": str(e)})
+        
+        return {"total": len(collections), "collections": result}
     except Exception as e:
         return {"error": str(e)}
-
 
 
 
