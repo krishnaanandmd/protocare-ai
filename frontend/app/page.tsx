@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo, useState, useEffect } from "react";
+import Link from "next/link";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 
@@ -65,7 +66,15 @@ export default function PatientQA() {
                   <p className="text-sm text-blue-300">Personalized Clinical Intelligence</p>
                 </div>
               </div>
-              <ModeToggle mode={mode} onChange={setMode} />
+              <div className="flex items-center gap-6">
+                <Link
+                  href="/about"
+                  className="text-slate-300 hover:text-white transition-colors font-semibold"
+                >
+                  About Us
+                </Link>
+                <ModeToggle mode={mode} onChange={setMode} />
+              </div>
             </div>
           </div>
         </header>
