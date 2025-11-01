@@ -19,7 +19,7 @@ const teamMembers: TeamMember[] = [
     role: 'CEO',
     title: 'Chief Executive Officer',
     image: '/team/kyle-kunze.svg',
-    linkedin: 'https://www.linkedin.com/in/kyle-kunze',
+    linkedin: 'https://www.linkedin.com/in/kylekunzemd/',
     bio: 'Leading ProtoCare AI\'s vision to revolutionize healthcare through artificial intelligence and evidence-based medicine.'
   },
   {
@@ -33,9 +33,9 @@ const teamMembers: TeamMember[] = [
   {
     name: 'Joshua Dines',
     role: 'CSO',
-    title: 'Chief Strategy Officer',
+    title: 'Chief Scientific Officer',
     image: '/team/joshua-dines.svg',
-    linkedin: 'https://www.linkedin.com/in/joshua-dines',
+    linkedin: 'https://www.linkedin.com/in/joshua-dines-md-7233b75/',
     bio: 'Shaping strategic direction and fostering partnerships to advance AI-powered healthcare delivery.'
   }
 ];
