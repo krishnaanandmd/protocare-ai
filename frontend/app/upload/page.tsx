@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import Link from "next/link";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8080";
 
 type Item = { file: File; status: string };
@@ -65,7 +66,15 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto p-6 space-y-4">
-        <h1 className="text-xl font-semibold">Upload guidelines / policies</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold">Upload guidelines / policies</h1>
+          <Link
+            href="/about"
+            className="text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium"
+          >
+            About Us
+          </Link>
+        </div>
 
         <div className="bg-white rounded-2xl shadow p-4 space-y-3">
           <label className="block text-sm font-medium text-gray-700">Organization</label>
