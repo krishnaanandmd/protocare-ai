@@ -18,7 +18,7 @@ const teamMembers: TeamMember[] = [
     name: 'Kyle Kunze',
     role: 'CEO',
     title: 'Chief Executive Officer',
-    image: '/team/kyle-kunze.svg',
+    image: '/team/kyle-kunze.jpg',
     linkedin: 'https://www.linkedin.com/in/kylekunzemd/',
     bio: 'Leading ProtoCare AI\'s vision to revolutionize healthcare through artificial intelligence and evidence-based medicine.'
   },
@@ -26,7 +26,7 @@ const teamMembers: TeamMember[] = [
     name: 'Krishna Anand',
     role: 'CTO',
     title: 'Chief Technology Officer',
-    image: '/team/krishna-anand.svg',
+    image: '/team/krishna-anand.jpg',
     linkedin: 'https://www.linkedin.com/in/krishna-anand',
     bio: 'Driving technological innovation and architecting cutting-edge AI solutions for healthcare providers and patients.'
   },
@@ -34,9 +34,38 @@ const teamMembers: TeamMember[] = [
     name: 'Joshua Dines',
     role: 'CSO',
     title: 'Chief Scientific Officer',
-    image: '/team/joshua-dines.svg',
+    image: '/team/joshua-dines.jpg',
     linkedin: 'https://www.linkedin.com/in/joshua-dines-md-7233b75/',
     bio: 'Shaping strategic direction and fostering partnerships to advance AI-powered healthcare delivery.'
+  }
+];
+
+interface AdvisoryMember {
+  name: string;
+  title: string;
+  specialty: string;
+}
+
+const advisoryBoard: AdvisoryMember[] = [
+  {
+    name: 'Asheesh Bedi, MD',
+    title: 'Clinical Advisor',
+    specialty: 'Orthopedic Surgery'
+  },
+  {
+    name: 'Ayoosh Pareek, MD',
+    title: 'Clinical Advisor',
+    specialty: 'Orthopedic Surgery'
+  },
+  {
+    name: 'William Long, MD',
+    title: 'Clinical Advisor',
+    specialty: 'Orthopedic Surgery'
+  },
+  {
+    name: 'Sheeraz Qureshi, MD',
+    title: 'Clinical Advisor',
+    specialty: 'Spine Surgery'
   }
 ];
 
@@ -142,6 +171,43 @@ export default function AboutUs() {
                           Connect on LinkedIn
                         </a>
                       )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Clinical Advisory Board Section */}
+            <div className="mb-16">
+              <h2 className="text-4xl font-bold text-white mb-4 text-center">
+                Clinical <span className="bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">Advisory Board</span>
+              </h2>
+              <p className="text-gray-300 text-center mb-12 max-w-3xl mx-auto">
+                Our clinical advisory board comprises world-renowned surgeons who ensure ProtoCare AI delivers
+                the highest standard of evidence-based medical guidance.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {advisoryBoard.map((advisor) => (
+                  <div
+                    key={advisor.name}
+                    className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-blue-400/50 transition-all"
+                  >
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-bold text-white mb-1">
+                        {advisor.name}
+                      </h3>
+                      <p className="text-blue-300 text-sm font-semibold mb-1">
+                        {advisor.title}
+                      </p>
+                      <p className="text-gray-400 text-sm">
+                        {advisor.specialty}
+                      </p>
                     </div>
                   </div>
                 ))}
