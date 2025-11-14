@@ -18,7 +18,7 @@ const teamMembers: TeamMember[] = [
     name: 'Kyle Kunze',
     role: 'CEO',
     title: 'Chief Executive Officer',
-    image: '/team/kyle-kunze.svg',
+    image: '/team/kyle-kunze.jpg',
     linkedin: 'https://www.linkedin.com/in/kylekunzemd/',
     bio: 'Leading ProtoCare AI\'s vision to revolutionize healthcare through artificial intelligence and evidence-based medicine.'
   },
@@ -26,7 +26,7 @@ const teamMembers: TeamMember[] = [
     name: 'Krishna Anand',
     role: 'CTO',
     title: 'Chief Technology Officer',
-    image: '/team/krishna-anand.svg',
+    image: '/team/krishna-anand.jpg',
     linkedin: 'https://www.linkedin.com/in/krishna-anand',
     bio: 'Driving technological innovation and architecting cutting-edge AI solutions for healthcare providers and patients.'
   },
@@ -34,7 +34,7 @@ const teamMembers: TeamMember[] = [
     name: 'Joshua Dines',
     role: 'CSO',
     title: 'Chief Scientific Officer',
-    image: '/team/joshua-dines.svg',
+    image: '/team/joshua-dines.jpg',
     linkedin: 'https://www.linkedin.com/in/joshua-dines-md-7233b75/',
     bio: 'Shaping strategic direction and fostering partnerships to advance AI-powered healthcare delivery.'
   }
