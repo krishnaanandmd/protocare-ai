@@ -49,22 +49,17 @@ interface AdvisoryMember {
 const advisoryBoard: AdvisoryMember[] = [
   {
     name: 'Asheesh Bedi, MD',
-    title: 'Clinical Advisor',
-    specialty: 'Orthopedic Surgery'
-  },
-  {
-    name: 'Ayoosh Pareek, MD',
-    title: 'Clinical Advisor',
-    specialty: 'Orthopedic Surgery'
+    title: 'Director, Sports Medicine Surgery',
+    specialty: 'Sports Medicine Surgery'
   },
   {
     name: 'William Long, MD',
-    title: 'Clinical Advisor',
-    specialty: 'Orthopedic Surgery'
+    title: 'Director, Adult Reconstruction & Joint Replacement',
+    specialty: 'Adult Reconstruction & Joint Replacement'
   },
   {
     name: 'Sheeraz Qureshi, MD',
-    title: 'Clinical Advisor',
+    title: 'Director, Spine Surgery',
     specialty: 'Spine Surgery'
   }
 ];
