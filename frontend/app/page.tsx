@@ -57,11 +57,11 @@ export default function PatientQA() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl">
-                  <span className="text-white font-black text-3xl">P</span>
+                  <span className="text-white font-black text-3xl">C</span>
                 </div>
                 <div>
                   <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">
-                    Protocare
+                    CareGuide
                   </h1>
                   <p className="text-sm text-blue-300">Personalized Clinical Intelligence</p>
                 </div>
@@ -229,7 +229,7 @@ export default function PatientQA() {
         <footer className="border-t border-white/10 bg-black/20 backdrop-blur-xl mt-20">
           <div className="max-w-5xl mx-auto px-6 py-8 text-center">
             <p className="text-sm text-slate-400">
-              Protocare v0.2 • Personalized Clinical Decision Support
+              CareGuide v0.2 • Personalized Clinical Decision Support
             </p>
             <p className="text-xs text-slate-500 mt-2">
               This tool provides information based on your surgeon's protocols. Always consult with your healthcare team.

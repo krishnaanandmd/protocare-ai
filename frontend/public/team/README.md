@@ -1,6 +1,6 @@
 # Team Headshots
 
-This directory contains the headshot images for the ProtoCare AI leadership team.
+This directory contains the headshot images for the CareGuide leadership team.
 
 ## Required Images
 
