@@ -15,8 +15,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://protocare.ai",
-        "https://www.protocare.ai",
+        "https://care-guide.ai",
+        "https://www.care-guide.ai",
         "https://*.vercel.app",  # For Vercel preview deployments
     ],
     allow_credentials=True,

@@ -1,8 +1,8 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'RAG Assistant',
-  description: 'Clinical RAG Q&A System',
+  title: 'CareGuide - Personalized Clinical Intelligence',
+  description: 'AI-powered clinical decision support with personalized answers based on your surgeon\'s protocols',
 }
 
 export default function RootLayout({

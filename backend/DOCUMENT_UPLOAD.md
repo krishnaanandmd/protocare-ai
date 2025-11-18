@@ -1,6 +1,6 @@
 # Document Upload Guide
 
-This guide explains how to upload medical protocol documents (PDFs) to the ProtoCare AI system.
+This guide explains how to upload medical protocol documents (PDFs) to the CareGuide system.
 
 ## Overview
 
@@ -104,7 +104,7 @@ s3://your-bucket/uploads/doctors/{doctor_slug}/{protocol_slug}/{uuid}.pdf
 
 Example:
 ```
-s3://protocare-docs/uploads/doctors/joshua_dines/ucl/a1b2c3d4e5f6.pdf
+s3://careguide-docs/uploads/doctors/joshua_dines/ucl/a1b2c3d4e5f6.pdf
 ```
 
 ### 2. Vector Database Collections

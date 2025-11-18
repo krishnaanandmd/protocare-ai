@@ -20,7 +20,7 @@ const teamMembers: TeamMember[] = [
     title: 'Chief Executive Officer',
     image: '/team/kyle-kunze.svg',
     linkedin: 'https://www.linkedin.com/in/kylekunzemd/',
-    bio: 'Leading ProtoCare AI\'s vision to revolutionize healthcare through artificial intelligence and evidence-based medicine.'
+    bio: 'Leading CareGuide\'s vision to revolutionize healthcare through artificial intelligence and evidence-based medicine.'
   },
   {
     name: 'Krishna Anand',
@@ -70,7 +70,7 @@ export default function AboutUs() {
             {/* Hero Section */}
             <div className="text-center mb-16">
               <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-                About <span className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">ProtoCare AI</span>
+                About <span className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">CareGuide</span>
               </h1>
               <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
                 We're building the future of healthcare with AI-powered, evidence-based medical assistance
@@ -193,7 +193,7 @@ export default function AboutUs() {
                 Ready to Experience AI-Powered Healthcare?
               </h2>
               <p className="text-gray-300 mb-8 text-lg">
-                Join thousands of patients and providers who trust ProtoCare AI for medical answers.
+                Join thousands of patients and providers who trust CareGuide for medical answers.
               </p>
               <Link
                 href="/"
@@ -208,7 +208,7 @@ export default function AboutUs() {
         {/* Footer */}
         <footer className="w-full py-6 px-6 border-t border-white/10">
           <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
-            <p>&copy; 2025 ProtoCare AI. All rights reserved.</p>
+            <p>&copy; 2025 CareGuide. All rights reserved.</p>
           </div>
         </footer>
       </div>
