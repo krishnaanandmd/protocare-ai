@@ -133,6 +133,7 @@ PROCEDURES = {
 }
 
 # Detailed conditions and procedures by surgeon specialty
+# This should reflect the actual documents uploaded for each surgeon
 SURGEON_SPECIALTIES = {
     "joshua_dines": {
         "categories": [
@@ -143,27 +144,7 @@ SURGEON_SPECIALTIES = {
                     {
                         "name": "Rotator Cuff Tears",
                         "description": "Partial or complete tears of the rotator cuff tendons",
-                        "procedures": ["Rotator Cuff Repair", "Rotator Cuff Reconstruction"]
-                    },
-                    {
-                        "name": "Shoulder Instability",
-                        "description": "Recurrent shoulder dislocations or subluxations",
-                        "procedures": ["Bankart Repair", "Latarjet Procedure"]
-                    },
-                    {
-                        "name": "Labral Tears (SLAP)",
-                        "description": "Superior labrum anterior-posterior tears",
-                        "procedures": ["SLAP Repair", "Biceps Tenodesis"]
-                    },
-                    {
-                        "name": "Shoulder Arthritis",
-                        "description": "Degenerative changes in the shoulder joint",
-                        "procedures": ["Shoulder Arthroscopy", "Debridement"]
-                    },
-                    {
-                        "name": "AC Joint Injuries",
-                        "description": "Acromioclavicular joint separations",
-                        "procedures": ["AC Joint Reconstruction", "Distal Clavicle Excision"]
+                        "procedures": ["Rotator Cuff Repair"]
                     }
                 ]
             },
@@ -174,22 +155,7 @@ SURGEON_SPECIALTIES = {
                     {
                         "name": "UCL Injuries",
                         "description": "Ulnar collateral ligament tears common in throwing athletes",
-                        "procedures": ["UCL Reconstruction (Tommy John)", "UCL Repair"]
-                    },
-                    {
-                        "name": "Tennis Elbow",
-                        "description": "Lateral epicondylitis causing outer elbow pain",
-                        "procedures": ["Lateral Epicondyle Release", "PRP Injection"]
-                    },
-                    {
-                        "name": "Golfer's Elbow",
-                        "description": "Medial epicondylitis causing inner elbow pain",
-                        "procedures": ["Medial Epicondyle Release", "PRP Injection"]
-                    },
-                    {
-                        "name": "Elbow Instability",
-                        "description": "Recurrent elbow dislocations or laxity",
-                        "procedures": ["Ligament Reconstruction", "Elbow Arthroscopy"]
+                        "procedures": ["UCL Reconstruction (Tommy John)"]
                     }
                 ]
             },
@@ -200,17 +166,7 @@ SURGEON_SPECIALTIES = {
                     {
                         "name": "ACL Tears",
                         "description": "Anterior cruciate ligament injuries",
-                        "procedures": ["ACL Reconstruction", "ACL Repair"]
-                    },
-                    {
-                        "name": "Meniscus Tears",
-                        "description": "Tears of the knee meniscus cartilage",
-                        "procedures": ["Meniscus Repair", "Partial Meniscectomy"]
-                    },
-                    {
-                        "name": "Cartilage Injuries",
-                        "description": "Damage to knee articular cartilage",
-                        "procedures": ["Microfracture", "Cartilage Transplant"]
+                        "procedures": ["ACL Reconstruction"]
                     }
                 ]
             }
