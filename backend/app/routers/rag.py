@@ -132,6 +132,92 @@ PROCEDURES = {
     "rotator_cuff": {"id": "rotator_cuff", "name": "Rotator Cuff Repair", "description": "Surgical repair of torn rotator cuff"}
 }
 
+# Detailed conditions and procedures by surgeon specialty
+SURGEON_SPECIALTIES = {
+    "joshua_dines": {
+        "categories": [
+            {
+                "name": "Shoulder",
+                "icon": "shoulder",
+                "conditions": [
+                    {
+                        "name": "Rotator Cuff Tears",
+                        "description": "Partial or complete tears of the rotator cuff tendons",
+                        "procedures": ["Rotator Cuff Repair", "Rotator Cuff Reconstruction"]
+                    },
+                    {
+                        "name": "Shoulder Instability",
+                        "description": "Recurrent shoulder dislocations or subluxations",
+                        "procedures": ["Bankart Repair", "Latarjet Procedure"]
+                    },
+                    {
+                        "name": "Labral Tears (SLAP)",
+                        "description": "Superior labrum anterior-posterior tears",
+                        "procedures": ["SLAP Repair", "Biceps Tenodesis"]
+                    },
+                    {
+                        "name": "Shoulder Arthritis",
+                        "description": "Degenerative changes in the shoulder joint",
+                        "procedures": ["Shoulder Arthroscopy", "Debridement"]
+                    },
+                    {
+                        "name": "AC Joint Injuries",
+                        "description": "Acromioclavicular joint separations",
+                        "procedures": ["AC Joint Reconstruction", "Distal Clavicle Excision"]
+                    }
+                ]
+            },
+            {
+                "name": "Elbow",
+                "icon": "elbow",
+                "conditions": [
+                    {
+                        "name": "UCL Injuries",
+                        "description": "Ulnar collateral ligament tears common in throwing athletes",
+                        "procedures": ["UCL Reconstruction (Tommy John)", "UCL Repair"]
+                    },
+                    {
+                        "name": "Tennis Elbow",
+                        "description": "Lateral epicondylitis causing outer elbow pain",
+                        "procedures": ["Lateral Epicondyle Release", "PRP Injection"]
+                    },
+                    {
+                        "name": "Golfer's Elbow",
+                        "description": "Medial epicondylitis causing inner elbow pain",
+                        "procedures": ["Medial Epicondyle Release", "PRP Injection"]
+                    },
+                    {
+                        "name": "Elbow Instability",
+                        "description": "Recurrent elbow dislocations or laxity",
+                        "procedures": ["Ligament Reconstruction", "Elbow Arthroscopy"]
+                    }
+                ]
+            },
+            {
+                "name": "Knee",
+                "icon": "knee",
+                "conditions": [
+                    {
+                        "name": "ACL Tears",
+                        "description": "Anterior cruciate ligament injuries",
+                        "procedures": ["ACL Reconstruction", "ACL Repair"]
+                    },
+                    {
+                        "name": "Meniscus Tears",
+                        "description": "Tears of the knee meniscus cartilage",
+                        "procedures": ["Meniscus Repair", "Partial Meniscectomy"]
+                    },
+                    {
+                        "name": "Cartilage Injuries",
+                        "description": "Damage to knee articular cartilage",
+                        "procedures": ["Microfracture", "Cartilage Transplant"]
+                    }
+                ]
+            }
+        ]
+    }
+}
+
 def slugify(text):
     """Convert text to slug."""
     return text.lower().replace(" ", "_").replace(".", "")
@@ -146,9 +232,20 @@ async def list_procedures(doctor_id: str):
     """Get procedures for a specific doctor."""
     if doctor_id not in DOCTORS:
         raise HTTPException(status_code=404, detail="Doctor not found")
-    
+
     doctor = DOCTORS[doctor_id]
     return [PROCEDURES[proc_id] for proc_id in doctor["procedures"] if proc_id in PROCEDURES]
+
+@router.get("/doctors/{doctor_id}/specialties")
+async def get_surgeon_specialties(doctor_id: str):
+    """Get detailed conditions and procedures for a specific surgeon."""
+    if doctor_id not in DOCTORS:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+
+    if doctor_id not in SURGEON_SPECIALTIES:
+        return {"categories": []}
+
+    return SURGEON_SPECIALTIES[doctor_id]
 
 @router.post("/query", response_model=Answer)
 async def rag_query(body: QueryRequest):
