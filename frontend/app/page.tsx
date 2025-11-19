@@ -101,8 +101,8 @@ export default function PatientQA() {
 
             <div className="flex items-center justify-center gap-8 pt-8">
               <div className="text-center">
-                <div className="text-3xl font-bold text-white">&lt; 3s</div>
-                <div className="text-sm text-slate-400">Response Time</div>
+                <div className="text-3xl font-bold text-white">Instant</div>
+                <div className="text-sm text-slate-400">Responses</div>
               </div>
               <div className="w-px h-12 bg-white/20" />
               <div className="text-center">
