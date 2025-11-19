@@ -238,14 +238,126 @@ async def list_procedures(doctor_id: str):
 
 @router.get("/doctors/{doctor_id}/specialties")
 async def get_surgeon_specialties(doctor_id: str):
-    """Get detailed conditions and procedures for a specific surgeon."""
+    """Get detailed conditions and procedures for a specific surgeon based on uploaded documents."""
     if doctor_id not in DOCTORS:
         raise HTTPException(status_code=404, detail="Doctor not found")
 
-    if doctor_id not in SURGEON_SPECIALTIES:
-        return {"categories": []}
+    # Dynamically build specialties from uploaded document collections
+    try:
+        c = retrieval.client()
+        all_collections = c.get_collections().collections
+        doctor_slug = slugify(doctor_id)
+        doctor_prefix = f"dr_{doctor_slug}_"
 
-    return SURGEON_SPECIALTIES[doctor_id]
+        # Find all collections for this doctor
+        doctor_collections = [
+            col.name for col in all_collections
+            if col.name.startswith(doctor_prefix)
+        ]
+
+        if not doctor_collections:
+            return {"categories": []}
+
+        # Map of procedure slugs to display names and descriptions
+        PROCEDURE_INFO = {
+            "ucl": {
+                "name": "UCL Reconstruction (Tommy John Surgery)",
+                "description": "Ulnar collateral ligament reconstruction for throwing athletes",
+                "category": "Elbow",
+                "icon": "elbow"
+            },
+            "acl": {
+                "name": "ACL Reconstruction",
+                "description": "Anterior cruciate ligament reconstruction surgery",
+                "category": "Knee",
+                "icon": "knee"
+            },
+            "rotator_cuff": {
+                "name": "Rotator Cuff Repair",
+                "description": "Surgical repair of torn rotator cuff tendons",
+                "category": "Shoulder",
+                "icon": "shoulder"
+            },
+            "meniscus": {
+                "name": "Meniscus Surgery",
+                "description": "Repair or removal of damaged meniscus cartilage",
+                "category": "Knee",
+                "icon": "knee"
+            },
+            "shoulder_instability": {
+                "name": "Shoulder Instability Surgery",
+                "description": "Surgical treatment for recurrent shoulder dislocations",
+                "category": "Shoulder",
+                "icon": "shoulder"
+            },
+            "labral": {
+                "name": "Labral Repair",
+                "description": "Surgical repair of labral tears (SLAP lesions)",
+                "category": "Shoulder",
+                "icon": "shoulder"
+            },
+            "tennis_elbow": {
+                "name": "Tennis Elbow Treatment",
+                "description": "Treatment for lateral epicondylitis",
+                "category": "Elbow",
+                "icon": "elbow"
+            },
+            "cartilage": {
+                "name": "Cartilage Restoration",
+                "description": "Procedures to repair or restore damaged cartilage",
+                "category": "Knee",
+                "icon": "knee"
+            }
+        }
+
+        # Group procedures by category
+        categories_map = {}
+
+        for col_name in doctor_collections:
+            # Extract procedure slug from collection name
+            procedure_slug = col_name.replace(doctor_prefix, "")
+
+            # Get procedure info or create default
+            if procedure_slug in PROCEDURE_INFO:
+                info = PROCEDURE_INFO[procedure_slug]
+            else:
+                # Create a readable name from the slug
+                readable_name = procedure_slug.replace("_", " ").title()
+                info = {
+                    "name": readable_name,
+                    "description": f"Information about {readable_name}",
+                    "category": "General",
+                    "icon": "medical"
+                }
+
+            category_name = info["category"]
+            if category_name not in categories_map:
+                categories_map[category_name] = {
+                    "name": category_name,
+                    "icon": info["icon"],
+                    "conditions": []
+                }
+
+            categories_map[category_name]["conditions"].append({
+                "name": info["name"],
+                "description": info["description"],
+                "procedures": [info["name"]]
+            })
+
+        # Convert to list and sort
+        categories = list(categories_map.values())
+        # Sort categories: Shoulder, Elbow, Knee, then others alphabetically
+        category_order = {"Shoulder": 0, "Elbow": 1, "Knee": 2}
+        categories.sort(key=lambda x: (category_order.get(x["name"], 99), x["name"]))
+
+        return {"categories": categories}
+
+    except Exception as e:
+        logger.error("failed_to_get_specialties", error=str(e))
+        # Fallback to hardcoded data if dynamic loading fails
+        if doctor_id in SURGEON_SPECIALTIES:
+            return SURGEON_SPECIALTIES[doctor_id]
+        return {"categories": []}
 
 @router.post("/query", response_model=Answer)
 async def rag_query(body: QueryRequest):
