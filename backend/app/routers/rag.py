@@ -261,52 +261,60 @@ async def get_surgeon_specialties(doctor_id: str):
         # Map of procedure slugs to display names and descriptions
         PROCEDURE_INFO = {
             "ucl": {
-                "name": "UCL Reconstruction (Tommy John Surgery)",
-                "description": "Ulnar collateral ligament reconstruction for throwing athletes",
+                "name": "UCL Injuries",
+                "description": "Ulnar collateral ligament tears common in throwing athletes",
                 "category": "Elbow",
-                "icon": "elbow"
+                "icon": "elbow",
+                "procedures": ["UCL Reconstruction (Tommy John)", "UCL Repair", "PRP Injection"]
             },
             "acl": {
-                "name": "ACL Reconstruction (in progress)",
-                "description": "Anterior cruciate ligament reconstruction surgery",
+                "name": "ACL Tears (in progress)",
+                "description": "Anterior cruciate ligament injuries",
                 "category": "Knee",
-                "icon": "knee"
+                "icon": "knee",
+                "procedures": ["ACL Reconstruction", "ACL Repair"]
             },
             "rotator_cuff": {
-                "name": "Rotator Cuff Repair",
-                "description": "Surgical repair of torn rotator cuff tendons",
+                "name": "Rotator Cuff Tears",
+                "description": "Partial or complete tears of the rotator cuff tendons",
                 "category": "Shoulder",
-                "icon": "shoulder"
+                "icon": "shoulder",
+                "procedures": ["Rotator Cuff Repair", "Rotator Cuff Reconstruction", "Debridement"]
             },
             "meniscus": {
-                "name": "Meniscus Surgery (in progress)",
-                "description": "Repair or removal of damaged meniscus cartilage",
+                "name": "Meniscus Tears (in progress)",
+                "description": "Tears of the knee meniscus cartilage",
                 "category": "Knee",
-                "icon": "knee"
+                "icon": "knee",
+                "procedures": ["Meniscus Repair", "Partial Meniscectomy"]
             },
             "shoulder_instability": {
-                "name": "Shoulder Instability Surgery (in progress)",
-                "description": "Surgical treatment for recurrent shoulder dislocations",
+                "name": "Shoulder Instability (in progress)",
+                "description": "Recurrent shoulder dislocations or subluxations",
                 "category": "Shoulder",
-                "icon": "shoulder"
+                "icon": "shoulder",
+                "procedures": ["Bankart Repair", "Latarjet Procedure"]
             },
             "labral": {
-                "name": "Labral Repair (in progress)",
-                "description": "Surgical repair of labral tears (SLAP lesions)",
+                "name": "Labral Tears (in progress)",
+                "description": "Superior labrum anterior-posterior tears",
                 "category": "Shoulder",
-                "icon": "shoulder"
+                "icon": "shoulder",
+                "procedures": ["SLAP Repair", "Biceps Tenodesis"]
             },
             "tennis_elbow": {
-                "name": "Tennis Elbow Treatment (in progress)",
-                "description": "Treatment for lateral epicondylitis",
+                "name": "Tennis Elbow (in progress)",
+                "description": "Lateral epicondylitis causing outer elbow pain",
                 "category": "Elbow",
-                "icon": "elbow"
+                "icon": "elbow",
+                "procedures": ["Lateral Epicondyle Release", "PRP Injection"]
             },
             "cartilage": {
-                "name": "Cartilage Restoration (in progress)",
-                "description": "Procedures to repair or restore damaged cartilage",
+                "name": "Cartilage Injuries (in progress)",
+                "description": "Damage to knee articular cartilage",
                 "category": "Knee",
-                "icon": "knee"
+                "icon": "knee",
+                "procedures": ["Microfracture", "Cartilage Transplant"]
             }
         }
 
@@ -320,6 +328,7 @@ async def get_surgeon_specialties(doctor_id: str):
             # Get procedure info or create default
             if procedure_slug in PROCEDURE_INFO:
                 info = PROCEDURE_INFO[procedure_slug]
+                procedures_list = info["procedures"]
             else:
                 # Create a readable name from the slug
                 readable_name = procedure_slug.replace("_", " ").title()
@@ -329,6 +338,7 @@ async def get_surgeon_specialties(doctor_id: str):
                     "category": "General",
                     "icon": "medical"
                 }
+                procedures_list = [readable_name]
 
             category_name = info["category"]
             if category_name not in categories_map:
@@ -341,7 +351,7 @@ async def get_surgeon_specialties(doctor_id: str):
             categories_map[category_name]["conditions"].append({
                 "name": info["name"],
                 "description": info["description"],
-                "procedures": [info["name"]]
+                "procedures": procedures_list
             })
 
         # Convert to list and sort
