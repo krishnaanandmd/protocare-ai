@@ -267,7 +267,7 @@ async def get_surgeon_specialties(doctor_id: str):
                 "icon": "elbow"
             },
             "acl": {
-                "name": "ACL Reconstruction",
+                "name": "ACL Reconstruction (in progress)",
                 "description": "Anterior cruciate ligament reconstruction surgery",
                 "category": "Knee",
                 "icon": "knee"
@@ -279,31 +279,31 @@ async def get_surgeon_specialties(doctor_id: str):
                 "icon": "shoulder"
             },
             "meniscus": {
-                "name": "Meniscus Surgery",
+                "name": "Meniscus Surgery (in progress)",
                 "description": "Repair or removal of damaged meniscus cartilage",
                 "category": "Knee",
                 "icon": "knee"
             },
             "shoulder_instability": {
-                "name": "Shoulder Instability Surgery",
+                "name": "Shoulder Instability Surgery (in progress)",
                 "description": "Surgical treatment for recurrent shoulder dislocations",
                 "category": "Shoulder",
                 "icon": "shoulder"
             },
             "labral": {
-                "name": "Labral Repair",
+                "name": "Labral Repair (in progress)",
                 "description": "Surgical repair of labral tears (SLAP lesions)",
                 "category": "Shoulder",
                 "icon": "shoulder"
             },
             "tennis_elbow": {
-                "name": "Tennis Elbow Treatment",
+                "name": "Tennis Elbow Treatment (in progress)",
                 "description": "Treatment for lateral epicondylitis",
                 "category": "Elbow",
                 "icon": "elbow"
             },
             "cartilage": {
-                "name": "Cartilage Restoration",
+                "name": "Cartilage Restoration (in progress)",
                 "description": "Procedures to repair or restore damaged cartilage",
                 "category": "Knee",
                 "icon": "knee"
