@@ -190,7 +190,7 @@ export default function PatientQA() {
             )}
           </div>
 
-          {/* Conditions & Procedures Display */}
+          {/* Conditions Display */}
           {selectedDoctor && (
             <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6">
               <div className="flex items-center gap-3">
@@ -200,12 +200,21 @@ export default function PatientQA() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">Conditions & Procedures</h3>
+                  <h3 className="text-xl font-bold text-white">Conditions</h3>
                   <p className="text-sm text-slate-400">Topics you can ask {selectedDoctorName} about</p>
                 </div>
               </div>
 
-              {loadingSpecialties ? (
+              {selectedDoctor === "joshua_dines" ? (
+                <div className="grid gap-3">
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                    <h5 className="font-semibold text-white">Rotator Cuff</h5>
+                  </div>
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                    <h5 className="font-semibold text-white">Ulnar Collateral Ligament</h5>
+                  </div>
+                </div>
+              ) : loadingSpecialties ? (
                 <div className="flex items-center justify-center py-8">
                   <svg className="animate-spin h-8 w-8 text-purple-400" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
