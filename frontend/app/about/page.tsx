@@ -16,6 +16,7 @@ interface TeamMember {
 interface ClinicalAdvisor {
   name: string;
   title: string;
+  affiliations?: string[];
 }
 
 const teamMembers: TeamMember[] = [
@@ -48,19 +49,36 @@ const teamMembers: TeamMember[] = [
 const clinicalAdvisors: ClinicalAdvisor[] = [
   {
     name: 'William Long',
-    title: 'Director of Adult Reconstruction and Joint Replacement'
+    title: 'Director of Adult Reconstruction and Joint Replacement',
+    affiliations: [
+      'Associate Attending Orthopaedic Surgeon HSS',
+      'Associate Professor Orthopaedic Surgery, Weill Cornell'
+    ]
   },
   {
     name: 'Asheesh Bedi',
-    title: 'Director of Sports Medicine'
+    title: 'Director of Sports Medicine',
+    affiliations: [
+      'Executive Director and Division Chief of Sports Medicine at University of Michigan',
+      'Former Team Physician, Chicago Bears',
+      'Former Team Physician, Detroit Lions',
+      'Medical Director for NBA Players Association'
+    ]
   },
   {
     name: 'Sheeraz Qureshi',
-    title: 'Director of Spine Surgery'
+    title: 'Director of Spine Surgery',
+    affiliations: [
+      'Co-Chief of Spine Surgery, HSS',
+      'Chief Medical Officer, HSS Florida'
+    ]
   },
   {
     name: 'Khalid Alkhelaifi',
-    title: 'Director of International Musculoskeletal Health'
+    title: 'Director of International Musculoskeletal Health',
+    affiliations: [
+      'Knee and Shoulder Surgeon, Aspetar (Doha, Qatar)'
+    ]
   }
 ];
 
@@ -190,9 +208,18 @@ export default function AboutUs() {
                     <h3 className="text-xl font-bold text-white mb-2">
                       {advisor.name}
                     </h3>
-                    <p className="text-cyan-300">
+                    <p className="text-cyan-300 mb-3">
                       {advisor.title}
                     </p>
+                    {advisor.affiliations && advisor.affiliations.length > 0 && (
+                      <div className="space-y-1">
+                        {advisor.affiliations.map((affiliation, index) => (
+                          <p key={index} className="text-sm text-gray-400">
+                            {affiliation}
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
