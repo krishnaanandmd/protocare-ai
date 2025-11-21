@@ -64,60 +64,116 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto p-6 space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <div className="max-w-4xl mx-auto p-6 space-y-8">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Upload guidelines / policies</h1>
+          <div>
+            <h1 className="text-3xl font-black bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text">
+              Upload Documents
+            </h1>
+            <p className="text-slate-400 mt-2">Upload guidelines and policies for processing</p>
+          </div>
           <Link
-            href="/about"
-            className="text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium"
+            href="/app"
+            className="text-slate-300 hover:text-white transition-colors font-semibold flex items-center gap-2"
           >
-            About Us
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to App
           </Link>
         </div>
 
-        <div className="bg-white rounded-2xl shadow p-4 space-y-3">
-          <label className="block text-sm font-medium text-gray-700">Organization</label>
-          <input
-            className="w-full rounded-xl border p-2"
-            value={orgId}
-            onChange={(e) => setOrgId(e.target.value)}
-            placeholder="demo"
-          />
+        {/* Upload Form */}
+        <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6">
+          {/* Organization Input */}
+          <div className="space-y-3">
+            <label className="block text-sm font-bold text-white">Organization ID</label>
+            <input
+              className="w-full rounded-xl bg-white/10 border-2 border-white/20 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-400 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 transition-all outline-none"
+              value={orgId}
+              onChange={(e) => setOrgId(e.target.value)}
+              placeholder="demo"
+            />
+          </div>
 
-          <label className="block text-sm font-medium text-gray-700">Files</label>
-          <input type="file" multiple accept=".pdf,.docx,.txt" onChange={onPick} />
+          {/* File Input */}
+          <div className="space-y-3">
+            <label className="block text-sm font-bold text-white">Select Files</label>
+            <div className="relative">
+              <input
+                type="file"
+                multiple
+                accept=".pdf,.docx,.txt"
+                onChange={onPick}
+                className="w-full text-slate-300 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-cyan-500 file:to-teal-600 file:text-white hover:file:from-cyan-600 hover:file:to-teal-700 file:cursor-pointer cursor-pointer"
+              />
+            </div>
+            <p className="text-xs text-slate-400">Supported formats: PDF, DOCX, TXT</p>
+          </div>
 
-          <div className="flex items-center gap-3">
+          {/* File List */}
+          {items.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-white">Selected Files ({items.length})</h3>
+              <div className="border border-white/20 rounded-2xl divide-y divide-white/10 overflow-hidden">
+                {items.map((it, idx) => (
+                  <div key={idx} className="p-4 flex items-center justify-between bg-white/5 hover:bg-white/10 transition-all">
+                    <span className="truncate mr-3 text-white font-medium text-sm">{it.file.name}</span>
+                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                      it.status.includes("✅")
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                        : it.status.includes("Failed")
+                        ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                        : "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                    }`}>
+                      {it.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center gap-4 pt-4">
             <button
               disabled={!items.length || busy}
               onClick={uploadAll}
-              className={`px-4 py-2 rounded-xl text-white ${
-                !items.length || busy ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+              className={`px-8 py-4 rounded-xl font-bold text-lg transition-all transform ${
+                !items.length || busy
+                  ? "bg-white/5 text-slate-600 cursor-not-allowed"
+                  : "bg-gradient-to-r from-cyan-500 to-teal-600 text-white shadow-2xl shadow-cyan-500/50 hover:shadow-cyan-500/70 hover:scale-105 active:scale-95"
               }`}
             >
-              {busy ? "Uploading…" : `Upload ${items.length} file${items.length > 1 ? "s" : ""}`}
+              {busy ? (
+                <span className="flex items-center gap-3">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Uploading...
+                </span>
+              ) : (
+                `Upload ${items.length} file${items.length > 1 ? "s" : ""}`
+              )}
             </button>
-            <a href="/" className="text-sm underline text-gray-600" onClick={(e) => busy && e.preventDefault()}>
-              ← Back to Q&A
-            </a>
           </div>
-
-          {items.length > 0 && (
-            <div className="border rounded-xl divide-y">
-              {items.map((it, idx) => (
-                <div key={idx} className="p-2 text-sm flex items-center justify-between">
-                  <span className="truncate mr-3">{it.file.name}</span>
-                  <span className="text-gray-600">{it.status}</span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
-        <p className="text-xs text-gray-500">
-          Files upload directly to S3 via presigned POST. After upload, they're queued for parsing → chunking → embedding.
-        </p>
+        {/* Info Card */}
+        <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-2xl p-6 flex gap-4 backdrop-blur-sm">
+          <svg className="w-6 h-6 text-cyan-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="font-bold text-cyan-300 mb-1">How it works</p>
+            <p className="text-sm text-cyan-200">
+              Files upload directly to S3 via presigned POST. After upload, they're automatically queued for parsing, chunking, and embedding into the knowledge base.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

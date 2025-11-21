@@ -66,11 +66,11 @@ const clinicalAdvisors: ClinicalAdvisor[] = [
 
 export default function AboutUs() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Animated background blobs */}
-      <div className="absolute top-20 left-20 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-      <div className="absolute top-40 right-20 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-      <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      <div className="absolute top-20 left-20 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+      <div className="absolute top-40 right-20 w-72 h-72 bg-teal-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+      <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
 
       <div className="relative min-h-screen flex flex-col">
         {/* Header */}
@@ -78,7 +78,7 @@ export default function AboutUs() {
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <Link
               href="/"
-              className="text-white hover:text-purple-300 transition-colors flex items-center gap-2"
+              className="text-white hover:text-cyan-300 transition-colors flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -94,7 +94,7 @@ export default function AboutUs() {
             {/* Hero Section */}
             <div className="text-center mb-16">
               <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-                About <span className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">CareGuide</span>
+                About <span className="bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text">CareGuide</span>
               </h1>
               <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
                 We're building the future of healthcare with AI-powered, evidence-based medical assistance
@@ -115,17 +115,17 @@ export default function AboutUs() {
             {/* Team Section */}
             <div className="mb-16">
               <h2 className="text-4xl font-bold text-white mb-12 text-center">
-                Meet Our <span className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">Leadership Team</span>
+                Meet Our <span className="bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text">Leadership Team</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {teamMembers.map((member) => (
                   <div
                     key={member.name}
-                    className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:border-purple-400/50 transition-all hover:transform hover:scale-105"
+                    className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:border-cyan-400/50 transition-all hover:transform hover:scale-105"
                   >
                     {/* Profile Image */}
-                    <div className="relative w-48 h-48 mx-auto mb-6 rounded-full overflow-hidden border-4 border-purple-400/50">
+                    <div className="relative w-48 h-48 mx-auto mb-6 rounded-full overflow-hidden border-4 border-cyan-400/50">
                       <Image
                         src={member.image}
                         alt={`${member.name} - ${member.role}`}
@@ -140,7 +140,7 @@ export default function AboutUs() {
                       <h3 className="text-2xl font-bold text-white mb-1">
                         {member.name}
                       </h3>
-                      <p className="text-purple-300 font-semibold text-lg mb-1">
+                      <p className="text-cyan-300 font-semibold text-lg mb-1">
                         {member.role}
                       </p>
                       <p className="text-gray-400 text-sm mb-4">
@@ -158,7 +158,7 @@ export default function AboutUs() {
                           href={member.linkedin}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-purple-300 hover:text-purple-200 transition-colors"
+                          className="inline-flex items-center gap-2 text-cyan-300 hover:text-cyan-200 transition-colors"
                         >
                           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
@@ -175,7 +175,7 @@ export default function AboutUs() {
             {/* Clinical Advisor Board Section */}
             <div className="mb-16">
               <h2 className="text-4xl font-bold text-white mb-4 text-center">
-                <span className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">Clinical Advisor Board</span>
+                <span className="bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text">Clinical Advisor Board</span>
               </h2>
               <p className="text-gray-300 text-center mb-12 max-w-3xl mx-auto">
                 Our distinguished clinical advisors bring world-class expertise in musculoskeletal medicine to guide our AI development and ensure clinical excellence.
@@ -185,12 +185,12 @@ export default function AboutUs() {
                 {clinicalAdvisors.map((advisor) => (
                   <div
                     key={advisor.name}
-                    className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-purple-400/50 transition-all"
+                    className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-cyan-400/50 transition-all"
                   >
                     <h3 className="text-xl font-bold text-white mb-2">
                       {advisor.name}
                     </h3>
-                    <p className="text-purple-300">
+                    <p className="text-cyan-300">
                       {advisor.title}
                     </p>
                   </div>
@@ -201,8 +201,8 @@ export default function AboutUs() {
             {/* Values Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
               <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
@@ -225,8 +225,8 @@ export default function AboutUs() {
               </div>
 
               <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                <div className="w-12 h-12 bg-pink-500/20 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-pink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
@@ -238,7 +238,7 @@ export default function AboutUs() {
             </div>
 
             {/* CTA Section */}
-            <div className="text-center bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-lg rounded-2xl p-12 border border-white/20">
+            <div className="text-center bg-gradient-to-r from-cyan-500/20 to-teal-500/20 backdrop-blur-lg rounded-2xl p-12 border border-white/20">
               <h2 className="text-3xl font-bold text-white mb-4">
                 Ready to Experience AI-Powered Healthcare?
               </h2>
@@ -246,8 +246,8 @@ export default function AboutUs() {
                 Join thousands of patients and providers who trust CareGuide for medical answers.
               </p>
               <Link
-                href="/"
-                className="inline-block px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105"
+                href="/app"
+                className="inline-block px-8 py-4 bg-gradient-to-r from-cyan-500 to-teal-600 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-teal-700 transition-all transform hover:scale-105"
               >
                 Get Started
               </Link>
