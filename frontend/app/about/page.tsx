@@ -35,7 +35,7 @@ const teamMembers: TeamMember[] = [
     title: 'Chief Technology Officer, Co-Founder',
     image: '/team/krishna-anand.jpg',
     linkedin: 'https://www.linkedin.com/in/krishna-anand',
-    bio: 'Dr. Krishna Anand leads the technical branch and operations at CareGuide. Krishna brings his technical background and operational expertise to CareGuide. He combines his experience as CEO of a former medical startup, innovator, and training as a resident physician to ensure CareGuide focuses on the needs of patients and clinicians.'
+    bio: 'Dr. Krishna Anand brings his technical background and operational expertise to CareGuide. He combines his experience as CEO of a former medical startup, innovator, and training as a resident physician to ensure CareGuide focuses on the needs of patients and clinicians.'
   },
   {
     name: 'Joshua Dines, M.D.',
