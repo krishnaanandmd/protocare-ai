@@ -16,6 +16,7 @@ interface TeamMember {
 interface ClinicalAdvisor {
   name: string;
   title: string;
+  image: string;
   affiliations?: string[];
 }
 
@@ -50,6 +51,7 @@ const clinicalAdvisors: ClinicalAdvisor[] = [
   {
     name: 'William Long',
     title: 'Director of Adult Reconstruction and Joint Replacement',
+    image: '/team/william-long.jpg',
     affiliations: [
       'Associate Attending Orthopaedic Surgeon HSS',
       'Associate Professor Orthopaedic Surgery, Weill Cornell'
@@ -58,6 +60,7 @@ const clinicalAdvisors: ClinicalAdvisor[] = [
   {
     name: 'Asheesh Bedi',
     title: 'Director of Sports Medicine',
+    image: '/team/asheesh-bedi.jpg',
     affiliations: [
       'Executive Director and Division Chief of Sports Medicine at University of Michigan',
       'Former Team Physician, Chicago Bears',
@@ -68,6 +71,7 @@ const clinicalAdvisors: ClinicalAdvisor[] = [
   {
     name: 'Sheeraz Qureshi',
     title: 'Director of Spine Surgery',
+    image: '/team/sheeraz-qureshi.jpg',
     affiliations: [
       'Co-Chief of Spine Surgery, HSS',
       'Chief Medical Officer, HSS Florida'
@@ -76,6 +80,7 @@ const clinicalAdvisors: ClinicalAdvisor[] = [
   {
     name: 'Khalid Alkhelaifi',
     title: 'Director of International Musculoskeletal Health',
+    image: '/team/khalid-alkhelaifi.jpg',
     affiliations: [
       'Knee and Shoulder Surgeon, Aspetar (Doha, Qatar)'
     ]
@@ -199,27 +204,41 @@ export default function AboutUs() {
                 Our distinguished clinical advisors bring world-class expertise in musculoskeletal medicine to guide our AI development and ensure clinical excellence.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 {clinicalAdvisors.map((advisor) => (
                   <div
                     key={advisor.name}
-                    className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-cyan-400/50 transition-all"
+                    className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:border-cyan-400/50 transition-all hover:transform hover:scale-105"
                   >
-                    <h3 className="text-xl font-bold text-white mb-2">
-                      {advisor.name}
-                    </h3>
-                    <p className="text-cyan-300 mb-3">
-                      {advisor.title}
-                    </p>
-                    {advisor.affiliations && advisor.affiliations.length > 0 && (
-                      <div className="space-y-1">
-                        {advisor.affiliations.map((affiliation, index) => (
-                          <p key={index} className="text-sm text-gray-400">
-                            {affiliation}
-                          </p>
-                        ))}
-                      </div>
-                    )}
+                    {/* Profile Image */}
+                    <div className="relative w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden border-4 border-cyan-400/50">
+                      <Image
+                        src={advisor.image}
+                        alt={`${advisor.name}`}
+                        fill
+                        className="object-cover"
+                        priority
+                      />
+                    </div>
+
+                    {/* Advisor Info */}
+                    <div className="text-center">
+                      <h3 className="text-lg font-bold text-white mb-2">
+                        {advisor.name}
+                      </h3>
+                      <p className="text-cyan-300 text-sm mb-3">
+                        {advisor.title}
+                      </p>
+                      {advisor.affiliations && advisor.affiliations.length > 0 && (
+                        <div className="space-y-1">
+                          {advisor.affiliations.map((affiliation, index) => (
+                            <p key={index} className="text-xs text-gray-400">
+                              {affiliation}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
