@@ -18,11 +18,13 @@ export default function PatientQA() {
   const [data, setData] = useState<Answer | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [doctors] = useState<Doctor[]>([
     { id: "joshua_dines", name: "Dr. Joshua Dines", specialty: "Orthopedic Surgery - Sports Medicine" }
   ]);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
+  const [doctorInput, setDoctorInput] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [specialties, setSpecialties] = useState<SurgeonSpecialties | null>(null);
   const [loadingSpecialties, setLoadingSpecialties] = useState(false);
 
@@ -51,7 +53,35 @@ export default function PatientQA() {
     fetchSpecialties();
   }, [selectedDoctor]);
 
-  const canAsk = useMemo(() => 
+  // Filter doctors based on input
+  const filteredDoctors = useMemo(() => {
+    if (!doctorInput.trim()) return [];
+    const searchTerm = doctorInput.toLowerCase();
+    return doctors.filter(d =>
+      d.name.toLowerCase().includes(searchTerm)
+    );
+  }, [doctorInput, doctors]);
+
+  const handleDoctorSelect = (doctor: Doctor) => {
+    setSelectedDoctor(doctor.id);
+    setDoctorInput(doctor.name);
+    setShowSuggestions(false);
+  };
+
+  const handleDoctorInputChange = (value: string) => {
+    setDoctorInput(value);
+    setShowSuggestions(true);
+
+    // Clear selection if input doesn't match selected doctor
+    if (selectedDoctor) {
+      const selectedDoc = doctors.find(d => d.id === selectedDoctor);
+      if (selectedDoc && value !== selectedDoc.name) {
+        setSelectedDoctor(null);
+      }
+    }
+  };
+
+  const canAsk = useMemo(() =>
     question.trim().length > 3 && !loading && selectedDoctor,
     [question, loading, selectedDoctor]
   );
@@ -161,21 +191,36 @@ export default function PatientQA() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white">Select Your Surgeon</h3>
+              <h3 className="text-xl font-bold text-white">Find Your Surgeon</h3>
             </div>
-            
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-300">Your Surgeon</label>
-              <select 
+
+            <div className="space-y-2 relative">
+              <label className="block text-sm font-semibold text-slate-300">Your Surgeon's Name</label>
+              <input
+                type="text"
                 className="w-full rounded-xl bg-white/10 border-2 border-white/20 backdrop-blur-sm px-4 py-4 text-white text-lg placeholder-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
-                value={selectedDoctor || ""}
-                onChange={(e) => setSelectedDoctor(e.target.value || null)}
-              >
-                <option value="" className="bg-slate-900">Choose your surgeon...</option>
-                {doctors.map(d => (
-                  <option key={d.id} value={d.id} className="bg-slate-900">{d.name}</option>
-                ))}
-              </select>
+                placeholder="Start typing your surgeon's name..."
+                value={doctorInput}
+                onChange={(e) => handleDoctorInputChange(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              />
+
+              {/* Autocomplete Suggestions */}
+              {showSuggestions && filteredDoctors.length > 0 && (
+                <div className="absolute z-10 w-full mt-2 bg-slate-900/95 backdrop-blur-xl border-2 border-white/20 rounded-xl shadow-2xl overflow-hidden">
+                  {filteredDoctors.map(doctor => (
+                    <button
+                      key={doctor.id}
+                      onClick={() => handleDoctorSelect(doctor)}
+                      className="w-full text-left px-4 py-4 hover:bg-white/10 transition-all border-b border-white/10 last:border-b-0"
+                    >
+                      <div className="font-semibold text-white">{doctor.name}</div>
+                      <div className="text-sm text-slate-400 mt-1">{doctor.specialty}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {selectedDoctorName && (
