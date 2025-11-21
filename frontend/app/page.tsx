@@ -10,7 +10,7 @@ export default function LandingPage() {
     {
       title: "Welcome to CareGuide",
       subtitle: "Personalized Clinical Intelligence",
-      description: "get instant answers based on our artificial intelligence model trained and curated by your doctors clinical expertise.",
+      description: "Get instant answers based on our artificial intelligence model trained and curated by your doctors clinical expertise.",
       cta: "Learn How It Works",
     },
     {
@@ -84,7 +84,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center shadow-2xl shadow-cyan-500/50">
-                  <span className="text-white font-black text-2xl">G</span>
+                  <span className="text-white font-black text-2xl">C</span>
                 </div>
                 <div>
                   <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text">
