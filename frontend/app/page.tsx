@@ -2,6 +2,7 @@
 
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
+import { DoctorAutocomplete } from "@/components/DoctorAutocomplete";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 
@@ -161,22 +162,14 @@ export default function PatientQA() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white">Select Your Surgeon</h3>
+              <h3 className="text-xl font-bold text-white">Find Your Surgeon</h3>
             </div>
-            
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-300">Your Surgeon</label>
-              <select 
-                className="w-full rounded-xl bg-white/10 border-2 border-white/20 backdrop-blur-sm px-4 py-4 text-white text-lg placeholder-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
-                value={selectedDoctor || ""}
-                onChange={(e) => setSelectedDoctor(e.target.value || null)}
-              >
-                <option value="" className="bg-slate-900">Choose your surgeon...</option>
-                {doctors.map(d => (
-                  <option key={d.id} value={d.id} className="bg-slate-900">{d.name}</option>
-                ))}
-              </select>
-            </div>
+
+            <DoctorAutocomplete
+              doctors={doctors}
+              selectedDoctorId={selectedDoctor}
+              onSelect={setSelectedDoctor}
+            />
 
             {selectedDoctorName && (
               <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-white/20">
