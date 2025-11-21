@@ -115,24 +115,7 @@ export default function PatientQA() {
         {/* Hero Section */}
         <div className="pt-20 pb-16 px-6">
           <div className="max-w-5xl mx-auto text-center space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-sm font-medium text-white">Powered by Advanced AI</span>
-            </div>
-
-            <div className="space-y-6">
-              <h2 className="text-6xl md:text-7xl lg:text-8xl font-black leading-none">
-                <span className="block text-white">Your Doctor's</span>
-                <span className="block bg-gradient-to-r from-cyan-400 via-teal-400 to-blue-400 text-transparent bg-clip-text">
-                  Protocols
-                </span>
-              </h2>
-              <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto font-light">
-                Get instant, personalized answers based on your surgeon's specific treatment protocols
-              </p>
-            </div>
-
-            <div className="flex items-center justify-center gap-8 pt-8">
+            <div className="flex items-center justify-center gap-8">
               <div className="text-center">
                 <div className="text-3xl font-bold text-white">Instant</div>
                 <div className="text-sm text-slate-400">Responses</div>
