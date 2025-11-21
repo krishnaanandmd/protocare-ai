@@ -10,7 +10,7 @@ export default function LandingPage() {
     {
       title: "Welcome to CareGuide",
       subtitle: "Personalized Clinical Intelligence",
-      description: "get instant answers based on our artificial intelligence model trained and curated by your doctors clinical expertise.",
+      description: "Get instant answers based on our artificial intelligence model trained and curated by your doctors clinical expertise.",
       cta: "Learn How It Works",
     },
     {
