@@ -22,28 +22,28 @@ interface ClinicalAdvisor {
 
 const teamMembers: TeamMember[] = [
   {
-    name: 'Kyle Kunze',
+    name: 'Kyle Kunze, M.D.',
     role: 'CEO',
     title: 'Chief Executive Officer',
     image: '/team/kyle-kunze.jpg',
     linkedin: 'https://www.linkedin.com/in/kylekunzemd/',
-    bio: 'Leading CareGuide\'s vision to revolutionize healthcare through artificial intelligence and evidence-based medicine.'
+    bio: 'Dr. Kyle Kunze leads CareGuide as an orthopaedic sports medicine surgeon. With over 100 peer-reviewed publications on the intersection between artificial intelligence and clinical medicine, Kyle leads to revolutionize healthcare through evidence-based medicine.'
   },
   {
-    name: 'Krishna Anand',
+    name: 'Krishna Anand, M.D., M.Eng.',
     role: 'CTO',
     title: 'Chief Technology Officer',
     image: '/team/krishna-anand.jpg',
     linkedin: 'https://www.linkedin.com/in/krishna-anand',
-    bio: 'Driving technological innovation and architecting cutting-edge AI solutions for healthcare providers and patients.'
+    bio: 'Dr. Krishna Anand leads the technical branch and operations at CareGuide. He combines his experience as CEO of a former medical startup, innovator, and training as a resident physician to ensure CareGuide focuses on the needs of patients and clinicians.'
   },
   {
-    name: 'Joshua Dines',
+    name: 'Joshua Dines, M.D.',
     role: 'CSO',
     title: 'Chief Scientific Officer',
     image: '/team/joshua-dines.jpg',
     linkedin: 'https://www.linkedin.com/in/joshua-dines-md-7233b75/',
-    bio: 'Shaping strategic direction and fostering partnerships to advance AI-powered healthcare delivery.'
+    bio: 'Dr. Joshua Dines brings his 20+ years as a leader in orthopedic surgery, team physician for multiple professional sports teams, and former CMO of ViewFi to root CareGuides mission in the hands of its patients. He leads the clinical advisory board and ensures all medical documents used to build CareGuide are rooted in evidence-based medicine.'
   }
 ];
 
