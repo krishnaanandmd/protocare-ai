@@ -10,7 +10,7 @@ export default function LandingPage() {
     {
       title: "Welcome to CareGuide",
       subtitle: "Personalized Clinical Intelligence",
-      description: "Get instant answers based on your surgeon's specific treatment protocols and clinical expertise.",
+      description: "get instant answers based on our artificial intelligence model trained and curated by your doctors clinical expertise.",
       cta: "Learn How It Works",
     },
     {
@@ -26,12 +26,12 @@ export default function LandingPage() {
         {
           icon: "question",
           title: "Ask Your Question",
-          desc: "Type any question about your treatment, recovery, or protocols",
+          desc: "Type any question about your condition, injury, treatment, or recovery",
         },
         {
           icon: "answer",
           title: "Get Personalized Answers",
-          desc: "Receive evidence-based responses from your surgeon's protocols",
+          desc: "Receive on-demand, evidence-based responses from your doctor",
         },
       ],
       cta: "Why Trust Us?",
@@ -52,9 +52,9 @@ export default function LandingPage() {
           desc: "Guided by leading orthopedic surgeons and specialists",
         },
         {
-          icon: "lock",
-          title: "HIPAA Compliant",
-          desc: "Your information is secure and private",
+          icon: "team",
+          title: "Built by Doctors",
+          desc: "A company built by and ran by doctors who understand patient care",
         },
         {
           icon: "clock",
