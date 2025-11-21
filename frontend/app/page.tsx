@@ -184,7 +184,7 @@ export default function PatientQA() {
           <Disclaimer mode={mode} />
 
           {/* Doctor Selection */}
-          <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6">
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6 overflow-visible">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,7 +194,7 @@ export default function PatientQA() {
               <h3 className="text-xl font-bold text-white">Find Your Surgeon</h3>
             </div>
 
-            <div className="space-y-2 relative">
+            <div className="space-y-2 relative overflow-visible">
               <label className="block text-sm font-semibold text-slate-300">Your Surgeon's Name</label>
               <input
                 type="text"
@@ -208,7 +208,7 @@ export default function PatientQA() {
 
               {/* Autocomplete Suggestions */}
               {showSuggestions && filteredDoctors.length > 0 && (
-                <div className="absolute z-10 w-full mt-2 bg-slate-900/95 backdrop-blur-xl border-2 border-white/20 rounded-xl shadow-2xl overflow-hidden">
+                <div className="absolute z-50 w-full mt-2 bg-slate-900/95 backdrop-blur-xl border-2 border-white/20 rounded-xl shadow-2xl overflow-hidden">
                   {filteredDoctors.map(doctor => (
                     <button
                       key={doctor.id}
