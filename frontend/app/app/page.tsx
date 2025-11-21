@@ -114,22 +114,14 @@ export default function PatientQA() {
 
         {/* Hero Section */}
         <div className="pt-20 pb-16 px-6">
-          <div className="max-w-5xl mx-auto text-center space-y-8">
-            <div className="flex items-center justify-center gap-8">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">Instant</div>
-                <div className="text-sm text-slate-400">Responses</div>
+          <div className="max-w-5xl mx-auto text-center">
+            <div className="flex items-center justify-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center shadow-2xl shadow-cyan-500/50">
+                <span className="text-white font-black text-4xl">C</span>
               </div>
-              <div className="w-px h-12 bg-white/20" />
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">100%</div>
-                <div className="text-sm text-slate-400">Evidence-Based</div>
-              </div>
-              <div className="w-px h-12 bg-white/20" />
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">24/7</div>
-                <div className="text-sm text-slate-400">Available</div>
-              </div>
+              <h2 className="text-5xl font-black tracking-tight bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text">
+                CareGuide
+              </h2>
             </div>
           </div>
         </div>
