@@ -181,7 +181,10 @@ export default function PatientQA() {
                     <h5 className="font-semibold text-white">Rotator Cuff</h5>
                   </div>
                   <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                    <h5 className="font-semibold text-white">Ulnar Collateral Ligament</h5>
+                    <h5 className="font-semibold text-white">Ulnar Collateral Ligament (UCL)</h5>
+                  </div>
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                    <h5 className="font-semibold text-white">Anterior Cruciate Ligament (ACL)</h5>
                   </div>
                 </div>
               ) : loadingSpecialties ? (
