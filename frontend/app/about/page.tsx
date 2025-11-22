@@ -16,51 +16,74 @@ interface TeamMember {
 interface ClinicalAdvisor {
   name: string;
   title: string;
+  image: string;
+  affiliations?: string[];
 }
 
 const teamMembers: TeamMember[] = [
   {
-    name: 'Kyle Kunze',
+    name: 'Kyle Kunze, M.D.',
     role: 'CEO',
-    title: 'Chief Executive Officer',
+    title: 'Chief Executive Officer, Co-Founder',
     image: '/team/kyle-kunze.jpg',
     linkedin: 'https://www.linkedin.com/in/kylekunzemd/',
-    bio: 'Leading CareGuide\'s vision to revolutionize healthcare through artificial intelligence and evidence-based medicine.'
+    bio: 'Dr. Kyle Kunze leads CareGuide as an orthopaedic sports medicine surgeon. With over 100 peer-reviewed publications on the intersection between artificial intelligence and clinical medicine, Kyle leads to revolutionize healthcare through evidence-based medicine.'
   },
   {
-    name: 'Krishna Anand',
+    name: 'Krishna Anand, M.D., M.Eng.',
     role: 'CTO',
-    title: 'Chief Technology Officer',
+    title: 'Chief Technology Officer, Co-Founder',
     image: '/team/krishna-anand.jpg',
     linkedin: 'https://www.linkedin.com/in/krishna-anand',
-    bio: 'Driving technological innovation and architecting cutting-edge AI solutions for healthcare providers and patients.'
+    bio: 'Dr. Krishna Anand brings his technical background and operational expertise to CareGuide. He combines his experience as CEO of a former medical startup, innovator, and training as a resident physician to ensure CareGuide focuses on the needs of patients and clinicians.'
   },
   {
-    name: 'Joshua Dines',
+    name: 'Joshua Dines, M.D.',
     role: 'CSO',
-    title: 'Chief Scientific Officer',
+    title: 'Chief Scientific Officer, Co-Founder',
     image: '/team/joshua-dines.jpg',
     linkedin: 'https://www.linkedin.com/in/joshua-dines-md-7233b75/',
-    bio: 'Shaping strategic direction and fostering partnerships to advance AI-powered healthcare delivery.'
+    bio: 'Dr. Joshua Dines brings his 20+ years as a leader in orthopedic surgery, team physician for multiple professional sports teams, and former CMO of ViewFi to root CareGuides mission in the hands of its patients. He leads the clinical advisory board and ensures all medical documents used to build CareGuide are rooted in evidence-based medicine.'
   }
 ];
 
 const clinicalAdvisors: ClinicalAdvisor[] = [
   {
     name: 'William Long',
-    title: 'Director of Adult Reconstruction and Joint Replacement'
+    title: 'Director of Adult Reconstruction and Joint Replacement',
+    image: '/team/william-long.jpg',
+    affiliations: [
+      'Associate Attending Orthopaedic Surgeon HSS',
+      'Associate Professor Orthopaedic Surgery, Weill Cornell'
+    ]
   },
   {
     name: 'Asheesh Bedi',
-    title: 'Director of Sports Medicine'
+    title: 'Director of Sports Medicine',
+    image: '/team/asheesh-bedi.jpg',
+    affiliations: [
+      'Executive Director and Division Chief of Sports Medicine at University of Michigan',
+      'Former Team Physician, Chicago Bears',
+      'Former Team Physician, Detroit Lions',
+      'Medical Director for NBA Players Association'
+    ]
   },
   {
     name: 'Sheeraz Qureshi',
-    title: 'Director of Spine Surgery'
+    title: 'Director of Spine Surgery',
+    image: '/team/sheeraz-qureshi.jpg',
+    affiliations: [
+      'Co-Chief of Spine Surgery, HSS',
+      'Chief Medical Officer, HSS Florida'
+    ]
   },
   {
     name: 'Khalid Alkhelaifi',
-    title: 'Director of International Musculoskeletal Health'
+    title: 'Director of International Musculoskeletal Health',
+    image: '/team/khalid-alkhelaifi.jpg',
+    affiliations: [
+      'Knee and Shoulder Surgeon, Aspetar (Doha, Qatar)'
+    ]
   }
 ];
 
@@ -181,18 +204,41 @@ export default function AboutUs() {
                 Our distinguished clinical advisors bring world-class expertise in musculoskeletal medicine to guide our AI development and ensure clinical excellence.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 {clinicalAdvisors.map((advisor) => (
                   <div
                     key={advisor.name}
-                    className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-cyan-400/50 transition-all"
+                    className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:border-cyan-400/50 transition-all hover:transform hover:scale-105"
                   >
-                    <h3 className="text-xl font-bold text-white mb-2">
-                      {advisor.name}
-                    </h3>
-                    <p className="text-cyan-300">
-                      {advisor.title}
-                    </p>
+                    {/* Profile Image */}
+                    <div className="relative w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden border-4 border-cyan-400/50">
+                      <Image
+                        src={advisor.image}
+                        alt={`${advisor.name}`}
+                        fill
+                        className="object-cover"
+                        priority
+                      />
+                    </div>
+
+                    {/* Advisor Info */}
+                    <div className="text-center">
+                      <h3 className="text-lg font-bold text-white mb-2">
+                        {advisor.name}
+                      </h3>
+                      <p className="text-cyan-300 text-sm mb-3">
+                        {advisor.title}
+                      </p>
+                      {advisor.affiliations && advisor.affiliations.length > 0 && (
+                        <div className="space-y-1">
+                          {advisor.affiliations.map((affiliation, index) => (
+                            <p key={index} className="text-xs text-gray-400">
+                              {affiliation}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
