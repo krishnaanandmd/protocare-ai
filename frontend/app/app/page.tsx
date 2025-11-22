@@ -183,6 +183,9 @@ export default function PatientQA() {
                   <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
                     <h5 className="font-semibold text-white">Ulnar Collateral Ligament</h5>
                   </div>
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                    <h5 className="font-semibold text-white">ACL</h5>
+                  </div>
                 </div>
               ) : loadingSpecialties ? (
                 <div className="flex items-center justify-center py-8">
