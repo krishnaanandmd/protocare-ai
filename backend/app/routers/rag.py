@@ -132,6 +132,12 @@ DOCTORS = {
     }
 }
 
+# Map doctors to additional doctors whose collections they should search
+# This allows multiple doctors to share the same document collections
+SHARED_COLLECTIONS = {
+    "asheesh_bedi": ["joshua_dines"]  # Dr. Bedi uses Dr. Dines' documents
+}
+
 PROCEDURES = {
     "ucl": {"id": "ucl", "name": "UCL Reconstruction (Tommy John)", "description": "Ulnar collateral ligament reconstruction"},
     "acl": {"id": "acl", "name": "ACL Reconstruction", "description": "Anterior cruciate ligament reconstruction"},
@@ -252,14 +258,22 @@ async def get_surgeon_specialties(doctor_id: str):
     try:
         c = retrieval.client()
         all_collections = c.get_collections().collections
-        doctor_slug = slugify(doctor_id)
-        doctor_prefix = f"dr_{doctor_slug}_"
 
-        # Find all collections for this doctor
-        doctor_collections = [
-            col.name for col in all_collections
-            if col.name.startswith(doctor_prefix)
-        ]
+        # Get list of doctors whose collections to search (including shared collections)
+        doctors_to_search = [doctor_id]
+        if doctor_id in SHARED_COLLECTIONS:
+            doctors_to_search.extend(SHARED_COLLECTIONS[doctor_id])
+
+        # Find all collections for this doctor and shared doctors
+        doctor_collections = []
+        for doc_id in doctors_to_search:
+            doc_slug = slugify(doc_id)
+            doctor_prefix = f"dr_{doc_slug}_"
+            collections = [
+                col.name for col in all_collections
+                if col.name.startswith(doctor_prefix)
+            ]
+            doctor_collections.extend(collections)
 
         if not doctor_collections:
             return {"categories": []}
@@ -382,26 +396,36 @@ async def rag_query(body: QueryRequest):
     doctor_name = None
     procedure_name = None
     collections_to_search = []
-    
+
     if body.doctor_id:
         doctor_slug = slugify(body.doctor_id)
         doctor_name = DOCTORS.get(body.doctor_id, {}).get("name", body.doctor_id)
-        
+
+        # Get list of doctors whose collections to search (including shared collections)
+        doctors_to_search = [body.doctor_id]
+        if body.doctor_id in SHARED_COLLECTIONS:
+            doctors_to_search.extend(SHARED_COLLECTIONS[body.doctor_id])
+
         if body.procedure:
-            # Search specific procedure collection
+            # Search specific procedure collection for all relevant doctors
             procedure_slug = slugify(body.procedure)
-            collections_to_search = [f"dr_{doctor_slug}_{procedure_slug}"]
+            for doc_id in doctors_to_search:
+                doc_slug = slugify(doc_id)
+                collections_to_search.append(f"dr_{doc_slug}_{procedure_slug}")
             procedure_name = PROCEDURES.get(body.procedure, {}).get("name", body.procedure)
         else:
-            # Search ALL collections for this doctor
+            # Search ALL collections for this doctor and shared doctors
             c = retrieval.client()
             all_collections = c.get_collections().collections
-            doctor_prefix = f"dr_{doctor_slug}_"
-            collections_to_search = [
-                col.name for col in all_collections 
-                if col.name.startswith(doctor_prefix)
-            ]
-            logger.info("searching_all_doctor_collections", doctor=doctor_slug, collections=len(collections_to_search))
+            for doc_id in doctors_to_search:
+                doc_slug = slugify(doc_id)
+                doctor_prefix = f"dr_{doc_slug}_"
+                doctor_collections = [
+                    col.name for col in all_collections
+                    if col.name.startswith(doctor_prefix)
+                ]
+                collections_to_search.extend(doctor_collections)
+            logger.info("searching_all_doctor_collections", doctor=doctor_slug, shared_doctors=doctors_to_search, collections=len(collections_to_search))
     else:
         # Fallback to demo collection
         collections_to_search = ["org_demo_chunks"]
