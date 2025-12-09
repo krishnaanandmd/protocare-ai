@@ -21,7 +21,8 @@ export default function PatientQA() {
   const [error, setError] = useState<string | null>(null);
 
   const [doctors] = useState<Doctor[]>([
-    { id: "joshua_dines", name: "Dr. Joshua Dines", specialty: "Orthopedic Surgery - Sports Medicine" }
+    { id: "joshua_dines", name: "Dr. Joshua Dines", specialty: "Orthopedic Surgery - Sports Medicine" },
+    { id: "asheesh_bedi", name: "Dr. Asheesh Bedi", specialty: "Orthopedic Surgery - Sports Medicine" }
   ]);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
   const [specialties, setSpecialties] = useState<SurgeonSpecialties | null>(null);

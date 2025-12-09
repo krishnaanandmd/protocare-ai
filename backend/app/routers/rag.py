@@ -123,6 +123,12 @@ DOCTORS = {
         "name": "Dr. Joshua Dines",
         "specialty": "Orthopedic Surgery - Sports Medicine",
         "procedures": ["ucl", "acl", "rotator_cuff"]
+    },
+    "asheesh_bedi": {
+        "id": "asheesh_bedi",
+        "name": "Dr. Asheesh Bedi",
+        "specialty": "Orthopedic Surgery - Sports Medicine",
+        "procedures": ["ucl", "acl", "rotator_cuff"]
     }
 }
 
