@@ -49,23 +49,23 @@ const teamMembers: TeamMember[] = [
 
 const clinicalAdvisors: ClinicalAdvisor[] = [
   {
-    name: 'William Long',
-    title: 'Director of Adult Reconstruction and Joint Replacement',
-    image: '/team/william-long.jpg',
-    affiliations: [
-      'Associate Attending Orthopaedic Surgeon HSS',
-      'Associate Professor Orthopaedic Surgery, Weill Cornell'
-    ]
-  },
-  {
     name: 'Asheesh Bedi',
-    title: 'Director of Sports Medicine',
+    title: 'Director of the Clinical Advisory Board',
     image: '/team/asheesh-bedi.jpg',
     affiliations: [
       'Executive Director and Division Chief of Sports Medicine at University of Michigan',
       'Former Team Physician, Chicago Bears',
       'Former Team Physician, Detroit Lions',
       'Medical Director for NBA Players Association'
+    ]
+  },
+  {
+    name: 'William Long',
+    title: 'Director of Adult Reconstruction and Joint Replacement',
+    image: '/team/william-long.jpg',
+    affiliations: [
+      'Associate Attending Orthopaedic Surgeon HSS',
+      'Associate Professor Orthopaedic Surgery, Weill Cornell'
     ]
   },
   {
