@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState, useEffect } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { DoctorAutocomplete } from "@/components/DoctorAutocomplete";
 
@@ -9,9 +9,6 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 type Citation = { title: string; document_id: string; page?: number; section?: string; };
 type Answer = { answer: string; citations: Citation[]; guardrails: Record<string, any>; latency_ms: number; };
 type Doctor = { id: string; name: string; specialty: string; };
-type Condition = { name: string; description: string; procedures: string[]; };
-type Category = { name: string; icon: string; conditions: Condition[]; };
-type SurgeonSpecialties = { categories: Category[]; };
 
 export default function PatientQA() {
   const [question, setQuestion] = useState("");
@@ -25,33 +22,6 @@ export default function PatientQA() {
     { id: "asheesh_bedi", name: "Dr. Asheesh Bedi", specialty: "Orthopedic Surgery - Sports Medicine" }
   ]);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
-  const [specialties, setSpecialties] = useState<SurgeonSpecialties | null>(null);
-  const [loadingSpecialties, setLoadingSpecialties] = useState(false);
-
-  // Fetch specialties when doctor is selected
-  useEffect(() => {
-    if (!selectedDoctor) {
-      setSpecialties(null);
-      return;
-    }
-
-    const fetchSpecialties = async () => {
-      setLoadingSpecialties(true);
-      try {
-        const res = await fetch(`${API_BASE}/rag/doctors/${selectedDoctor}/specialties`);
-        if (res.ok) {
-          const data = await res.json();
-          setSpecialties(data);
-        }
-      } catch (e) {
-        console.error("Failed to fetch specialties:", e);
-      } finally {
-        setLoadingSpecialties(false);
-      }
-    };
-
-    fetchSpecialties();
-  }, [selectedDoctor]);
 
   const canAsk = useMemo(() =>
     question.trim().length > 3 && !loading && selectedDoctor,
@@ -176,81 +146,17 @@ export default function PatientQA() {
                 </div>
               </div>
 
-              {selectedDoctor === "joshua_dines" ? (
-                <div className="grid gap-3">
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                    <h5 className="font-semibold text-white">Rotator Cuff</h5>
-                  </div>
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                    <h5 className="font-semibold text-white">Ulnar Collateral Ligament (UCL)</h5>
-                  </div>
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                    <h5 className="font-semibold text-white">Anterior Cruciate Ligament (ACL)</h5>
-                  </div>
+              <div className="grid gap-3">
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                  <h5 className="font-semibold text-white">Rotator Cuff</h5>
                 </div>
-              ) : loadingSpecialties ? (
-                <div className="flex items-center justify-center py-8">
-                  <svg className="animate-spin h-8 w-8 text-cyan-400" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                  <h5 className="font-semibold text-white">Ulnar Collateral Ligament (UCL)</h5>
                 </div>
-              ) : specialties && specialties.categories.length > 0 ? (
-                <div className="space-y-6">
-                  {specialties.categories.map((category, catIdx) => (
-                    <div key={catIdx} className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                          {category.icon === "shoulder" && (
-                            <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                          )}
-                          {category.icon === "elbow" && (
-                            <svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
-                            </svg>
-                          )}
-                          {category.icon === "knee" && (
-                            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                          )}
-                        </div>
-                        <h4 className="text-lg font-bold text-white">{category.name}</h4>
-                      </div>
-
-                      <div className="grid gap-3">
-                        {category.conditions.map((condition, condIdx) => (
-                          <div
-                            key={condIdx}
-                            className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
-                          >
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 min-w-0">
-                                <h5 className="font-semibold text-white text-sm">{condition.name}</h5>
-                                <p className="text-xs text-slate-400 mt-1">{condition.description}</p>
-                              </div>
-                            </div>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {condition.procedures.map((proc, procIdx) => (
-                                <span
-                                  key={procIdx}
-                                  className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-500/20 to-teal-500/20 border border-white/10 text-xs font-medium text-slate-300"
-                                >
-                                  {proc}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                  <h5 className="font-semibold text-white">Anterior Cruciate Ligament (ACL)</h5>
                 </div>
-              ) : (
-                <p className="text-sm text-slate-400 text-center py-4">No specialty information available</p>
-              )}
+              </div>
             </div>
           )}
 
