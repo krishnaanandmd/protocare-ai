@@ -37,8 +37,8 @@ export default function PatientQA() {
   const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
 
   const canAsk = useMemo(() =>
-    question.trim().length > 3 && !loading && selectedDoctor,
-    [question, loading, selectedDoctor]
+    question.trim().length > 3 && !loading && (selectedDoctor || selectedBodyPart),
+    [question, loading, selectedDoctor, selectedBodyPart]
   );
 
   const ask = useCallback(async () => {
@@ -116,59 +116,53 @@ export default function PatientQA() {
 
           <Disclaimer mode={mode} />
 
-          {/* Doctor Selection */}
+          {/* Search Selection - Surgeon or Body Part */}
           <div className="relative z-10 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-white">Find Your Information</h3>
               </div>
-              <h3 className="text-xl font-bold text-white">Find Your Surgeon</h3>
+              <p className="text-sm text-slate-400 ml-13">Choose a surgeon or select a body part to get started</p>
             </div>
 
-            <DoctorAutocomplete
-              doctors={doctors}
-              selectedDoctorId={selectedDoctor}
-              onSelect={setSelectedDoctor}
-            />
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <DoctorAutocomplete
+                  doctors={doctors}
+                  selectedDoctorId={selectedDoctor}
+                  onSelect={setSelectedDoctor}
+                />
+              </div>
 
-            {selectedDoctorName && (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-cyan-500/20 to-teal-500/20 border border-white/20">
+              <div>
+                <BodyPartAutocomplete
+                  bodyParts={bodyParts}
+                  selectedBodyPartId={selectedBodyPart}
+                  onSelect={setSelectedBodyPart}
+                />
+              </div>
+            </div>
+
+            {(selectedDoctorName || selectedBodyPart) && (
+              <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-white/20">
                 <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-sm font-medium text-white">
-                  Connected to <span className="font-bold">{selectedDoctorName}'s</span> protocols
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Body Part Selection */}
-          <div className="relative z-10 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-white">Select Body Part</h3>
-            </div>
-
-            <BodyPartAutocomplete
-              bodyParts={bodyParts}
-              selectedBodyPartId={selectedBodyPart}
-              onSelect={setSelectedBodyPart}
-            />
-
-            {selectedBodyPart && (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-white/20">
-                <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm font-medium text-white">
-                  Focused on <span className="font-bold">{bodyParts.find(b => b.id === selectedBodyPart)?.name}</span>
+                  {selectedDoctorName && selectedBodyPart && (
+                    <>Searching <span className="font-bold">{selectedDoctorName}'s</span> protocols for <span className="font-bold">{bodyParts.find(b => b.id === selectedBodyPart)?.name}</span></>
+                  )}
+                  {selectedDoctorName && !selectedBodyPart && (
+                    <>Connected to <span className="font-bold">{selectedDoctorName}'s</span> protocols</>
+                  )}
+                  {!selectedDoctorName && selectedBodyPart && (
+                    <>Focused on <span className="font-bold">{bodyParts.find(b => b.id === selectedBodyPart)?.name}</span></>
+                  )}
                 </p>
               </div>
             )}
@@ -217,13 +211,19 @@ export default function PatientQA() {
             <textarea
               className="w-full rounded-2xl bg-white/10 border-2 border-white/20 backdrop-blur-sm px-4 py-4 text-white placeholder-slate-400 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 transition-all outline-none resize-none disabled:opacity-30"
               rows={4}
-              placeholder={selectedDoctorName
-                ? `Ask ${selectedDoctorName} anything about your treatment...`
-                : "Select your surgeon first to ask questions..."}
+              placeholder={
+                selectedDoctorName && selectedBodyPart
+                  ? `Ask ${selectedDoctorName} about ${bodyParts.find(b => b.id === selectedBodyPart)?.name.toLowerCase()} treatment...`
+                  : selectedDoctorName
+                  ? `Ask ${selectedDoctorName} anything about your treatment...`
+                  : selectedBodyPart
+                  ? `Ask about ${bodyParts.find(b => b.id === selectedBodyPart)?.name.toLowerCase()} treatment...`
+                  : "Select a surgeon or body part first to ask questions..."
+              }
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canAsk) ask(); }}
-              disabled={!selectedDoctor}
+              disabled={!selectedDoctor && !selectedBodyPart}
             />
 
             <div className="flex items-center justify-between">
