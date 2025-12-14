@@ -3,12 +3,14 @@
 import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { DoctorAutocomplete } from "@/components/DoctorAutocomplete";
+import { BodyPartAutocomplete } from "@/components/BodyPartAutocomplete";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 
 type Citation = { title: string; document_id: string; page?: number; section?: string; };
 type Answer = { answer: string; citations: Citation[]; guardrails: Record<string, any>; latency_ms: number; };
 type Doctor = { id: string; name: string; specialty: string; };
+type BodyPart = { id: string; name: string; description: string; };
 
 export default function PatientQA() {
   const [question, setQuestion] = useState("");
@@ -22,6 +24,17 @@ export default function PatientQA() {
     { id: "asheesh_bedi", name: "Dr. Asheesh Bedi", specialty: "Orthopedic Surgery - Sports Medicine" }
   ]);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
+
+  const [bodyParts] = useState<BodyPart[]>([
+    { id: "shoulder", name: "Shoulder", description: "Shoulder joint and rotator cuff" },
+    { id: "elbow", name: "Elbow", description: "Elbow joint and surrounding structures" },
+    { id: "hand_wrist", name: "Hand/Wrist", description: "Hand, wrist, and finger joints" },
+    { id: "hip", name: "Hip", description: "Hip joint and surrounding structures" },
+    { id: "knee", name: "Knee", description: "Knee joint including ACL, MCL, meniscus" },
+    { id: "ankle_foot", name: "Ankle/Foot", description: "Ankle, foot, and toe joints" },
+    { id: "spine", name: "Spine", description: "Cervical, thoracic, and lumbar spine" },
+  ]);
+  const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
 
   const canAsk = useMemo(() =>
     question.trim().length > 3 && !loading && selectedDoctor,
@@ -38,7 +51,8 @@ export default function PatientQA() {
         body: JSON.stringify({
           question: question.trim(),
           actor: mode,
-          doctor_id: selectedDoctor
+          doctor_id: selectedDoctor,
+          body_part: selectedBodyPart
         }),
       });
       if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
@@ -46,7 +60,7 @@ export default function PatientQA() {
       setData(json);
     } catch (e: any) { setError(e?.message || "Something went wrong"); }
     finally { setLoading(false); }
-  }, [question, mode, canAsk, selectedDoctor]);
+  }, [question, mode, canAsk, selectedDoctor, selectedBodyPart]);
 
   const selectedDoctorName = doctors.find(d => d.id === selectedDoctor)?.name;
 
@@ -126,6 +140,35 @@ export default function PatientQA() {
                 </svg>
                 <p className="text-sm font-medium text-white">
                   Connected to <span className="font-bold">{selectedDoctorName}'s</span> protocols
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Body Part Selection */}
+          <div className="relative z-10 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-white">Select Body Part</h3>
+            </div>
+
+            <BodyPartAutocomplete
+              bodyParts={bodyParts}
+              selectedBodyPartId={selectedBodyPart}
+              onSelect={setSelectedBodyPart}
+            />
+
+            {selectedBodyPart && (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-white/20">
+                <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-medium text-white">
+                  Focused on <span className="font-bold">{bodyParts.find(b => b.id === selectedBodyPart)?.name}</span>
                 </p>
               </div>
             )}
