@@ -10,6 +10,7 @@ frontend/dist/
 backend/__pycache__/
 backend/app/__pycache__/
 backend/app/*/__pycache__/
+*.tsbuildinfo
 
 # Environment files
 .env

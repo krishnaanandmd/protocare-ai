@@ -9,6 +9,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 type Citation = { title: string; document_id: string; page?: number; section?: string; };
 type Answer = { answer: string; citations: Citation[]; guardrails: Record<string, any>; latency_ms: number; };
 type Doctor = { id: string; name: string; specialty: string; };
+type BodyPart = { id: string; name: string; description: string; };
 
 export default function PatientQA() {
   const [question, setQuestion] = useState("");
@@ -23,9 +24,33 @@ export default function PatientQA() {
   ]);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
 
+  const [bodyParts] = useState<BodyPart[]>([
+    { id: "shoulder", name: "Shoulder", description: "Shoulder joint and rotator cuff" },
+    { id: "elbow", name: "Elbow", description: "Elbow joint and surrounding structures" },
+    { id: "hand_wrist", name: "Hand/Wrist", description: "Hand, wrist, and finger joints" },
+    { id: "hip", name: "Hip", description: "Hip joint and surrounding structures" },
+    { id: "knee", name: "Knee", description: "Knee joint including ACL, MCL, meniscus" },
+    { id: "ankle_foot", name: "Ankle/Foot", description: "Ankle, foot, and toe joints" },
+    { id: "spine", name: "Spine", description: "Cervical, thoracic, and lumbar spine" },
+  ]);
+  const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
+
+  // Handlers that enforce mutual exclusivity
+  const handleDoctorSelect = (doctorId: string | null) => {
+    setSelectedDoctor(doctorId);
+    if (doctorId) {
+      setSelectedBodyPart(null); // Clear body part when doctor is selected
+    }
+  };
+
+  const handleBodyPartSelect = (bodyPartId: string) => {
+    setSelectedBodyPart(bodyPartId);
+    setSelectedDoctor(null); // Clear doctor when body part is selected
+  };
+
   const canAsk = useMemo(() =>
-    question.trim().length > 3 && !loading && selectedDoctor,
-    [question, loading, selectedDoctor]
+    question.trim().length > 3 && !loading && (selectedDoctor || selectedBodyPart),
+    [question, loading, selectedDoctor, selectedBodyPart]
   );
 
   const ask = useCallback(async () => {
@@ -38,7 +63,8 @@ export default function PatientQA() {
         body: JSON.stringify({
           question: question.trim(),
           actor: mode,
-          doctor_id: selectedDoctor
+          doctor_id: selectedDoctor,
+          body_part: selectedBodyPart
         }),
       });
       if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
@@ -46,7 +72,7 @@ export default function PatientQA() {
       setData(json);
     } catch (e: any) { setError(e?.message || "Something went wrong"); }
     finally { setLoading(false); }
-  }, [question, mode, canAsk, selectedDoctor]);
+  }, [question, mode, canAsk, selectedDoctor, selectedBodyPart]);
 
   const selectedDoctorName = doctors.find(d => d.id === selectedDoctor)?.name;
 
@@ -102,33 +128,90 @@ export default function PatientQA() {
 
           <Disclaimer mode={mode} />
 
-          {/* Doctor Selection */}
-          <div className="relative z-10 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-white">Find Your Surgeon</h3>
+          {/* Selection Section */}
+          <div className="relative z-10 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-8">
+            <div className="space-y-2 text-center">
+              <h3 className="text-2xl font-bold text-white">Choose Your Path</h3>
+              <p className="text-sm text-slate-400">Select a specific surgeon OR choose a body part model</p>
             </div>
 
-            <DoctorAutocomplete
-              doctors={doctors}
-              selectedDoctorId={selectedDoctor}
-              onSelect={setSelectedDoctor}
-            />
-
-            {selectedDoctorName && (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-cyan-500/20 to-teal-500/20 border border-white/20">
-                <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm font-medium text-white">
-                  Connected to <span className="font-bold">{selectedDoctorName}'s</span> protocols
-                </p>
+            {/* Surgeon Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-bold text-white">Specific Surgeon</h4>
               </div>
-            )}
+
+              <DoctorAutocomplete
+                doctors={doctors}
+                selectedDoctorId={selectedDoctor}
+                onSelect={handleDoctorSelect}
+              />
+
+              {selectedDoctorName && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-teal-500/20 border border-white/20">
+                  <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm font-medium text-white">
+                    Connected to <span className="font-bold">{selectedDoctorName}'s</span> protocols
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/20"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-slate-900/50 text-slate-400 font-medium">OR</span>
+              </div>
+            </div>
+
+            {/* Body Part Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-bold text-white">MSK Body Part Model</h4>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {bodyParts.map((bodyPart) => (
+                  <button
+                    key={bodyPart.id}
+                    onClick={() => handleBodyPartSelect(bodyPart.id)}
+                    className={`p-4 rounded-xl border-2 transition-all text-left ${
+                      selectedBodyPart === bodyPart.id
+                        ? "bg-gradient-to-br from-purple-500/30 to-pink-500/30 border-purple-400 shadow-lg shadow-purple-500/30"
+                        : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
+                    }`}
+                  >
+                    <div className="font-semibold text-white text-sm">{bodyPart.name}</div>
+                  </button>
+                ))}
+              </div>
+
+              {selectedBodyPart && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-white/20">
+                  <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm font-medium text-white">
+                    Using <span className="font-bold">{bodyParts.find(b => b.id === selectedBodyPart)?.name}</span> model
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Conditions Display */}
@@ -174,13 +257,17 @@ export default function PatientQA() {
             <textarea
               className="w-full rounded-2xl bg-white/10 border-2 border-white/20 backdrop-blur-sm px-4 py-4 text-white placeholder-slate-400 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 transition-all outline-none resize-none disabled:opacity-30"
               rows={4}
-              placeholder={selectedDoctorName
-                ? `Ask ${selectedDoctorName} anything about your treatment...`
-                : "Select your surgeon first to ask questions..."}
+              placeholder={
+                selectedDoctorName
+                  ? `Ask ${selectedDoctorName} anything about your treatment...`
+                  : selectedBodyPart
+                  ? `Ask about ${bodyParts.find(b => b.id === selectedBodyPart)?.name.toLowerCase()} treatment...`
+                  : "Choose a surgeon or body part model above to get started..."
+              }
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canAsk) ask(); }}
-              disabled={!selectedDoctor}
+              disabled={!selectedDoctor && !selectedBodyPart}
             />
 
             <div className="flex items-center justify-between">
