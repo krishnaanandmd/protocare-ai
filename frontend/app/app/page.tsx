@@ -132,7 +132,7 @@ export default function PatientQA() {
           <div className="relative z-10 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-8">
             <div className="space-y-2 text-center">
               <h3 className="text-2xl font-bold text-white">Choose Your Path</h3>
-              <p className="text-sm text-slate-400">Select a specific surgeon OR choose a body part model</p>
+              <p className="text-sm text-slate-400">Select your provider OR choose a CareGuide's standardized MSK model based on your anatomic area of concern</p>
             </div>
 
             {/* Surgeon Section */}
@@ -177,12 +177,10 @@ export default function PatientQA() {
             {/* Body Part Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30 text-2xl">
+                  🦴
                 </div>
-                <h4 className="text-lg font-bold text-white">MSK Body Part Model</h4>
+                <h4 className="text-lg font-bold text-white">CareGuide MSK Models</h4>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
