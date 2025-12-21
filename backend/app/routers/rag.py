@@ -129,6 +129,30 @@ DOCTORS = {
         "name": "Dr. Asheesh Bedi",
         "specialty": "Orthopedic Surgery - Sports Medicine",
         "procedures": ["ucl", "acl", "rotator_cuff"]
+    },
+    "ayoosh_pareek": {
+        "id": "ayoosh_pareek",
+        "name": "Dr. Ayoosh Pareek",
+        "specialty": "Orthopedic Surgery - Sports Medicine",
+        "procedures": ["acl", "meniscus", "cartilage_restoration"]
+    },
+    "sheeraz_qureshi": {
+        "id": "sheeraz_qureshi",
+        "name": "Dr. Sheeraz Qureshi",
+        "specialty": "Orthopedic Surgery - Spine Surgery",
+        "procedures": ["spinal_fusion", "disc_replacement", "decompression"]
+    },
+    "khalid_alkhelaifi": {
+        "id": "khalid_alkhelaifi",
+        "name": "Dr. Khalid Alkhelaifi",
+        "specialty": "Orthopedic Surgery - Sports Medicine",
+        "procedures": ["hip_arthroscopy", "acl", "shoulder_instability"]
+    },
+    "william_long": {
+        "id": "william_long",
+        "name": "Dr. William Long",
+        "specialty": "Orthopedic Surgery - Joint Replacement",
+        "procedures": ["total_hip", "total_knee", "revision_arthroplasty"]
     }
 }
 
@@ -223,6 +247,232 @@ SURGEON_SPECIALTIES = {
                         "name": "Cartilage Injuries",
                         "description": "Damage to knee articular cartilage",
                         "procedures": ["Microfracture", "Cartilage Transplant"]
+                    }
+                ]
+            }
+        ]
+    },
+    "ayoosh_pareek": {
+        "categories": [
+            {
+                "name": "Knee",
+                "icon": "knee",
+                "conditions": [
+                    {
+                        "name": "ACL Tears",
+                        "description": "Anterior cruciate ligament injuries",
+                        "procedures": ["ACL Reconstruction", "ACL Repair", "Revision ACL Reconstruction"]
+                    },
+                    {
+                        "name": "Meniscus Tears",
+                        "description": "Tears of the knee meniscus cartilage",
+                        "procedures": ["Meniscus Repair", "Partial Meniscectomy", "Meniscal Transplant"]
+                    },
+                    {
+                        "name": "Cartilage Injuries",
+                        "description": "Damage to knee articular cartilage",
+                        "procedures": ["Cartilage Restoration", "Osteochondral Allograft", "MACI"]
+                    },
+                    {
+                        "name": "Multiligament Knee Injuries",
+                        "description": "Complex injuries involving multiple knee ligaments",
+                        "procedures": ["Multiligament Reconstruction", "PCL Reconstruction"]
+                    }
+                ]
+            },
+            {
+                "name": "Hip",
+                "icon": "hip",
+                "conditions": [
+                    {
+                        "name": "Labral Tears",
+                        "description": "Tears of the hip labrum",
+                        "procedures": ["Hip Arthroscopy", "Labral Repair"]
+                    },
+                    {
+                        "name": "FAI (Femoroacetabular Impingement)",
+                        "description": "Hip impingement causing pain and damage",
+                        "procedures": ["Hip Arthroscopy", "Osteoplasty"]
+                    }
+                ]
+            }
+        ]
+    },
+    "sheeraz_qureshi": {
+        "categories": [
+            {
+                "name": "Cervical Spine",
+                "icon": "spine",
+                "conditions": [
+                    {
+                        "name": "Cervical Disc Herniation",
+                        "description": "Herniated disc in the neck causing nerve compression",
+                        "procedures": ["Anterior Cervical Discectomy and Fusion (ACDF)", "Cervical Disc Replacement"]
+                    },
+                    {
+                        "name": "Cervical Stenosis",
+                        "description": "Narrowing of the spinal canal in the neck",
+                        "procedures": ["Cervical Laminectomy", "Cervical Laminoplasty"]
+                    },
+                    {
+                        "name": "Cervical Myelopathy",
+                        "description": "Spinal cord compression in the neck",
+                        "procedures": ["Cervical Decompression", "Multilevel Fusion"]
+                    }
+                ]
+            },
+            {
+                "name": "Lumbar Spine",
+                "icon": "spine",
+                "conditions": [
+                    {
+                        "name": "Lumbar Disc Herniation",
+                        "description": "Herniated disc in the lower back",
+                        "procedures": ["Microdiscectomy", "Lumbar Discectomy"]
+                    },
+                    {
+                        "name": "Lumbar Stenosis",
+                        "description": "Narrowing of the spinal canal in the lower back",
+                        "procedures": ["Lumbar Decompression", "Laminectomy"]
+                    },
+                    {
+                        "name": "Spondylolisthesis",
+                        "description": "Vertebra slipping forward over another",
+                        "procedures": ["Spinal Fusion", "TLIF (Transforaminal Lumbar Interbody Fusion)"]
+                    },
+                    {
+                        "name": "Degenerative Disc Disease",
+                        "description": "Breakdown of intervertebral discs",
+                        "procedures": ["Lumbar Fusion", "Artificial Disc Replacement"]
+                    }
+                ]
+            },
+            {
+                "name": "Thoracic Spine",
+                "icon": "spine",
+                "conditions": [
+                    {
+                        "name": "Thoracic Disc Herniation",
+                        "description": "Herniated disc in the mid-back",
+                        "procedures": ["Thoracic Discectomy", "Thoracoscopic Surgery"]
+                    },
+                    {
+                        "name": "Spinal Deformity",
+                        "description": "Scoliosis and kyphosis",
+                        "procedures": ["Spinal Fusion", "Deformity Correction"]
+                    }
+                ]
+            }
+        ]
+    },
+    "khalid_alkhelaifi": {
+        "categories": [
+            {
+                "name": "Hip",
+                "icon": "hip",
+                "conditions": [
+                    {
+                        "name": "Hip Labral Tears",
+                        "description": "Tears of the hip labrum",
+                        "procedures": ["Hip Arthroscopy", "Labral Repair", "Labral Reconstruction"]
+                    },
+                    {
+                        "name": "FAI (Femoroacetabular Impingement)",
+                        "description": "Hip impingement syndrome",
+                        "procedures": ["Hip Arthroscopy", "Cam/Pincer Resection"]
+                    },
+                    {
+                        "name": "Hip Cartilage Damage",
+                        "description": "Damage to hip articular cartilage",
+                        "procedures": ["Microfracture", "Cartilage Restoration"]
+                    },
+                    {
+                        "name": "Athletic Pubalgia (Sports Hernia)",
+                        "description": "Groin pain in athletes",
+                        "procedures": ["Core Muscle Repair", "Sports Hernia Repair"]
+                    }
+                ]
+            },
+            {
+                "name": "Knee",
+                "icon": "knee",
+                "conditions": [
+                    {
+                        "name": "ACL Tears",
+                        "description": "Anterior cruciate ligament injuries",
+                        "procedures": ["ACL Reconstruction", "ACL Repair"]
+                    },
+                    {
+                        "name": "Meniscus Tears",
+                        "description": "Tears of the knee meniscus",
+                        "procedures": ["Meniscus Repair", "Partial Meniscectomy"]
+                    }
+                ]
+            },
+            {
+                "name": "Shoulder",
+                "icon": "shoulder",
+                "conditions": [
+                    {
+                        "name": "Shoulder Instability",
+                        "description": "Recurrent shoulder dislocations",
+                        "procedures": ["Bankart Repair", "Latarjet Procedure", "Remplissage"]
+                    },
+                    {
+                        "name": "Rotator Cuff Tears",
+                        "description": "Tears of the rotator cuff tendons",
+                        "procedures": ["Rotator Cuff Repair", "Arthroscopic Repair"]
+                    }
+                ]
+            }
+        ]
+    },
+    "william_long": {
+        "categories": [
+            {
+                "name": "Hip",
+                "icon": "hip",
+                "conditions": [
+                    {
+                        "name": "Hip Osteoarthritis",
+                        "description": "Degenerative arthritis of the hip joint",
+                        "procedures": ["Total Hip Replacement", "Anterior Approach THR", "Posterior Approach THR"]
+                    },
+                    {
+                        "name": "Avascular Necrosis",
+                        "description": "Loss of blood supply to the hip bone",
+                        "procedures": ["Total Hip Replacement", "Hip Resurfacing"]
+                    },
+                    {
+                        "name": "Failed Hip Replacement",
+                        "description": "Complications from previous hip replacement",
+                        "procedures": ["Revision Hip Replacement", "Complex Revision Arthroplasty"]
+                    },
+                    {
+                        "name": "Hip Dysplasia",
+                        "description": "Abnormal development of the hip joint",
+                        "procedures": ["Total Hip Replacement", "Periacetabular Osteotomy"]
+                    }
+                ]
+            },
+            {
+                "name": "Knee",
+                "icon": "knee",
+                "conditions": [
+                    {
+                        "name": "Knee Osteoarthritis",
+                        "description": "Degenerative arthritis of the knee joint",
+                        "procedures": ["Total Knee Replacement", "Partial Knee Replacement"]
+                    },
+                    {
+                        "name": "Failed Knee Replacement",
+                        "description": "Complications from previous knee replacement",
+                        "procedures": ["Revision Knee Replacement", "Complex Revision Surgery"]
+                    },
+                    {
+                        "name": "Post-Traumatic Arthritis",
+                        "description": "Arthritis following knee injury",
+                        "procedures": ["Total Knee Replacement", "Unicompartmental Knee Replacement"]
                     }
                 ]
             }
@@ -394,7 +644,7 @@ async def rag_query(body: QueryRequest):
 
     # Determine collection(s) to search
     doctor_name = None
-    procedure_name = None
+    body_part_name = None
     collections_to_search = []
 
     if body.doctor_id:
@@ -406,13 +656,13 @@ async def rag_query(body: QueryRequest):
         if body.doctor_id in SHARED_COLLECTIONS:
             doctors_to_search.extend(SHARED_COLLECTIONS[body.doctor_id])
 
-        if body.procedure:
-            # Search specific procedure collection for all relevant doctors
-            procedure_slug = slugify(body.procedure)
+        if body.body_part:
+            # Search specific body part collection for all relevant doctors
+            body_part_slug = slugify(body.body_part)
             for doc_id in doctors_to_search:
                 doc_slug = slugify(doc_id)
-                collections_to_search.append(f"dr_{doc_slug}_{procedure_slug}")
-            procedure_name = PROCEDURES.get(body.procedure, {}).get("name", body.procedure)
+                collections_to_search.append(f"dr_{doc_slug}_{body_part_slug}")
+            body_part_name = body.body_part.title()
         else:
             # Search ALL collections for this doctor and shared doctors
             c = retrieval.client()
@@ -477,8 +727,8 @@ async def rag_query(body: QueryRequest):
         context = "\n".join(context_parts)
         
         if body.actor == "PROVIDER":
-            if doctor_name and procedure_name:
-                system_prompt = f"""You are a clinical assistant helping providers understand Dr. {doctor_name}'s protocols for {procedure_name}.
+            if doctor_name and body_part_name:
+                system_prompt = f"""You are a clinical assistant helping providers understand Dr. {doctor_name}'s protocols for {body_part_name}.
 
 Guidelines:
 - Provide evidence-based answers using ONLY the provided protocols
@@ -502,8 +752,8 @@ Guidelines:
             else:
                 system_prompt = """You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. When making specific claims, cite sources using (Author Year) format if evident in the text, otherwise use (Source N) format."""
         else:
-            if doctor_name and procedure_name:
-                system_prompt = f"""You are a patient education assistant explaining Dr. {doctor_name}'s approach to {procedure_name}.
+            if doctor_name and body_part_name:
+                system_prompt = f"""You are a patient education assistant explaining Dr. {doctor_name}'s approach to {body_part_name}.
 
 Guidelines:
 - Use clear, patient-friendly language

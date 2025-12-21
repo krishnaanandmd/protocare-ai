@@ -17,7 +17,7 @@ class QueryRequest(BaseModel):
     question: str
     actor: str  # PROVIDER | PATIENT
     doctor_id: Optional[str] = None  # e.g., "joshua_dines"
-    procedure: Optional[str] = None  # e.g., "ucl"
+    body_part: Optional[str] = None  # e.g., "shoulder", "knee", "elbow"
     org_id: str = "demo"  # Legacy - will be replaced by doctor_id_procedure
 
 class UploadInitResponse(BaseModel):
