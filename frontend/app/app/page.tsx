@@ -20,7 +20,11 @@ export default function PatientQA() {
 
   const [doctors] = useState<Doctor[]>([
     { id: "joshua_dines", name: "Dr. Joshua Dines", specialty: "Orthopedic Surgery - Sports Medicine" },
-    { id: "asheesh_bedi", name: "Dr. Asheesh Bedi", specialty: "Orthopedic Surgery - Sports Medicine" }
+    { id: "asheesh_bedi", name: "Dr. Asheesh Bedi", specialty: "Orthopedic Surgery - Sports Medicine" },
+    { id: "ayoosh_pareek", name: "Dr. Ayoosh Pareek", specialty: "Orthopedic Surgery - Sports Medicine" },
+    { id: "sheeraz_qureshi", name: "Dr. Sheeraz Qureshi", specialty: "Orthopedic Surgery - Spine Surgery" },
+    { id: "khalid_alkhelaifi", name: "Dr. Khalid Alkhelaifi", specialty: "Orthopedic Surgery - Sports Medicine" },
+    { id: "william_long", name: "Dr. William Long", specialty: "Orthopedic Surgery - Joint Replacement" }
   ]);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
 
