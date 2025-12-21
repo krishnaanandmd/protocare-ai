@@ -394,7 +394,7 @@ async def rag_query(body: QueryRequest):
 
     # Determine collection(s) to search
     doctor_name = None
-    procedure_name = None
+    body_part_name = None
     collections_to_search = []
 
     if body.doctor_id:
@@ -406,13 +406,13 @@ async def rag_query(body: QueryRequest):
         if body.doctor_id in SHARED_COLLECTIONS:
             doctors_to_search.extend(SHARED_COLLECTIONS[body.doctor_id])
 
-        if body.procedure:
-            # Search specific procedure collection for all relevant doctors
-            procedure_slug = slugify(body.procedure)
+        if body.body_part:
+            # Search specific body part collection for all relevant doctors
+            body_part_slug = slugify(body.body_part)
             for doc_id in doctors_to_search:
                 doc_slug = slugify(doc_id)
-                collections_to_search.append(f"dr_{doc_slug}_{procedure_slug}")
-            procedure_name = PROCEDURES.get(body.procedure, {}).get("name", body.procedure)
+                collections_to_search.append(f"dr_{doc_slug}_{body_part_slug}")
+            body_part_name = body.body_part.title()
         else:
             # Search ALL collections for this doctor and shared doctors
             c = retrieval.client()
@@ -477,8 +477,8 @@ async def rag_query(body: QueryRequest):
         context = "\n".join(context_parts)
         
         if body.actor == "PROVIDER":
-            if doctor_name and procedure_name:
-                system_prompt = f"""You are a clinical assistant helping providers understand Dr. {doctor_name}'s protocols for {procedure_name}.
+            if doctor_name and body_part_name:
+                system_prompt = f"""You are a clinical assistant helping providers understand Dr. {doctor_name}'s protocols for {body_part_name}.
 
 Guidelines:
 - Provide evidence-based answers using ONLY the provided protocols
@@ -502,8 +502,8 @@ Guidelines:
             else:
                 system_prompt = """You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. When making specific claims, cite sources using (Author Year) format if evident in the text, otherwise use (Source N) format."""
         else:
-            if doctor_name and procedure_name:
-                system_prompt = f"""You are a patient education assistant explaining Dr. {doctor_name}'s approach to {procedure_name}.
+            if doctor_name and body_part_name:
+                system_prompt = f"""You are a patient education assistant explaining Dr. {doctor_name}'s approach to {body_part_name}.
 
 Guidelines:
 - Use clear, patient-friendly language
