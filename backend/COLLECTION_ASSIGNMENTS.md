@@ -1,8 +1,8 @@
 # Document Collection Assignment Summary
 
-## UCL RCT Assignment Complete ✅
+## All RCT Assignments Complete ✅
 
-### Assigned To:
+### UCL RCT - Assigned To:
 
 **Surgeons:**
 - ✅ Dr. Joshua Dines (Sports Medicine)
@@ -11,7 +11,40 @@
 - ✅ Dr. Khalid Alkhelaifi (Sports Medicine)
 
 **CareGuide Models:**
-- ✅ CareGuide Elbow (body-part based queries)
+- ✅ CareGuide Elbow
+
+### Rotator Cuff RCT - Assigned To:
+
+**Surgeons:**
+- ✅ Dr. Joshua Dines (Sports Medicine)
+- ✅ Dr. Asheesh Bedi (Sports Medicine)
+- ✅ Dr. Ayoosh Pareek (Sports Medicine)
+- ✅ Dr. Khalid Alkhelaifi (Sports Medicine)
+
+**CareGuide Models:**
+- ✅ CareGuide Shoulder
+
+### Meniscus RCT - Assigned To:
+
+**Surgeons:**
+- ✅ Dr. Joshua Dines (Sports Medicine)
+- ✅ Dr. Asheesh Bedi (Sports Medicine)
+- ✅ Dr. Ayoosh Pareek (Sports Medicine)
+- ✅ Dr. Khalid Alkhelaifi (Sports Medicine)
+
+**CareGuide Models:**
+- ✅ CareGuide Knee
+
+### ACL RCT - Assigned To:
+
+**Surgeons:**
+- ✅ Dr. Joshua Dines (Sports Medicine)
+- ✅ Dr. Asheesh Bedi (Sports Medicine)
+- ✅ Dr. Ayoosh Pareek (Sports Medicine)
+- ✅ Dr. Khalid Alkhelaifi (Sports Medicine)
+
+**CareGuide Models:**
+- ✅ CareGuide Knee
 
 ### Implementation:
 
@@ -124,15 +157,15 @@ Creates: `dr_general_foot_ankle` (automatically discovered by CareGuide Foot que
 
 After upload, you should have:
 
-| Collection Name | Assigned To |
-|----------------|-------------|
-| `dr_general_ucl_rct` | Dines, Bedi, Pareek, Alkhelaifi, CareGuide Elbow |
-| `dr_general_rotator_cuff_rct` | Dines, Bedi, Pareek, Alkhelaifi, CareGuide Shoulder |
-| `dr_general_acl_rct` | Dines, Bedi, Pareek, Alkhelaifi, CareGuide Knee |
-| `dr_general_meniscus_rct` | Dines, Bedi, Pareek, Alkhelaifi, CareGuide Knee |
-| `dr_general_back` | All surgeons with "general", CareGuide Back |
-| `dr_general_neck` | All surgeons with "general", CareGuide Neck |
-| `dr_general_hip_thigh` | All surgeons with "general", CareGuide Hip |
+| Collection Name | Assigned Surgeons | CareGuide Model | Status |
+|----------------|-------------------|-----------------|--------|
+| `dr_general_ucl_rct` | Dines, Bedi, Pareek, Alkhelaifi | Elbow | ✅ Complete |
+| `dr_general_rotator_cuff_rct` | Dines, Bedi, Pareek, Alkhelaifi | Shoulder | ✅ Complete |
+| `dr_general_acl_rct` | Dines, Bedi, Pareek, Alkhelaifi | Knee | ✅ Complete |
+| `dr_general_meniscus_rct` | Dines, Bedi, Pareek, Alkhelaifi | Knee | ✅ Complete |
+| `dr_general_back` | All surgeons with "general" | Back | ✅ Complete |
+| `dr_general_neck` | All surgeons with "general" | Neck | ✅ Complete |
+| `dr_general_hip_thigh` | All surgeons with "general" | Hip | ✅ Complete |
 
 ## Verification
 
@@ -167,6 +200,10 @@ Both should return results from the UCL RCT collection!
 ## Next Steps
 
 1. ✅ UCL RCT assigned to surgeons and CareGuide Elbow
-2. ⏳ Assign other collections (Rotator Cuff RCT, ACL RCT, etc.)
-3. ⏳ Upload remaining document sets
-4. ⏳ Test queries in frontend
+2. ✅ Rotator Cuff RCT assigned to surgeons and CareGuide Shoulder
+3. ✅ Meniscus RCT assigned to surgeons and CareGuide Knee
+4. ✅ ACL RCT assigned to surgeons and CareGuide Knee
+5. ✅ Back, Neck, Hip & Thigh assigned to CareGuide body parts
+6. ⏳ Upload remaining document sets (Dines protocols, HSS, Foot/Ankle, etc.)
+7. ⏳ Test queries in frontend
+8. ⏳ Assign collections to additional surgeons (Qureshi for spine, Long for knee/hip)
