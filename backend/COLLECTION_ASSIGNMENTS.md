@@ -48,12 +48,24 @@
 
 ### Implementation:
 
-1. **SHARED_COLLECTIONS** (backend/app/routers/rag.py:161-166)
-   - Added "general" to each surgeon's shared collections list
-   - Allows these surgeons to access all `dr_general_*` collections
-   - Includes: UCL RCT, ACL RCT, Rotator Cuff RCT, Meniscus RCT, etc.
+1. **COLLECTION_PERMISSIONS** (backend/app/routers/rag.py:167-188)
+   - **Explicit permission mapping** for each collection
+   - Each surgeon is individually listed for each collection they can access
+   - Provides **granular control** - surgeons ONLY see collections they're explicitly assigned to
 
-2. **CareGuide Body-Part Queries** (backend/app/routers/rag.py:682-713)
+   ```python
+   COLLECTION_PERMISSIONS = {
+       "dr_general_ucl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+       "dr_general_rotator_cuff_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+       "dr_general_meniscus_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+       "dr_general_acl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+       "dr_general_back": ["sheeraz_qureshi"],
+       "dr_general_neck": ["sheeraz_qureshi"],
+       "dr_general_hip_thigh": ["william_long", "khalid_alkhelaifi"],
+   }
+   ```
+
+2. **CareGuide Body-Part Queries** (backend/app/routers/rag.py:710-741)
    - New logic for body-part queries without doctor selection
    - Maps body parts to relevant collections:
      - **Elbow** → searches UCL RCT, Elbow collections
@@ -66,11 +78,12 @@
 ## How It Works
 
 ### When a surgeon is selected:
-1. System looks up surgeon in SHARED_COLLECTIONS
-2. Searches all collections for that surgeon AND shared doctors
-3. For Dr. Joshua Dines, searches:
+1. System searches their own collections (`dr_{doctor}_*`)
+2. System checks COLLECTION_PERMISSIONS for additional collections
+3. System checks SHARED_COLLECTIONS for shared doctor collections
+4. For Dr. Joshua Dines, searches:
    - `dr_joshua_dines_*` (his specific collections)
-   - `dr_general_*` (general RCTs and guidelines)
+   - Collections explicitly listed in COLLECTION_PERMISSIONS (UCL RCT, Rotator Cuff RCT, etc.)
 
 ### When CareGuide body part is selected (no doctor):
 1. System identifies the body part (e.g., "elbow")
@@ -84,17 +97,17 @@
 
 ### To assign a collection to a surgeon:
 
-**Option 1: Use SHARED_COLLECTIONS (recommended for general collections)**
+**Option 1: Use COLLECTION_PERMISSIONS (recommended for explicit control)**
 
-Edit `backend/app/routers/rag.py`:
+Edit `backend/app/routers/rag.py` and add the collection to `COLLECTION_PERMISSIONS`:
 
 ```python
-SHARED_COLLECTIONS = {
-    "asheesh_bedi": ["joshua_dines", "general"],
-    "joshua_dines": ["general"],
-    "ayoosh_pareek": ["general"],
-    "khalid_alkhelaifi": ["general"],
-    "william_long": ["general"],  # Add more surgeons here
+COLLECTION_PERMISSIONS = {
+    # Existing assignments...
+    "dr_general_ucl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+
+    # Add new collection assignment
+    "dr_general_shoulder": ["joshua_dines", "asheesh_bedi"],  # Specify exact surgeons
 }
 ```
 
@@ -159,13 +172,13 @@ After upload, you should have:
 
 | Collection Name | Assigned Surgeons | CareGuide Model | Status |
 |----------------|-------------------|-----------------|--------|
-| `dr_general_ucl_rct` | Dines, Bedi, Pareek, Alkhelaifi | Elbow | ✅ Complete |
-| `dr_general_rotator_cuff_rct` | Dines, Bedi, Pareek, Alkhelaifi | Shoulder | ✅ Complete |
-| `dr_general_acl_rct` | Dines, Bedi, Pareek, Alkhelaifi | Knee | ✅ Complete |
-| `dr_general_meniscus_rct` | Dines, Bedi, Pareek, Alkhelaifi | Knee | ✅ Complete |
-| `dr_general_back` | All surgeons with "general" | Back | ✅ Complete |
-| `dr_general_neck` | All surgeons with "general" | Neck | ✅ Complete |
-| `dr_general_hip_thigh` | All surgeons with "general" | Hip | ✅ Complete |
+| `dr_general_ucl_rct` | Dines, Bedi, Pareek, Alkhelaifi | Elbow | ✅ Explicit Assignment |
+| `dr_general_rotator_cuff_rct` | Dines, Bedi, Pareek, Alkhelaifi | Shoulder | ✅ Explicit Assignment |
+| `dr_general_acl_rct` | Dines, Bedi, Pareek, Alkhelaifi | Knee | ✅ Explicit Assignment |
+| `dr_general_meniscus_rct` | Dines, Bedi, Pareek, Alkhelaifi | Knee | ✅ Explicit Assignment |
+| `dr_general_back` | Qureshi | Back | ✅ Explicit Assignment |
+| `dr_general_neck` | Qureshi | Neck | ✅ Explicit Assignment |
+| `dr_general_hip_thigh` | Long, Alkhelaifi | Hip | ✅ Explicit Assignment |
 
 ## Verification
 
@@ -197,13 +210,28 @@ curl -X POST http://localhost:8000/rag/query \
 
 Both should return results from the UCL RCT collection!
 
+## Key Differences from Broad Sharing
+
+**OLD Approach (broad sharing):**
+- Added "general" to SHARED_COLLECTIONS
+- Surgeon gets access to ALL `dr_general_*` collections automatically
+- No control over which specific collections they see
+
+**NEW Approach (explicit permissions):**
+- Each collection lists exact surgeons who can access it
+- Surgeons ONLY see collections they're explicitly listed in
+- Full control - add/remove surgeons per collection
+- Dr. Qureshi only sees Back/Neck (not knee/shoulder RCTs)
+- Dr. Long only sees Hip/Thigh (not elbow/shoulder RCTs)
+
 ## Next Steps
 
-1. ✅ UCL RCT assigned to surgeons and CareGuide Elbow
-2. ✅ Rotator Cuff RCT assigned to surgeons and CareGuide Shoulder
-3. ✅ Meniscus RCT assigned to surgeons and CareGuide Knee
-4. ✅ ACL RCT assigned to surgeons and CareGuide Knee
-5. ✅ Back, Neck, Hip & Thigh assigned to CareGuide body parts
-6. ⏳ Upload remaining document sets (Dines protocols, HSS, Foot/Ankle, etc.)
-7. ⏳ Test queries in frontend
-8. ⏳ Assign collections to additional surgeons (Qureshi for spine, Long for knee/hip)
+1. ✅ UCL RCT assigned to Dines, Bedi, Pareek, Alkhelaifi + CareGuide Elbow
+2. ✅ Rotator Cuff RCT assigned to Dines, Bedi, Pareek, Alkhelaifi + CareGuide Shoulder
+3. ✅ Meniscus RCT assigned to Dines, Bedi, Pareek, Alkhelaifi + CareGuide Knee
+4. ✅ ACL RCT assigned to Dines, Bedi, Pareek, Alkhelaifi + CareGuide Knee
+5. ✅ Back assigned to Qureshi + CareGuide Back
+6. ✅ Neck assigned to Qureshi + CareGuide Neck
+7. ✅ Hip & Thigh assigned to Long, Alkhelaifi + CareGuide Hip
+8. ⏳ Upload remaining document sets (Dines protocols, HSS, Foot/Ankle, etc.)
+9. ⏳ Test queries in frontend
