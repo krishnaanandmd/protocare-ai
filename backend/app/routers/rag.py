@@ -159,7 +159,10 @@ DOCTORS = {
 # Map doctors to additional doctors whose collections they should search
 # This allows multiple doctors to share the same document collections
 SHARED_COLLECTIONS = {
-    "asheesh_bedi": ["joshua_dines"]  # Dr. Bedi uses Dr. Dines' documents
+    "asheesh_bedi": ["joshua_dines", "general"],  # Dr. Bedi uses Dr. Dines' documents + general collections
+    "joshua_dines": ["general"],  # Dr. Dines uses general collections (e.g., RCTs)
+    "ayoosh_pareek": ["general"],  # Dr. Pareek uses general collections
+    "khalid_alkhelaifi": ["general"],  # Dr. Alkhelaifi uses general collections
 }
 
 PROCEDURES = {
@@ -676,6 +679,38 @@ async def rag_query(body: QueryRequest):
                 ]
                 collections_to_search.extend(doctor_collections)
             logger.info("searching_all_doctor_collections", doctor=doctor_slug, shared_doctors=doctors_to_search, collections=len(collections_to_search))
+    elif body.body_part:
+        # CareGuide MSK Model: body part selected without specific doctor
+        # Search general collections and body-part specific collections
+        body_part_slug = slugify(body.body_part)
+        body_part_name = body.body_part.title()
+
+        c = retrieval.client()
+        all_collections = c.get_collections().collections
+
+        # Search for general collections related to this body part
+        # This includes RCTs and clinical guidelines for the body part
+        for col in all_collections:
+            col_name = col.name
+            # Include collections like: dr_general_ucl_rct, dr_general_shoulder, etc.
+            if col_name.startswith("dr_general_"):
+                # Map body parts to related procedures/collections
+                body_part_matches = {
+                    "elbow": ["ucl", "elbow"],
+                    "knee": ["acl", "meniscus", "knee", "aaos_knee"],
+                    "shoulder": ["rotator_cuff", "shoulder"],
+                    "hip": ["hip"],
+                    "back": ["back"],
+                    "neck": ["neck"],
+                }
+
+                matches = body_part_matches.get(body_part_slug, [body_part_slug])
+                for match in matches:
+                    if match in col_name:
+                        collections_to_search.append(col_name)
+                        break
+
+        logger.info("careguide_body_part_search", body_part=body_part_slug, collections=collections_to_search)
     else:
         # Fallback to demo collection
         collections_to_search = ["org_demo_chunks"]
