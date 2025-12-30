@@ -159,10 +159,32 @@ DOCTORS = {
 # Map doctors to additional doctors whose collections they should search
 # This allows multiple doctors to share the same document collections
 SHARED_COLLECTIONS = {
-    "asheesh_bedi": ["joshua_dines", "general"],  # Dr. Bedi uses Dr. Dines' documents + general collections
-    "joshua_dines": ["general"],  # Dr. Dines uses general collections (e.g., RCTs)
-    "ayoosh_pareek": ["general"],  # Dr. Pareek uses general collections
-    "khalid_alkhelaifi": ["general"],  # Dr. Alkhelaifi uses general collections
+    "asheesh_bedi": ["joshua_dines"]  # Dr. Bedi uses Dr. Dines' documents
+}
+
+# Explicit collection permissions - maps collections to allowed surgeons
+# This provides granular control over which surgeons can access which collections
+COLLECTION_PERMISSIONS = {
+    # UCL RCT - Sports Medicine surgeons
+    "dr_general_ucl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+
+    # Rotator Cuff RCT - Sports Medicine surgeons
+    "dr_general_rotator_cuff_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+
+    # Meniscus RCT - Sports Medicine surgeons
+    "dr_general_meniscus_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+
+    # ACL RCT - Sports Medicine surgeons
+    "dr_general_acl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+
+    # Back - Spine surgeon and general access
+    "dr_general_back": ["sheeraz_qureshi"],
+
+    # Neck - Spine surgeon
+    "dr_general_neck": ["sheeraz_qureshi"],
+
+    # Hip & Thigh - Joint replacement surgeon
+    "dr_general_hip_thigh": ["william_long", "khalid_alkhelaifi"],
 }
 
 PROCEDURES = {
@@ -678,6 +700,12 @@ async def rag_query(body: QueryRequest):
                     if col.name.startswith(doctor_prefix)
                 ]
                 collections_to_search.extend(doctor_collections)
+
+            # Add collections from COLLECTION_PERMISSIONS
+            for collection_name, allowed_doctors in COLLECTION_PERMISSIONS.items():
+                if body.doctor_id in allowed_doctors:
+                    collections_to_search.append(collection_name)
+
             logger.info("searching_all_doctor_collections", doctor=doctor_slug, shared_doctors=doctors_to_search, collections=len(collections_to_search))
     elif body.body_part:
         # CareGuide MSK Model: body part selected without specific doctor
