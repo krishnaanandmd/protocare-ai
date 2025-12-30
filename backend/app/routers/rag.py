@@ -165,26 +165,29 @@ SHARED_COLLECTIONS = {
 # Explicit collection permissions - maps collections to allowed surgeons
 # This provides granular control over which surgeons can access which collections
 COLLECTION_PERMISSIONS = {
-    # UCL RCT - Sports Medicine surgeons
+    # RCT Documents
     "dr_general_ucl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
-
-    # Rotator Cuff RCT - Sports Medicine surgeons
     "dr_general_rotator_cuff_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
-
-    # Meniscus RCT - Sports Medicine surgeons
     "dr_general_meniscus_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
-
-    # ACL RCT - Sports Medicine surgeons
     "dr_general_acl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
 
-    # Back - Spine surgeon and general access
+    # Dines-specific protocols
+    "dr_joshua_dines_clinic_protocols": ["joshua_dines", "asheesh_bedi"],
+
+    # HSS protocols
+    "dr_general_hss_protocols": ["joshua_dines", "ayoosh_pareek", "sheeraz_qureshi", "william_long"],
+
+    # Body part specific collections
+    "dr_general_knee_lower_leg": ["william_long", "khalid_alkhelaifi"],
+    "dr_general_foot_ankle": [],  # CareGuide only
+    "dr_general_shoulder": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+    "dr_general_elbow": ["joshua_dines", "ayoosh_pareek", "khalid_alkhelaifi"],
+    "dr_general_hip_thigh": ["asheesh_bedi", "william_long"],
+    "dr_general_neck": ["sheeraz_qureshi"],
     "dr_general_back": ["sheeraz_qureshi"],
 
-    # Neck - Spine surgeon
-    "dr_general_neck": ["sheeraz_qureshi"],
-
-    # Hip & Thigh - Joint replacement surgeon
-    "dr_general_hip_thigh": ["william_long", "khalid_alkhelaifi"],
+    # AAOS Guidelines
+    "dr_general_aaos_knee_oa": ["william_long"],
 }
 
 PROCEDURES = {
@@ -725,11 +728,16 @@ async def rag_query(body: QueryRequest):
                 # Map body parts to related procedures/collections
                 body_part_matches = {
                     "elbow": ["ucl", "elbow"],
-                    "knee": ["acl", "meniscus", "knee", "aaos_knee"],
+                    "knee": ["acl", "meniscus", "knee", "aaos_knee", "lower_leg"],
                     "shoulder": ["rotator_cuff", "shoulder"],
-                    "hip": ["hip"],
+                    "hip": ["hip", "thigh"],
                     "back": ["back"],
                     "neck": ["neck"],
+                    "spine": ["back", "neck"],
+                    "foot": ["foot", "ankle"],
+                    "ankle": ["foot", "ankle"],
+                    "hand": ["hand", "wrist"],
+                    "wrist": ["hand", "wrist"],
                 }
 
                 matches = body_part_matches.get(body_part_slug, [body_part_slug])
