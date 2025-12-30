@@ -29,7 +29,7 @@ log.setLevel(logging.INFO)
 
 STATUS: Dict[str, Dict[str, Any]] = {}
 EMBED_MODEL = "text-embedding-3-small"
-PRECEDENCE = {"AAOS":100, "HOSPITAL_POLICY":90, "PEER_REVIEW":80, "DOCTOR_PROTOCOL":95, "OTHER":50}
+PRECEDENCE = {"AAOS":100, "RCT":100, "CLINICAL_GUIDELINE":100, "HOSPITAL_POLICY":90, "PEER_REVIEW":80, "DOCTOR_PROTOCOL":95, "OTHER":50}
 
 def _s3():
     return boto3.client("s3", region_name=settings.aws_region, config=BotoConfig(retries={"max_attempts": 3}))
