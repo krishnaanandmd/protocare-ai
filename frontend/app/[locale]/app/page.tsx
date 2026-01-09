@@ -2,7 +2,9 @@
 
 import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { DoctorAutocomplete } from "@/components/DoctorAutocomplete";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 
@@ -12,6 +14,7 @@ type Doctor = { id: string; name: string; specialty: string; };
 type BodyPart = { id: string; name: string; description: string; };
 
 export default function PatientQA() {
+  const t = useTranslations();
   const [question, setQuestion] = useState("");
   const [mode, setMode] = useState<"PATIENT" | "PROVIDER">("PATIENT");
   const [data, setData] = useState<Answer | null>(null);
@@ -24,15 +27,15 @@ export default function PatientQA() {
   ]);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
 
-  const [bodyParts] = useState<BodyPart[]>([
-    { id: "shoulder", name: "Shoulder", description: "Shoulder joint and rotator cuff" },
-    { id: "elbow", name: "Elbow", description: "Elbow joint and surrounding structures" },
-    { id: "hand_wrist", name: "Hand/Wrist", description: "Hand, wrist, and finger joints" },
-    { id: "hip", name: "Hip", description: "Hip joint and surrounding structures" },
-    { id: "knee", name: "Knee", description: "Knee joint including ACL, MCL, meniscus" },
-    { id: "ankle_foot", name: "Ankle/Foot", description: "Ankle, foot, and toe joints" },
-    { id: "spine", name: "Spine", description: "Cervical, thoracic, and lumbar spine" },
-  ]);
+  const bodyParts = useMemo<BodyPart[]>(() => [
+    { id: "shoulder", name: t('qa.selection.bodyParts.shoulder'), description: "Shoulder joint and rotator cuff" },
+    { id: "elbow", name: t('qa.selection.bodyParts.elbow'), description: "Elbow joint and surrounding structures" },
+    { id: "hand_wrist", name: t('qa.selection.bodyParts.handWrist'), description: "Hand, wrist, and finger joints" },
+    { id: "hip", name: t('qa.selection.bodyParts.hip'), description: "Hip joint and surrounding structures" },
+    { id: "knee", name: t('qa.selection.bodyParts.knee'), description: "Knee joint including ACL, MCL, meniscus" },
+    { id: "ankle_foot", name: t('qa.selection.bodyParts.ankleFoot'), description: "Ankle, foot, and toe joints" },
+    { id: "spine", name: t('qa.selection.bodyParts.spine'), description: "Cervical, thoracic, and lumbar spine" },
+  ], [t]);
   const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
 
   // Handlers that enforce mutual exclusivity
@@ -90,10 +93,10 @@ export default function PatientQA() {
                 <div>
                   <Link href="/">
                     <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text hover:from-cyan-300 hover:to-teal-300 transition-all cursor-pointer">
-                      CareGuide
+                      {t('common.careguide')}
                     </h1>
                   </Link>
-                  <p className="text-sm text-cyan-300">Personalized Clinical Intelligence</p>
+                  <p className="text-sm text-cyan-300">{t('qa.header.tagline')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-6">
@@ -101,8 +104,9 @@ export default function PatientQA() {
                   href="/about"
                   className="text-slate-300 hover:text-white transition-colors font-semibold"
                 >
-                  About Us
+                  {t('qa.header.aboutUs')}
                 </Link>
+                <LanguageSwitcher />
                 <ModeToggle mode={mode} onChange={setMode} />
               </div>
             </div>
@@ -117,7 +121,7 @@ export default function PatientQA() {
                 <span className="text-white font-black text-4xl">C</span>
               </div>
               <h2 className="text-5xl font-black tracking-tight bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text">
-                CareGuide
+                {t('common.careguide')}
               </h2>
             </div>
           </div>
@@ -131,8 +135,8 @@ export default function PatientQA() {
           {/* Selection Section */}
           <div className="relative z-10 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-8">
             <div className="space-y-2 text-center">
-              <h3 className="text-2xl font-bold text-white">Choose Your Path</h3>
-              <p className="text-sm text-slate-400">Select your provider OR choose a CareGuide's standardized MSK model based on your anatomic area of concern</p>
+              <h3 className="text-2xl font-bold text-white">{t('qa.selection.title')}</h3>
+              <p className="text-sm text-slate-400">{t('qa.selection.subtitle')}</p>
             </div>
 
             {/* Surgeon Section */}
@@ -143,7 +147,7 @@ export default function PatientQA() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
-                <h4 className="text-lg font-bold text-white">Specific Surgeon</h4>
+                <h4 className="text-lg font-bold text-white">{t('qa.selection.surgeon.title')}</h4>
               </div>
 
               <DoctorAutocomplete
@@ -158,7 +162,7 @@ export default function PatientQA() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <p className="text-sm font-medium text-white">
-                    Connected to <span className="font-bold">{selectedDoctorName}'s</span> protocols
+                    {t('qa.selection.surgeon.connected')} <span className="font-bold">{selectedDoctorName}</span> {t('qa.selection.surgeon.protocols')}
                   </p>
                 </div>
               )}
@@ -170,7 +174,7 @@ export default function PatientQA() {
                 <div className="w-full border-t border-white/20"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-slate-900/50 text-slate-400 font-medium">OR</span>
+                <span className="px-4 bg-slate-900/50 text-slate-400 font-medium">{t('qa.selection.or')}</span>
               </div>
             </div>
 
@@ -180,7 +184,7 @@ export default function PatientQA() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30 text-2xl">
                   🦴
                 </div>
-                <h4 className="text-lg font-bold text-white">CareGuide MSK Models</h4>
+                <h4 className="text-lg font-bold text-white">{t('qa.selection.bodyPart.title')}</h4>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -205,7 +209,7 @@ export default function PatientQA() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <p className="text-sm font-medium text-white">
-                    Using <span className="font-bold">{bodyParts.find(b => b.id === selectedBodyPart)?.name}</span> model
+                    {t('qa.selection.bodyPart.using')} <span className="font-bold">{bodyParts.find(b => b.id === selectedBodyPart)?.name}</span> {t('qa.selection.bodyPart.model')}
                   </p>
                 </div>
               )}
@@ -222,20 +226,20 @@ export default function PatientQA() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">Conditions</h3>
-                  <p className="text-sm text-slate-400">Topics you can ask {selectedDoctorName} about</p>
+                  <h3 className="text-xl font-bold text-white">{t('qa.conditions.title')}</h3>
+                  <p className="text-sm text-slate-400">{t('qa.conditions.subtitle', { doctorName: selectedDoctorName })}</p>
                 </div>
               </div>
 
               <div className="grid gap-3">
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                  <h5 className="font-semibold text-white">Rotator Cuff</h5>
+                  <h5 className="font-semibold text-white">{t('qa.conditions.rotatorCuff')}</h5>
                 </div>
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                  <h5 className="font-semibold text-white">Ulnar Collateral Ligament (UCL)</h5>
+                  <h5 className="font-semibold text-white">{t('qa.conditions.ucl')}</h5>
                 </div>
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                  <h5 className="font-semibold text-white">Anterior Cruciate Ligament (ACL)</h5>
+                  <h5 className="font-semibold text-white">{t('qa.conditions.acl')}</h5>
                 </div>
               </div>
             </div>
@@ -249,7 +253,7 @@ export default function PatientQA() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white">Ask Your Question</h3>
+              <h3 className="text-xl font-bold text-white">{t('qa.question.title')}</h3>
             </div>
 
             <textarea
@@ -257,10 +261,10 @@ export default function PatientQA() {
               rows={4}
               placeholder={
                 selectedDoctorName
-                  ? `Ask ${selectedDoctorName} anything about your treatment...`
+                  ? t('qa.question.placeholder.doctor', { doctorName: selectedDoctorName })
                   : selectedBodyPart
-                  ? `Ask about ${bodyParts.find(b => b.id === selectedBodyPart)?.name.toLowerCase()} treatment...`
-                  : "Choose a surgeon or body part model above to get started..."
+                  ? t('qa.question.placeholder.bodyPart', { bodyPart: bodyParts.find(b => b.id === selectedBodyPart)?.name.toLowerCase() })
+                  : t('qa.question.placeholder.default')
               }
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
@@ -269,7 +273,7 @@ export default function PatientQA() {
             />
 
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400">Press ⌘/Ctrl + Enter to send</span>
+              <span className="text-xs text-slate-400">{t('qa.question.shortcut')}</span>
               <button
                 disabled={!canAsk}
                 onClick={ask}
@@ -285,10 +289,10 @@ export default function PatientQA() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    Analyzing...
+                    {t('qa.question.button.analyzing')}
                   </span>
                 ) : (
-                  "Ask Question"
+                  t('qa.question.button.ask')
                 )}
               </button>
             </div>
@@ -300,7 +304,7 @@ export default function PatientQA() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <p className="font-bold text-red-300">Error</p>
+                <p className="font-bold text-red-300">{t('qa.error.title')}</p>
                 <p className="text-sm text-red-200">{error}</p>
               </div>
             </div>
@@ -314,10 +318,10 @@ export default function PatientQA() {
         <footer className="border-t border-white/10 bg-black/20 backdrop-blur-xl mt-20">
           <div className="max-w-5xl mx-auto px-6 py-8 text-center">
             <p className="text-sm text-slate-400">
-              CareGuide v0.2 • Personalized Clinical Decision Support
+              {t('qa.footer.version')}
             </p>
             <p className="text-xs text-slate-500 mt-2">
-              This tool provides information based on your surgeon's protocols. Always consult with your healthcare team.
+              {t('qa.footer.disclaimer')}
             </p>
           </div>
         </footer>
@@ -329,6 +333,7 @@ export default function PatientQA() {
 function ModeToggle({
   mode, onChange,
 }: { mode: "PATIENT" | "PROVIDER"; onChange: (m: "PATIENT" | "PROVIDER") => void; }) {
+  const t = useTranslations();
   return (
     <div className="inline-flex items-center rounded-xl bg-white/10 backdrop-blur-sm p-1 border border-white/20">
       {(["PATIENT", "PROVIDER"] as const).map((m) => (
@@ -341,7 +346,7 @@ function ModeToggle({
               : "text-slate-300 hover:text-white"
           }`}
         >
-          {m === "PATIENT" ? "Patient" : "Provider"}
+          {m === "PATIENT" ? t('qa.mode.patient') : t('qa.mode.provider')}
         </button>
       ))}
     </div>
@@ -349,6 +354,7 @@ function ModeToggle({
 }
 
 function Disclaimer({ mode }: { mode: "PATIENT" | "PROVIDER" }) {
+  const t = useTranslations();
   if (mode === "PATIENT") {
     return (
       <div className="bg-amber-500/20 border-2 border-amber-500/50 rounded-2xl p-6 flex gap-4 backdrop-blur-sm">
@@ -356,10 +362,9 @@ function Disclaimer({ mode }: { mode: "PATIENT" | "PROVIDER" }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
         <div>
-          <p className="font-bold text-amber-300 mb-1">For informational purposes only</p>
+          <p className="font-bold text-amber-300 mb-1">{t('qa.disclaimer.patient.title')}</p>
           <p className="text-sm text-amber-200">
-            This tool provides information about your surgeon's protocols. It does not give medical advice or handle emergencies.
-            If you have urgent symptoms, call your clinic or emergency services.
+            {t('qa.disclaimer.patient.description')}
           </p>
         </div>
       </div>
@@ -371,9 +376,9 @@ function Disclaimer({ mode }: { mode: "PATIENT" | "PROVIDER" }) {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       <div>
-        <p className="font-bold text-cyan-300 mb-1">Provider Mode</p>
+        <p className="font-bold text-cyan-300 mb-1">{t('qa.disclaimer.provider.title')}</p>
         <p className="text-sm text-cyan-200">
-          Clinical view with explicit citations and detailed protocols.
+          {t('qa.disclaimer.provider.description')}
         </p>
       </div>
     </div>
@@ -387,6 +392,7 @@ function AnswerCard({
   data: Answer;
   doctorName?: string;
 }) {
+  const t = useTranslations();
   const { answer, citations, latency_ms } = data;
 
   return (
@@ -400,7 +406,7 @@ function AnswerCard({
           </div>
           <div>
             <h3 className="text-2xl font-bold text-white">
-              {doctorName ? `${doctorName}'s Protocols` : "Answer"}
+              {doctorName ? t('qa.answer.title.doctor', { doctorName }) : t('qa.answer.title.default')}
             </h3>
           </div>
         </div>
@@ -418,10 +424,10 @@ function AnswerCard({
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          Sources
+          {t('qa.answer.sources')}
         </h4>
         {citations.length === 0 ? (
-          <p className="text-sm text-slate-400 italic">No sources cited</p>
+          <p className="text-sm text-slate-400 italic">{t('qa.answer.noSources')}</p>
         ) : (
           <div className="space-y-3">
             {citations.map((c, idx) => (
@@ -448,7 +454,7 @@ function AnswerCard({
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Always discuss your specific situation with {doctorName || "your surgeon"} before making medical decisions.
+            {t('qa.answer.disclaimer', { doctorName: doctorName || t('qa.answer.title.default') })}
           </p>
         </div>
       )}

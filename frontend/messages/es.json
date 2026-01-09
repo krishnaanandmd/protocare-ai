@@ -1,0 +1,217 @@
+{
+  "common": {
+    "careguide": "CareGuide",
+    "tagline": "Inteligencia Clínica Personalizada",
+    "version": "CareGuide v0.2",
+    "poweredBy": "Impulsado por IA Avanzada",
+    "skipToApp": "Ir a la Aplicación →",
+    "aboutUs": "Acerca de Nosotros",
+    "backToHome": "Volver al Inicio",
+    "getStarted": "Comenzar",
+    "back": "Atrás"
+  },
+  "landing": {
+    "screens": {
+      "welcome": {
+        "title": "Bienvenido a CareGuide",
+        "subtitle": "Inteligencia Clínica Personalizada",
+        "description": "Obtenga respuestas instantáneas basadas en nuestro modelo de inteligencia artificial entrenado y curado por la experiencia clínica de sus médicos.",
+        "cta": "Conozca Cómo Funciona"
+      },
+      "howItWorks": {
+        "title": "Cómo Funciona",
+        "subtitle": "Tres Pasos Sencillos",
+        "cta": "¿Por Qué Confiar en Nosotros?",
+        "steps": {
+          "step": "Paso",
+          "findSurgeon": {
+            "title": "Encuentre a Su Cirujano",
+            "desc": "Seleccione a su médico de nuestra red de los mejores especialistas ortopédicos"
+          },
+          "askQuestion": {
+            "title": "Haga Su Pregunta",
+            "desc": "Escriba cualquier pregunta sobre su condición, lesión, tratamiento o recuperación"
+          },
+          "getAnswers": {
+            "title": "Obtenga Respuestas Personalizadas",
+            "desc": "Reciba respuestas bajo demanda y basadas en evidencia de su médico"
+          }
+        }
+      },
+      "trust": {
+        "title": "Atención Basada en Evidencia",
+        "subtitle": "Respaldado por Experiencia Clínica",
+        "cta": "Comenzar",
+        "features": {
+          "evidenceBased": {
+            "title": "100% Basado en Evidencia",
+            "desc": "Todas las respuestas provienen de protocolos clínicos e investigación verificados"
+          },
+          "expertBoard": {
+            "title": "Junta Asesora de Expertos",
+            "desc": "Guiado por cirujanos ortopédicos y especialistas líderes"
+          },
+          "builtByDoctors": {
+            "title": "Construido por Médicos",
+            "desc": "Una empresa construida y dirigida por médicos que comprenden la atención al paciente"
+          },
+          "available247": {
+            "title": "Disponibilidad 24/7",
+            "desc": "Obtenga respuestas en cualquier momento, sin esperar el horario de oficina"
+          }
+        }
+      }
+    },
+    "stats": {
+      "instant": "Instantáneas",
+      "responses": "Respuestas",
+      "evidenceBased": "Basadas en Evidencia",
+      "available": "Disponible"
+    },
+    "footer": {
+      "tagline": "Inteligencia Clínica Personalizada"
+    }
+  },
+  "qa": {
+    "header": {
+      "tagline": "Inteligencia Clínica Personalizada",
+      "aboutUs": "Acerca de Nosotros"
+    },
+    "disclaimer": {
+      "patient": {
+        "title": "Solo con fines informativos",
+        "description": "Esta herramienta proporciona información sobre los protocolos de su cirujano. No proporciona consejos médicos ni maneja emergencias. Si tiene síntomas urgentes, llame a su clínica o servicios de emergencia."
+      },
+      "provider": {
+        "title": "Modo Proveedor",
+        "description": "Vista clínica con citas explícitas y protocolos detallados."
+      }
+    },
+    "selection": {
+      "title": "Elija Su Camino",
+      "subtitle": "Seleccione su proveedor O elija un modelo MSK estandarizado de CareGuide basado en su área anatómica de preocupación",
+      "surgeon": {
+        "title": "Cirujano Específico",
+        "connected": "Conectado a los protocolos de",
+        "protocols": ""
+      },
+      "bodyPart": {
+        "title": "Modelos MSK de CareGuide",
+        "using": "Usando el modelo de",
+        "model": ""
+      },
+      "or": "O",
+      "bodyParts": {
+        "shoulder": "Hombro",
+        "elbow": "Codo",
+        "handWrist": "Mano/Muñeca",
+        "hip": "Cadera",
+        "knee": "Rodilla",
+        "ankleFoot": "Tobillo/Pie",
+        "spine": "Columna"
+      }
+    },
+    "conditions": {
+      "title": "Condiciones",
+      "subtitle": "Temas sobre los que puede preguntar a {doctorName}",
+      "rotatorCuff": "Manguito Rotador",
+      "ucl": "Ligamento Colateral Cubital (LCC)",
+      "acl": "Ligamento Cruzado Anterior (LCA)"
+    },
+    "question": {
+      "title": "Haga Su Pregunta",
+      "placeholder": {
+        "doctor": "Pregúntele a {doctorName} cualquier cosa sobre su tratamiento...",
+        "bodyPart": "Pregunte sobre el tratamiento de {bodyPart}...",
+        "default": "Elija un cirujano o modelo de parte del cuerpo arriba para comenzar..."
+      },
+      "shortcut": "Presione ⌘/Ctrl + Enter para enviar",
+      "button": {
+        "ask": "Hacer Pregunta",
+        "analyzing": "Analizando..."
+      }
+    },
+    "answer": {
+      "title": {
+        "doctor": "Protocolos de {doctorName}",
+        "default": "Respuesta"
+      },
+      "sources": "Fuentes",
+      "noSources": "No se citaron fuentes",
+      "disclaimer": "Siempre discuta su situación específica con {doctorName} antes de tomar decisiones médicas."
+    },
+    "error": {
+      "title": "Error"
+    },
+    "mode": {
+      "patient": "Paciente",
+      "provider": "Proveedor"
+    },
+    "footer": {
+      "version": "CareGuide v0.2 • Apoyo a las Decisiones Clínicas Personalizadas",
+      "disclaimer": "Esta herramienta proporciona información basada en los protocolos de su cirujano. Siempre consulte con su equipo de atención médica."
+    }
+  },
+  "about": {
+    "title": "Acerca de",
+    "careguide": "CareGuide",
+    "hero": {
+      "description": "Estamos construyendo el futuro de la atención médica con asistencia médica impulsada por IA y basada en evidencia que empodera tanto a pacientes como a proveedores con respuestas instantáneas y confiables."
+    },
+    "mission": {
+      "title": "Nuestra Misión",
+      "description": "Democratizar el acceso a información médica de alta calidad combinando inteligencia artificial de vanguardia con medicina basada en evidencia, asegurando que todos—desde pacientes que buscan claridad hasta proveedores de atención médica que toman decisiones críticas—tengan acceso instantáneo a conocimiento médico confiable y preciso."
+    },
+    "team": {
+      "title": "Conozca a Nuestro",
+      "subtitle": "Equipo de Liderazgo",
+      "connectLinkedIn": "Conectar en LinkedIn",
+      "members": {
+        "kyle": {
+          "name": "Kyle Kunze, M.D.",
+          "role": "CEO",
+          "title": "Director Ejecutivo, Cofundador",
+          "bio": "El Dr. Kyle Kunze lidera CareGuide como cirujano ortopédico de medicina deportiva. Con más de 100 publicaciones revisadas por pares sobre la intersección entre inteligencia artificial y medicina clínica, Kyle lidera la revolución de la atención médica a través de la medicina basada en evidencia."
+        },
+        "krishna": {
+          "name": "Krishna Anand, M.D., M.Eng.",
+          "role": "CTO",
+          "title": "Director de Tecnología, Cofundador",
+          "bio": "El Dr. Krishna Anand aporta su experiencia técnica y operativa a CareGuide. Combina su experiencia como CEO de una startup médica anterior, innovador y entrenamiento como médico residente para garantizar que CareGuide se centre en las necesidades de los pacientes y los médicos."
+        },
+        "joshua": {
+          "name": "Joshua Dines, M.D.",
+          "role": "CSO",
+          "title": "Director Científico, Cofundador",
+          "bio": "El Dr. Joshua Dines aporta sus más de 20 años como líder en cirugía ortopédica, médico de equipo de múltiples equipos deportivos profesionales y ex CMO de ViewFi para enraizar la misión de CareGuide en las manos de sus pacientes. Lidera la junta asesora clínica y garantiza que todos los documentos médicos utilizados para construir CareGuide estén arraigados en la medicina basada en evidencia."
+        }
+      }
+    },
+    "advisors": {
+      "title": "Junta Asesora Clínica",
+      "description": "Nuestros distinguidos asesores clínicos aportan experiencia de clase mundial en medicina musculoesquelética para guiar nuestro desarrollo de IA y garantizar la excelencia clínica."
+    },
+    "values": {
+      "evidenceBased": {
+        "title": "Basado en Evidencia",
+        "description": "Cada respuesta está fundamentada en literatura médica revisada por pares y guías clínicas."
+      },
+      "fast": {
+        "title": "Increíblemente Rápido",
+        "description": "Obtenga respuestas médicas completas en segundos, no horas de investigación."
+      },
+      "patientCentered": {
+        "title": "Centrado en el Paciente",
+        "description": "Diseñado para empoderar tanto a pacientes como a proveedores con conocimiento médico accesible."
+      }
+    },
+    "cta": {
+      "title": "¿Listo para Experimentar la Atención Médica Impulsada por IA?",
+      "description": "Únase a miles de pacientes y proveedores que confían en CareGuide para respuestas médicas.",
+      "button": "Comenzar"
+    },
+    "footer": {
+      "copyright": "© 2025 CareGuide. Todos los derechos reservados."
+    }
+  }
+}
