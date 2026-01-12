@@ -235,35 +235,6 @@ export default function PatientQA() {
             </div>
           </div>
 
-          {/* Conditions Display */}
-          {selectedDoctor && (
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">{t('qa.conditions.title')}</h3>
-                  <p className="text-sm text-slate-400">{t('qa.conditions.subtitle', { doctorName: selectedDoctorName })}</p>
-                </div>
-              </div>
-
-              <div className="grid gap-3">
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                  <h5 className="font-semibold text-white">{t('qa.conditions.rotatorCuff')}</h5>
-                </div>
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                  <h5 className="font-semibold text-white">{t('qa.conditions.ucl')}</h5>
-                </div>
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                  <h5 className="font-semibold text-white">{t('qa.conditions.acl')}</h5>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Question Input */}
           <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6">
             <div className="flex items-center gap-3">
