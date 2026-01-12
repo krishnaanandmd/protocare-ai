@@ -119,12 +119,6 @@ export default function PatientQA() {
                 >
                   {t('qa.header.aboutUs')}
                 </Link>
-                <Link
-                  href="/providers"
-                  className="text-slate-300 hover:text-white transition-colors font-semibold"
-                >
-                  Providers
-                </Link>
                 <LanguageSwitcher />
                 <ModeToggle mode={mode} onChange={setMode} />
               </div>
