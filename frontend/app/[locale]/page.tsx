@@ -2,71 +2,75 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function LandingPage() {
+  const t = useTranslations();
   const [currentScreen, setCurrentScreen] = useState(0);
 
   const screens = [
     {
-      title: "Welcome to CareGuide",
-      subtitle: "Personalized Clinical Intelligence",
-      description: "Get instant answers based on our artificial intelligence model trained and curated by your doctors clinical expertise.",
-      cta: "Learn How It Works",
+      titleKey: "landing.screens.welcome.title",
+      subtitleKey: "landing.screens.welcome.subtitle",
+      descriptionKey: "landing.screens.welcome.description",
+      ctaKey: "landing.screens.welcome.cta",
     },
     {
-      title: "How It Works",
-      subtitle: "Three Simple Steps",
-      description: null,
+      titleKey: "landing.screens.howItWorks.title",
+      subtitleKey: "landing.screens.howItWorks.subtitle",
+      descriptionKey: null,
       steps: [
         {
           icon: "search",
-          title: "Find Your Surgeon",
-          desc: "Select your doctor from our network of top orthopedic specialists",
+          titleKey: "landing.screens.howItWorks.steps.findSurgeon.title",
+          descKey: "landing.screens.howItWorks.steps.findSurgeon.desc",
         },
         {
           icon: "question",
-          title: "Ask Your Question",
-          desc: "Type any question about your condition, injury, treatment, or recovery",
+          titleKey: "landing.screens.howItWorks.steps.askQuestion.title",
+          descKey: "landing.screens.howItWorks.steps.askQuestion.desc",
         },
         {
           icon: "answer",
-          title: "Get Personalized Answers",
-          desc: "Receive on-demand, evidence-based responses from your doctor",
+          titleKey: "landing.screens.howItWorks.steps.getAnswers.title",
+          descKey: "landing.screens.howItWorks.steps.getAnswers.desc",
         },
       ],
-      cta: "Why Trust Us?",
+      ctaKey: "landing.screens.howItWorks.cta",
     },
     {
-      title: "Evidence-Based Care",
-      subtitle: "Backed by Clinical Expertise",
-      description: null,
+      titleKey: "landing.screens.trust.title",
+      subtitleKey: "landing.screens.trust.subtitle",
+      descriptionKey: null,
       features: [
         {
           icon: "shield",
-          title: "100% Evidence-Based",
-          desc: "All responses sourced from verified clinical protocols and research",
+          titleKey: "landing.screens.trust.features.evidenceBased.title",
+          descKey: "landing.screens.trust.features.evidenceBased.desc",
         },
         {
           icon: "team",
-          title: "Expert Advisory Board",
-          desc: "Guided by leading orthopedic surgeons and specialists",
+          titleKey: "landing.screens.trust.features.expertBoard.title",
+          descKey: "landing.screens.trust.features.expertBoard.desc",
         },
         {
           icon: "team",
-          title: "Built by Doctors",
-          desc: "A company built by and ran by doctors who understand patient care",
+          titleKey: "landing.screens.trust.features.builtByDoctors.title",
+          descKey: "landing.screens.trust.features.builtByDoctors.desc",
         },
         {
           icon: "clock",
-          title: "24/7 Availability",
-          desc: "Get answers anytime, without waiting for office hours",
+          titleKey: "landing.screens.trust.features.available247.title",
+          descKey: "landing.screens.trust.features.available247.desc",
         },
       ],
-      cta: "Get Started",
+      ctaKey: "landing.screens.trust.cta",
     },
   ];
 
   const currentScreenData = screens[currentScreen];
+  const title = t(currentScreenData.titleKey);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
@@ -88,16 +92,19 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text">
-                    CareGuide
+                    {t('common.careguide')}
                   </h1>
                 </div>
               </div>
-              <Link
-                href="/app"
-                className="text-sm font-semibold text-slate-300 hover:text-white transition-colors"
-              >
-                Skip to App →
-              </Link>
+              <div className="flex items-center gap-4">
+                <LanguageSwitcher />
+                <Link
+                  href="/app"
+                  className="text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                >
+                  {t('common.skipToApp')}
+                </Link>
+              </div>
             </div>
           </div>
         </header>
@@ -113,23 +120,23 @@ export default function LandingPage() {
                   <div className="space-y-6">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm">
                       <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-sm font-medium text-white">Powered by Advanced AI</span>
+                      <span className="text-sm font-medium text-white">{t('common.poweredBy')}</span>
                     </div>
 
                     <h2 className="text-6xl md:text-7xl lg:text-8xl font-black leading-tight">
-                      <span className="block text-white mb-2">{currentScreenData.title.split(" ")[0]}</span>
-                      <span className="block text-white mb-2">{currentScreenData.title.split(" ")[1]}</span>
+                      <span className="block text-white mb-2">{title.split(" ")[0]}</span>
+                      <span className="block text-white mb-2">{title.split(" ")[1]}</span>
                       <span className="block bg-gradient-to-r from-cyan-400 via-teal-400 to-blue-400 text-transparent bg-clip-text animate-gradient">
-                        {currentScreenData.title.split(" ").slice(2).join(" ")}
+                        {title.split(" ").slice(2).join(" ")}
                       </span>
                     </h2>
 
                     <p className="text-2xl md:text-3xl text-slate-300 font-light max-w-4xl mx-auto leading-relaxed">
-                      {currentScreenData.subtitle}
+                      {t(currentScreenData.subtitleKey)}
                     </p>
 
                     <p className="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto">
-                      {currentScreenData.description}
+                      {t(currentScreenData.descriptionKey!)}
                     </p>
                   </div>
 
@@ -137,23 +144,23 @@ export default function LandingPage() {
                   <div className="flex items-center justify-center gap-8 pt-8">
                     <div className="text-center">
                       <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text">
-                        Instant
+                        {t('landing.stats.instant')}
                       </div>
-                      <div className="text-sm text-slate-400 mt-2">Responses</div>
+                      <div className="text-sm text-slate-400 mt-2">{t('landing.stats.responses')}</div>
                     </div>
                     <div className="w-px h-16 bg-white/20" />
                     <div className="text-center">
                       <div className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-blue-400 text-transparent bg-clip-text">
                         100%
                       </div>
-                      <div className="text-sm text-slate-400 mt-2">Evidence-Based</div>
+                      <div className="text-sm text-slate-400 mt-2">{t('landing.stats.evidenceBased')}</div>
                     </div>
                     <div className="w-px h-16 bg-white/20" />
                     <div className="text-center">
                       <div className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 text-transparent bg-clip-text">
                         24/7
                       </div>
-                      <div className="text-sm text-slate-400 mt-2">Available</div>
+                      <div className="text-sm text-slate-400 mt-2">{t('landing.stats.available')}</div>
                     </div>
                   </div>
                 </>
@@ -164,10 +171,10 @@ export default function LandingPage() {
                 <>
                   <div className="space-y-6">
                     <h2 className="text-6xl md:text-7xl font-black text-white leading-tight">
-                      {currentScreenData.title}
+                      {t(currentScreenData.titleKey)}
                     </h2>
                     <p className="text-2xl text-slate-300 font-light">
-                      {currentScreenData.subtitle}
+                      {t(currentScreenData.subtitleKey)}
                     </p>
                   </div>
 
@@ -197,9 +204,9 @@ export default function LandingPage() {
                           </div>
                         </div>
                         <div className="space-y-3">
-                          <div className="text-sm font-bold text-cyan-400">Step {idx + 1}</div>
-                          <h3 className="text-2xl font-bold text-white">{step.title}</h3>
-                          <p className="text-slate-400 leading-relaxed">{step.desc}</p>
+                          <div className="text-sm font-bold text-cyan-400">{t('landing.screens.howItWorks.steps.step')} {idx + 1}</div>
+                          <h3 className="text-2xl font-bold text-white">{t(step.titleKey)}</h3>
+                          <p className="text-slate-400 leading-relaxed">{t(step.descKey)}</p>
                         </div>
                       </div>
                     ))}
@@ -212,10 +219,10 @@ export default function LandingPage() {
                 <>
                   <div className="space-y-6">
                     <h2 className="text-6xl md:text-7xl font-black text-white leading-tight">
-                      {currentScreenData.title}
+                      {t(currentScreenData.titleKey)}
                     </h2>
                     <p className="text-2xl text-slate-300 font-light">
-                      {currentScreenData.subtitle}
+                      {t(currentScreenData.subtitleKey)}
                     </p>
                   </div>
 
@@ -247,8 +254,8 @@ export default function LandingPage() {
                             </svg>
                           )}
                         </div>
-                        <h3 className="text-xl font-bold text-white">{feature.title}</h3>
-                        <p className="text-slate-400 leading-relaxed">{feature.desc}</p>
+                        <h3 className="text-xl font-bold text-white">{t(feature.titleKey)}</h3>
+                        <p className="text-slate-400 leading-relaxed">{t(feature.descKey)}</p>
                       </div>
                     ))}
                   </div>
@@ -264,7 +271,7 @@ export default function LandingPage() {
                     className="group px-10 py-5 rounded-2xl font-bold text-xl bg-gradient-to-r from-cyan-500 to-teal-600 text-white shadow-2xl shadow-cyan-500/50 hover:shadow-cyan-500/70 hover:scale-105 active:scale-95 transition-all"
                   >
                     <span className="flex items-center gap-3">
-                      {currentScreenData.cta}
+                      {t(currentScreenData.ctaKey)}
                       <svg className="w-6 h-6 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
@@ -276,7 +283,7 @@ export default function LandingPage() {
                     className="group px-12 py-6 rounded-2xl font-bold text-2xl bg-gradient-to-r from-cyan-500 to-teal-600 text-white shadow-2xl shadow-cyan-500/50 hover:shadow-cyan-500/70 hover:scale-105 active:scale-95 transition-all"
                   >
                     <span className="flex items-center gap-3">
-                      {currentScreenData.cta}
+                      {t(currentScreenData.ctaKey)}
                       <svg className="w-7 h-7 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
@@ -309,7 +316,7 @@ export default function LandingPage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
-                    Back
+                    {t('common.back')}
                   </button>
                 )}
               </div>
@@ -322,10 +329,10 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-6 py-6">
             <div className="flex items-center justify-between text-sm">
               <p className="text-slate-400">
-                CareGuide v0.2 • Personalized Clinical Intelligence
+                {t('common.version')} • {t('landing.footer.tagline')}
               </p>
               <Link href="/about" className="text-slate-400 hover:text-white transition-colors">
-                About Us
+                {t('common.aboutUs')}
               </Link>
             </div>
           </div>

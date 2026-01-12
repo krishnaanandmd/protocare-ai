@@ -1,0 +1,217 @@
+{
+  "common": {
+    "careguide": "CareGuide",
+    "tagline": "Personalized Clinical Intelligence",
+    "version": "CareGuide v0.2",
+    "poweredBy": "Powered by Advanced AI",
+    "skipToApp": "Skip to App →",
+    "aboutUs": "About Us",
+    "backToHome": "Back to Home",
+    "getStarted": "Get Started",
+    "back": "Back"
+  },
+  "landing": {
+    "screens": {
+      "welcome": {
+        "title": "Welcome to CareGuide",
+        "subtitle": "Personalized Clinical Intelligence",
+        "description": "Get instant answers based on our artificial intelligence model trained and curated by your doctors clinical expertise.",
+        "cta": "Learn How It Works"
+      },
+      "howItWorks": {
+        "title": "How It Works",
+        "subtitle": "Three Simple Steps",
+        "cta": "Why Trust Us?",
+        "steps": {
+          "step": "Step",
+          "findSurgeon": {
+            "title": "Find Your Surgeon",
+            "desc": "Select your doctor from our network of top orthopedic specialists"
+          },
+          "askQuestion": {
+            "title": "Ask Your Question",
+            "desc": "Type any question about your condition, injury, treatment, or recovery"
+          },
+          "getAnswers": {
+            "title": "Get Personalized Answers",
+            "desc": "Receive on-demand, evidence-based responses from your doctor"
+          }
+        }
+      },
+      "trust": {
+        "title": "Evidence-Based Care",
+        "subtitle": "Backed by Clinical Expertise",
+        "cta": "Get Started",
+        "features": {
+          "evidenceBased": {
+            "title": "100% Evidence-Based",
+            "desc": "All responses sourced from verified clinical protocols and research"
+          },
+          "expertBoard": {
+            "title": "Expert Advisory Board",
+            "desc": "Guided by leading orthopedic surgeons and specialists"
+          },
+          "builtByDoctors": {
+            "title": "Built by Doctors",
+            "desc": "A company built by and ran by doctors who understand patient care"
+          },
+          "available247": {
+            "title": "24/7 Availability",
+            "desc": "Get answers anytime, without waiting for office hours"
+          }
+        }
+      }
+    },
+    "stats": {
+      "instant": "Instant",
+      "responses": "Responses",
+      "evidenceBased": "Evidence-Based",
+      "available": "Available"
+    },
+    "footer": {
+      "tagline": "Personalized Clinical Intelligence"
+    }
+  },
+  "qa": {
+    "header": {
+      "tagline": "Personalized Clinical Intelligence",
+      "aboutUs": "About Us"
+    },
+    "disclaimer": {
+      "patient": {
+        "title": "For informational purposes only",
+        "description": "This tool provides information about your surgeon's protocols. It does not give medical advice or handle emergencies. If you have urgent symptoms, call your clinic or emergency services."
+      },
+      "provider": {
+        "title": "Provider Mode",
+        "description": "Clinical view with explicit citations and detailed protocols."
+      }
+    },
+    "selection": {
+      "title": "Choose Your Path",
+      "subtitle": "Select your provider OR choose a CareGuide's standardized MSK model based on your anatomic area of concern",
+      "surgeon": {
+        "title": "Specific Surgeon",
+        "connected": "Connected to",
+        "protocols": "protocols"
+      },
+      "bodyPart": {
+        "title": "CareGuide MSK Models",
+        "using": "Using",
+        "model": "model"
+      },
+      "or": "OR",
+      "bodyParts": {
+        "shoulder": "Shoulder",
+        "elbow": "Elbow",
+        "handWrist": "Hand/Wrist",
+        "hip": "Hip",
+        "knee": "Knee",
+        "ankleFoot": "Ankle/Foot",
+        "spine": "Spine"
+      }
+    },
+    "conditions": {
+      "title": "Conditions",
+      "subtitle": "Topics you can ask {doctorName} about",
+      "rotatorCuff": "Rotator Cuff",
+      "ucl": "Ulnar Collateral Ligament (UCL)",
+      "acl": "Anterior Cruciate Ligament (ACL)"
+    },
+    "question": {
+      "title": "Ask Your Question",
+      "placeholder": {
+        "doctor": "Ask {doctorName} anything about your treatment...",
+        "bodyPart": "Ask about {bodyPart} treatment...",
+        "default": "Choose a surgeon or body part model above to get started..."
+      },
+      "shortcut": "Press ⌘/Ctrl + Enter to send",
+      "button": {
+        "ask": "Ask Question",
+        "analyzing": "Analyzing..."
+      }
+    },
+    "answer": {
+      "title": {
+        "doctor": "{doctorName}'s Protocols",
+        "default": "Answer"
+      },
+      "sources": "Sources",
+      "noSources": "No sources cited",
+      "disclaimer": "Always discuss your specific situation with {doctorName} before making medical decisions."
+    },
+    "error": {
+      "title": "Error"
+    },
+    "mode": {
+      "patient": "Patient",
+      "provider": "Provider"
+    },
+    "footer": {
+      "version": "CareGuide v0.2 • Personalized Clinical Decision Support",
+      "disclaimer": "This tool provides information based on your surgeon's protocols. Always consult with your healthcare team."
+    }
+  },
+  "about": {
+    "title": "About",
+    "careguide": "CareGuide",
+    "hero": {
+      "description": "We're building the future of healthcare with AI-powered, evidence-based medical assistance that empowers both patients and providers with instant, reliable answers."
+    },
+    "mission": {
+      "title": "Our Mission",
+      "description": "To democratize access to high-quality medical information by combining cutting-edge artificial intelligence with evidence-based medicine, ensuring that everyone—from patients seeking clarity to healthcare providers making critical decisions—has instant access to trusted, accurate medical knowledge."
+    },
+    "team": {
+      "title": "Meet Our",
+      "subtitle": "Leadership Team",
+      "connectLinkedIn": "Connect on LinkedIn",
+      "members": {
+        "kyle": {
+          "name": "Kyle Kunze, M.D.",
+          "role": "CEO",
+          "title": "Chief Executive Officer, Co-Founder",
+          "bio": "Dr. Kyle Kunze leads CareGuide as an orthopaedic sports medicine surgeon. With over 100 peer-reviewed publications on the intersection between artificial intelligence and clinical medicine, Kyle leads to revolutionize healthcare through evidence-based medicine."
+        },
+        "krishna": {
+          "name": "Krishna Anand, M.D., M.Eng.",
+          "role": "CTO",
+          "title": "Chief Technology Officer, Co-Founder",
+          "bio": "Dr. Krishna Anand brings his technical background and operational expertise to CareGuide. He combines his experience as CEO of a former medical startup, innovator, and training as a resident physician to ensure CareGuide focuses on the needs of patients and clinicians."
+        },
+        "joshua": {
+          "name": "Joshua Dines, M.D.",
+          "role": "CSO",
+          "title": "Chief Scientific Officer, Co-Founder",
+          "bio": "Dr. Joshua Dines brings his 20+ years as a leader in orthopedic surgery, team physician for multiple professional sports teams, and former CMO of ViewFi to root CareGuides mission in the hands of its patients. He leads the clinical advisory board and ensures all medical documents used to build CareGuide are rooted in evidence-based medicine."
+        }
+      }
+    },
+    "advisors": {
+      "title": "Clinical Advisor Board",
+      "description": "Our distinguished clinical advisors bring world-class expertise in musculoskeletal medicine to guide our AI development and ensure clinical excellence."
+    },
+    "values": {
+      "evidenceBased": {
+        "title": "Evidence-Based",
+        "description": "Every answer is grounded in peer-reviewed medical literature and clinical guidelines."
+      },
+      "fast": {
+        "title": "Lightning Fast",
+        "description": "Get comprehensive medical answers in seconds, not hours of research."
+      },
+      "patientCentered": {
+        "title": "Patient-Centered",
+        "description": "Designed to empower both patients and providers with accessible medical knowledge."
+      }
+    },
+    "cta": {
+      "title": "Ready to Experience AI-Powered Healthcare?",
+      "description": "Join thousands of patients and providers who trust CareGuide for medical answers.",
+      "button": "Get Started"
+    },
+    "footer": {
+      "copyright": "© 2025 CareGuide. All rights reserved."
+    }
+  }
+}
