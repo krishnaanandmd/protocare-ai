@@ -97,6 +97,12 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="flex items-center gap-4">
+                <Link
+                  href="/providers"
+                  className="text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                >
+                  Providers
+                </Link>
                 <LanguageSwitcher />
                 <Link
                   href="/app"
