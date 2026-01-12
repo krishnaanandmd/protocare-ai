@@ -162,6 +162,34 @@ SHARED_COLLECTIONS = {
     "asheesh_bedi": ["joshua_dines"]  # Dr. Bedi uses Dr. Dines' documents
 }
 
+# Explicit collection permissions - maps collections to allowed surgeons
+# This provides granular control over which surgeons can access which collections
+COLLECTION_PERMISSIONS = {
+    # RCT Documents
+    "dr_general_ucl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+    "dr_general_rotator_cuff_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+    "dr_general_meniscus_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+    "dr_general_acl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+
+    # Dines-specific protocols
+    "dr_joshua_dines_clinic_protocols": ["joshua_dines", "asheesh_bedi"],
+
+    # HSS protocols
+    "dr_general_hss_protocols": ["joshua_dines", "ayoosh_pareek", "sheeraz_qureshi", "william_long"],
+
+    # Body part specific collections
+    "dr_general_knee_lower_leg": ["william_long", "khalid_alkhelaifi"],
+    "dr_general_foot_ankle": [],  # CareGuide only
+    "dr_general_shoulder": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+    "dr_general_elbow": ["joshua_dines", "ayoosh_pareek", "khalid_alkhelaifi"],
+    "dr_general_hip_thigh": ["asheesh_bedi", "william_long"],
+    "dr_general_neck": ["sheeraz_qureshi"],
+    "dr_general_back": ["sheeraz_qureshi"],
+
+    # AAOS Guidelines
+    "dr_general_aaos_knee_oa": ["william_long"],
+}
+
 PROCEDURES = {
     "ucl": {"id": "ucl", "name": "UCL Reconstruction (Tommy John)", "description": "Ulnar collateral ligament reconstruction"},
     "acl": {"id": "acl", "name": "ACL Reconstruction", "description": "Anterior cruciate ligament reconstruction"},
@@ -675,7 +703,50 @@ async def rag_query(body: QueryRequest):
                     if col.name.startswith(doctor_prefix)
                 ]
                 collections_to_search.extend(doctor_collections)
+
+            # Add collections from COLLECTION_PERMISSIONS
+            for collection_name, allowed_doctors in COLLECTION_PERMISSIONS.items():
+                if body.doctor_id in allowed_doctors:
+                    collections_to_search.append(collection_name)
+
             logger.info("searching_all_doctor_collections", doctor=doctor_slug, shared_doctors=doctors_to_search, collections=len(collections_to_search))
+    elif body.body_part:
+        # CareGuide MSK Model: body part selected without specific doctor
+        # Search general collections and body-part specific collections
+        body_part_slug = slugify(body.body_part)
+        body_part_name = body.body_part.title()
+
+        c = retrieval.client()
+        all_collections = c.get_collections().collections
+
+        # Search for general collections related to this body part
+        # This includes RCTs and clinical guidelines for the body part
+        for col in all_collections:
+            col_name = col.name
+            # Include collections like: dr_general_ucl_rct, dr_general_shoulder, etc.
+            if col_name.startswith("dr_general_"):
+                # Map body parts to related procedures/collections
+                body_part_matches = {
+                    "elbow": ["ucl", "elbow"],
+                    "knee": ["acl", "meniscus", "knee", "aaos_knee", "lower_leg"],
+                    "shoulder": ["rotator_cuff", "shoulder"],
+                    "hip": ["hip", "thigh"],
+                    "back": ["back"],
+                    "neck": ["neck"],
+                    "spine": ["back", "neck"],
+                    "foot": ["foot", "ankle"],
+                    "ankle": ["foot", "ankle"],
+                    "hand": ["hand", "wrist"],
+                    "wrist": ["hand", "wrist"],
+                }
+
+                matches = body_part_matches.get(body_part_slug, [body_part_slug])
+                for match in matches:
+                    if match in col_name:
+                        collections_to_search.append(col_name)
+                        break
+
+        logger.info("careguide_body_part_search", body_part=body_part_slug, collections=collections_to_search)
     else:
         # Fallback to demo collection
         collections_to_search = ["org_demo_chunks"]
