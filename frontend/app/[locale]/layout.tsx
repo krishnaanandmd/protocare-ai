@@ -10,13 +10,15 @@ export const metadata = {
 
 type Props = {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 };
 
 export default async function LocaleLayout({
   children,
-  params: { locale }
+  params
 }: Props) {
+  const { locale } = await params;
+
   // Ensure that the incoming `locale` is valid
   if (!locales.includes(locale as any)) {
     notFound();
