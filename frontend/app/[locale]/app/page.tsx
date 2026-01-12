@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { DoctorAutocomplete } from "@/components/DoctorAutocomplete";
@@ -21,11 +21,24 @@ export default function PatientQA() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [doctors] = useState<Doctor[]>([
-    { id: "joshua_dines", name: "Dr. Joshua Dines", specialty: "Orthopedic Surgery - Sports Medicine" },
-    { id: "asheesh_bedi", name: "Dr. Asheesh Bedi", specialty: "Orthopedic Surgery - Sports Medicine" }
-  ]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
+
+  // Fetch all doctors from the API
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/rag/doctors`);
+        if (res.ok) {
+          const doctorsData = await res.json();
+          setDoctors(doctorsData);
+        }
+      } catch (err) {
+        console.error("Failed to fetch doctors:", err);
+      }
+    };
+    fetchDoctors();
+  }, []);
 
   const bodyParts = useMemo<BodyPart[]>(() => [
     { id: "shoulder", name: t('qa.selection.bodyParts.shoulder'), description: "Shoulder joint and rotator cuff" },
@@ -105,6 +118,12 @@ export default function PatientQA() {
                   className="text-slate-300 hover:text-white transition-colors font-semibold"
                 >
                   {t('qa.header.aboutUs')}
+                </Link>
+                <Link
+                  href="/providers"
+                  className="text-slate-300 hover:text-white transition-colors font-semibold"
+                >
+                  Providers
                 </Link>
                 <LanguageSwitcher />
                 <ModeToggle mode={mode} onChange={setMode} />

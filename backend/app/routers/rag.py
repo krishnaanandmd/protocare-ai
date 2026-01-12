@@ -657,6 +657,87 @@ async def get_surgeon_specialties(doctor_id: str):
             return SURGEON_SPECIALTIES[doctor_id]
         return {"categories": []}
 
+@router.get("/doctors/with-documents")
+async def list_doctors_with_documents():
+    """Get all doctors with their associated document collections."""
+    try:
+        c = retrieval.client()
+        all_collections = c.get_collections().collections
+        all_collection_names = [col.name for col in all_collections]
+
+        doctors_with_docs = []
+
+        for doctor_id, doctor_info in DOCTORS.items():
+            doc_slug = slugify(doctor_id)
+            doctor_prefix = f"dr_{doc_slug}_"
+
+            # Get doctor-specific collections
+            doctor_collections = [
+                name for name in all_collection_names
+                if name.startswith(doctor_prefix)
+            ]
+
+            # Get collections from COLLECTION_PERMISSIONS
+            permitted_collections = [
+                col_name for col_name, permitted_doctors in COLLECTION_PERMISSIONS.items()
+                if doctor_id in permitted_doctors
+            ]
+
+            # Get shared collections
+            shared_doctor_collections = []
+            if doctor_id in SHARED_COLLECTIONS:
+                for shared_doc_id in SHARED_COLLECTIONS[doctor_id]:
+                    shared_slug = slugify(shared_doc_id)
+                    shared_prefix = f"dr_{shared_slug}_"
+                    shared_collections = [
+                        name for name in all_collection_names
+                        if name.startswith(shared_prefix)
+                    ]
+                    shared_doctor_collections.extend(shared_collections)
+
+            # Combine all collections and remove duplicates
+            all_doctor_collections = list(set(
+                doctor_collections + permitted_collections + shared_doctor_collections
+            ))
+            all_doctor_collections.sort()
+
+            # Get collection info with point counts
+            collection_details = []
+            for col_name in all_doctor_collections:
+                try:
+                    col_info = c.get_collection(col_name)
+                    collection_details.append({
+                        "name": col_name,
+                        "points_count": col_info.points_count,
+                        "display_name": col_name.replace("dr_", "").replace("_", " ").title()
+                    })
+                except Exception as e:
+                    logger.warning(f"Could not get info for collection {col_name}: {str(e)}")
+                    collection_details.append({
+                        "name": col_name,
+                        "points_count": 0,
+                        "display_name": col_name.replace("dr_", "").replace("_", " ").title(),
+                        "error": str(e)
+                    })
+
+            doctors_with_docs.append({
+                "id": doctor_id,
+                "name": doctor_info["name"],
+                "specialty": doctor_info["specialty"],
+                "procedures": doctor_info["procedures"],
+                "collections": collection_details,
+                "total_collections": len(collection_details)
+            })
+
+        return {
+            "total_doctors": len(doctors_with_docs),
+            "doctors": doctors_with_docs
+        }
+
+    except Exception as e:
+        logger.error("failed_to_list_doctors_with_documents", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve doctors with documents: {str(e)}")
+
 @router.post("/query", response_model=Answer)
 async def rag_query(body: QueryRequest):
     t0 = time.time()
