@@ -1,7 +1,7 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import '../globals.css';
+import { locales } from '@/i18n';
 
 export const metadata = {
   title: 'CareGuide - Personalized Clinical Intelligence',
@@ -18,7 +18,7 @@ export default async function LocaleLayout({
   params: { locale }
 }: Props) {
   // Ensure that the incoming `locale` is valid
-  if (!['en', 'es'].includes(locale)) {
+  if (!locales.includes(locale as any)) {
     notFound();
   }
 
