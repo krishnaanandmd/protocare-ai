@@ -7,7 +7,7 @@ import { DoctorAutocomplete } from "@/components/DoctorAutocomplete";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 
-type Citation = { title: string; document_id: string; page?: number; section?: string; };
+type Citation = { title: string; document_id: string; page?: number; section?: string; author?: string; publication_year?: number; };
 type Answer = { answer: string; citations: Citation[]; guardrails: Record<string, any>; latency_ms: number; };
 type Doctor = { id: string; name: string; specialty: string; };
 type BodyPart = { id: string; name: string; description: string; };
@@ -413,20 +413,30 @@ function AnswerCard({
           <p className="text-sm text-slate-400 italic">{t('qa.answer.noSources')}</p>
         ) : (
           <div className="space-y-3">
-            {citations.map((c, idx) => (
-              <div key={idx} className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-600 text-white text-xs font-bold flex-shrink-0 shadow-lg">
-                  {idx + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-white text-sm">{c.title}</p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {c.section && <span>{c.section} • </span>}
-                    {typeof c.page === "number" && <span>Page {c.page}</span>}
-                  </p>
+            {citations.map((c, idx) => {
+              // Build author citation format if author and year are available
+              const authorCitation = c.author && c.publication_year
+                ? `${c.author} (${c.publication_year})`
+                : c.author || null;
+
+              return (
+                <div key={idx} className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-600 text-white text-xs font-bold flex-shrink-0 shadow-lg">
+                    {idx + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-white text-sm">{c.title}</p>
+                    {authorCitation && (
+                      <p className="text-sm text-slate-300 mt-1">{authorCitation}</p>
+                    )}
+                    <p className="text-xs text-slate-400 mt-1">
+                      {c.section && <span>{c.section} • </span>}
+                      {typeof c.page === "number" && <span>Page {c.page}</span>}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

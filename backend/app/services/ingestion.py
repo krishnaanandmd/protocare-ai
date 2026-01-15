@@ -1,6 +1,6 @@
-import os, tempfile, logging, uuid
+import os, tempfile, logging, uuid, re
 from types import SimpleNamespace as NS
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Tuple
 import boto3
 from botocore.config import Config as BotoConfig
 from pypdf import PdfReader
@@ -125,6 +125,86 @@ def _parse_pdf_fast(path: str) -> List[NS]:
     
     return out
 
+def _extract_metadata(path: str) -> Tuple[Optional[str], Optional[str], Optional[int]]:
+    """
+    Extract meaningful metadata from PDF.
+    Returns: (title, author, publication_year)
+    """
+    try:
+        r = PdfReader(path)
+        metadata = r.metadata
+
+        # Initialize with None
+        title = None
+        author = None
+        year = None
+
+        # Try to get metadata from PDF properties
+        if metadata:
+            # Get title from metadata
+            if hasattr(metadata, 'title') and metadata.title:
+                title = metadata.title.strip()
+
+            # Get author from metadata
+            if hasattr(metadata, 'author') and metadata.author:
+                author = metadata.author.strip()
+
+            # Get year from creation/modification date
+            if hasattr(metadata, 'creation_date') and metadata.creation_date:
+                try:
+                    year = metadata.creation_date.year
+                except:
+                    pass
+
+            # If no creation date, try modification date
+            if not year and hasattr(metadata, 'modification_date') and metadata.modification_date:
+                try:
+                    year = metadata.modification_date.year
+                except:
+                    pass
+
+        # If we still don't have title or author, try to extract from first page
+        if (not title or not author or not year) and len(r.pages) > 0:
+            first_page_text = r.pages[0].extract_text() or ""
+
+            # Try to extract title from first page (usually first few lines)
+            if not title:
+                lines = [l.strip() for l in first_page_text.split('\n') if l.strip()]
+                if lines:
+                    # Take first non-empty line as potential title
+                    potential_title = lines[0]
+                    # Only use if it looks like a title (not too long, not a URL, etc.)
+                    if len(potential_title) < 200 and not potential_title.startswith('http'):
+                        title = potential_title
+
+            # Try to extract author patterns (e.g., "Author Name, MD" or "By Author Name")
+            if not author:
+                # Look for common author patterns
+                author_patterns = [
+                    r'(?:By|Author[s]?:|Written by)[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)',
+                    r'([A-Z][a-z]+\s+[A-Z][a-z]+)(?:,?\s+(?:MD|PhD|M\.D\.|Ph\.D\.))',
+                ]
+                for pattern in author_patterns:
+                    match = re.search(pattern, first_page_text)
+                    if match:
+                        author = match.group(1).strip()
+                        break
+
+            # Try to extract year (4 digits, typically between 1900-2099)
+            if not year:
+                year_pattern = r'\b(19\d{2}|20\d{2})\b'
+                years = re.findall(year_pattern, first_page_text)
+                if years:
+                    # Take the first year found
+                    year = int(years[0])
+
+        log.info(f"Extracted metadata - Title: {title}, Author: {author}, Year: {year}")
+        return (title, author, year)
+
+    except Exception as e:
+        log.error(f"Failed to extract metadata: {e}")
+        return (None, None, None)
+
 def _split(text: str, max_chars=1800, overlap=200) -> List[str]:
     if not text: return []
     chunks = []
@@ -172,27 +252,31 @@ def process_document(s3_key: str, source_type: str = "OTHER", org_id: str = "dem
     try:
         path = _download(bucket, s3_key)
         log.info("Downloaded %s", path)
-        
+
+        # Extract metadata from PDF
+        doc_title, doc_author, doc_year = _extract_metadata(path)
+
+        # Fallback to filename if no title extracted
+        if not doc_title:
+            doc_title = os.path.basename(s3_key)
+
         elems = _parse_pdf_fast(path)
-        
-        if not elems: 
+
+        if not elems:
             raise RuntimeError("No text extracted. PDF may be scanned and OCR failed, or file is empty.")
-        
+
         chunks = _to_chunks(elems)
         log.info("Chunks pre-embed=%d", len(chunks))
-        
+
         vecs = _embed([c["text"] for c in chunks])
-        if len(vecs) != len(chunks): 
+        if len(vecs) != len(chunks):
             raise RuntimeError("Embedding mismatch")
-        
+
         cli = _qdrant()
         _ensure_collection(cli, collection_name)
-        
+
         rank = PRECEDENCE.get(source_type.upper(), PRECEDENCE["OTHER"])
-        
-        # Extract filename for title
-        filename = os.path.basename(s3_key)
-        
+
         points = []
         for i, (c, v) in enumerate(zip(chunks, vecs)):
             # Use UUID for point ID instead of string path (Qdrant requires UUID or int)
@@ -205,7 +289,9 @@ def process_document(s3_key: str, source_type: str = "OTHER", org_id: str = "dem
                 "page": c.get("page"),
                 "section": c.get("section"),
                 "text": c["text"],
-                "title": filename,
+                "title": doc_title,
+                "author": doc_author,
+                "publication_year": doc_year,
                 "chunk_index": i  # Add chunk index to payload for reference
             }
             points.append(PointStruct(id=pid, vector=v, payload=payload))
