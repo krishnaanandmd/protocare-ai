@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 interface TeamMember {
   name: string;
@@ -114,7 +113,6 @@ export default function AboutUs() {
               </svg>
               {t('common.backToHome')}
             </Link>
-            <LanguageSwitcher />
           </div>
         </header>
 

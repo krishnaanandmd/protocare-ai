@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { DoctorAutocomplete } from "@/components/DoctorAutocomplete";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 
@@ -120,7 +119,6 @@ export default function PatientQA() {
                 >
                   {t('qa.header.aboutUs')}
                 </Link>
-                <LanguageSwitcher />
                 <ModeToggle mode={mode} onChange={setMode} />
               </div>
             </div>
