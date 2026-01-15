@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function LandingPage() {
   const t = useTranslations();
@@ -98,7 +97,12 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <LanguageSwitcher />
+                <Link
+                  href={`/${locale}/about`}
+                  className="text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                >
+                  {t('common.aboutUs')}
+                </Link>
                 <Link
                   href={`/${locale}/app`}
                   className="text-sm font-semibold text-slate-300 hover:text-white transition-colors"
