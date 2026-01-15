@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { DoctorAutocomplete } from "@/components/DoctorAutocomplete";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
@@ -15,6 +15,7 @@ type BodyPart = { id: string; name: string; description: string; };
 
 export default function PatientQA() {
   const t = useTranslations();
+  const locale = useLocale();
   const [question, setQuestion] = useState("");
   const [mode, setMode] = useState<"PATIENT" | "PROVIDER">("PATIENT");
   const [data, setData] = useState<Answer | null>(null);
@@ -104,7 +105,7 @@ export default function PatientQA() {
                   <span className="text-white font-black text-3xl">C</span>
                 </div>
                 <div>
-                  <Link href="/">
+                  <Link href={`/${locale}/`}>
                     <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text hover:from-cyan-300 hover:to-teal-300 transition-all cursor-pointer">
                       {t('common.careguide')}
                     </h1>
@@ -114,7 +115,7 @@ export default function PatientQA() {
               </div>
               <div className="flex items-center gap-6">
                 <Link
-                  href="/about"
+                  href={`/${locale}/about`}
                   className="text-slate-300 hover:text-white transition-colors font-semibold"
                 >
                   {t('qa.header.aboutUs')}
