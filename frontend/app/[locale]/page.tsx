@@ -98,6 +98,12 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center gap-4">
                 <Link
+                  href={`/${locale}/about`}
+                  className="text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                >
+                  {t('common.aboutUs')}
+                </Link>
+                <Link
                   href={`/${locale}/app`}
                   className="text-sm font-semibold text-slate-300 hover:text-white transition-colors"
                 >
