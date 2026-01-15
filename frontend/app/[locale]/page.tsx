@@ -2,11 +2,12 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function LandingPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const [currentScreen, setCurrentScreen] = useState(0);
 
   const screens = [
@@ -99,7 +100,7 @@ export default function LandingPage() {
               <div className="flex items-center gap-4">
                 <LanguageSwitcher />
                 <Link
-                  href="/app"
+                  href={`/${locale}/app`}
                   className="text-sm font-semibold text-slate-300 hover:text-white transition-colors"
                 >
                   {t('common.skipToApp')}
@@ -279,7 +280,7 @@ export default function LandingPage() {
                   </button>
                 ) : (
                   <Link
-                    href="/app"
+                    href={`/${locale}/app`}
                     className="group px-12 py-6 rounded-2xl font-bold text-2xl bg-gradient-to-r from-cyan-500 to-teal-600 text-white shadow-2xl shadow-cyan-500/50 hover:shadow-cyan-500/70 hover:scale-105 active:scale-95 transition-all"
                   >
                     <span className="flex items-center gap-3">
@@ -331,7 +332,7 @@ export default function LandingPage() {
               <p className="text-slate-400">
                 {t('common.version')} • {t('landing.footer.tagline')}
               </p>
-              <Link href="/about" className="text-slate-400 hover:text-white transition-colors">
+              <Link href={`/${locale}/about`} className="text-slate-400 hover:text-white transition-colors">
                 {t('common.aboutUs')}
               </Link>
             </div>

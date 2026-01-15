@@ -1,11 +1,13 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
+import { useLocale } from "next-intl";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8080";
 
 type Item = { file: File; status: string };
 
 export default function UploadPage() {
+  const locale = useLocale();
   const [orgId, setOrgId] = useState("demo");
   const [items, setItems] = useState<Item[]>([]);
   const [busy, setBusy] = useState(false);
@@ -75,7 +77,7 @@ export default function UploadPage() {
             <p className="text-slate-400 mt-2">Upload guidelines and policies for processing</p>
           </div>
           <Link
-            href="/app"
+            href={`/${locale}/app`}
             className="text-slate-300 hover:text-white transition-colors font-semibold flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

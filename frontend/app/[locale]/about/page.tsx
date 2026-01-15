@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 interface TeamMember {
@@ -91,6 +91,7 @@ const clinicalAdvisors: ClinicalAdvisor[] = [
 
 export default function AboutUs() {
   const t = useTranslations();
+  const locale = useLocale();
   const teamMembers = getTeamMembers(t);
 
   return (
@@ -105,7 +106,7 @@ export default function AboutUs() {
         <header className="w-full p-6">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <Link
-              href="/"
+              href={`/${locale}/`}
               className="text-white hover:text-cyan-300 transition-colors flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,7 +296,7 @@ export default function AboutUs() {
                 {t('about.cta.description')}
               </p>
               <Link
-                href="/app"
+                href={`/${locale}/app`}
                 className="inline-block px-8 py-4 bg-gradient-to-r from-cyan-500 to-teal-600 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-teal-700 transition-all transform hover:scale-105"
               >
                 {t('about.cta.button')}
