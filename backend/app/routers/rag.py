@@ -153,6 +153,12 @@ DOCTORS = {
         "name": "Dr. William Long",
         "specialty": "Orthopedic Surgery - Joint Replacement",
         "procedures": ["total_hip", "total_knee", "revision_arthroplasty"]
+    },
+    "jorge_chahla": {
+        "id": "jorge_chahla",
+        "name": "Dr. Jorge Chahla",
+        "specialty": "Orthopedic Surgery - Sports Medicine",
+        "procedures": ["ucl", "rotator_cuff", "meniscus", "acl"]
     }
 }
 
@@ -166,10 +172,10 @@ SHARED_COLLECTIONS = {
 # This provides granular control over which surgeons can access which collections
 COLLECTION_PERMISSIONS = {
     # RCT Documents
-    "dr_general_ucl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
-    "dr_general_rotator_cuff_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
-    "dr_general_meniscus_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
-    "dr_general_acl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
+    "dr_general_ucl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla"],
+    "dr_general_rotator_cuff_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla"],
+    "dr_general_meniscus_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla"],
+    "dr_general_acl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla"],
 
     # Dines-specific protocols
     "dr_joshua_dines_clinic_protocols": ["joshua_dines", "asheesh_bedi"],
@@ -178,11 +184,11 @@ COLLECTION_PERMISSIONS = {
     "dr_general_hss_protocols": ["joshua_dines", "ayoosh_pareek", "sheeraz_qureshi", "william_long"],
 
     # Body part specific collections
-    "dr_general_knee_lower_leg": ["william_long", "khalid_alkhelaifi"],
+    "dr_general_knee_lower_leg": ["william_long", "khalid_alkhelaifi", "jorge_chahla"],
     "dr_general_foot_ankle": [],  # CareGuide only
-    "dr_general_shoulder": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi"],
-    "dr_general_elbow": ["joshua_dines", "ayoosh_pareek", "khalid_alkhelaifi"],
-    "dr_general_hip_thigh": ["asheesh_bedi", "william_long"],
+    "dr_general_shoulder": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla"],
+    "dr_general_elbow": ["joshua_dines", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla"],
+    "dr_general_hip_thigh": ["asheesh_bedi", "william_long", "jorge_chahla"],
     "dr_general_neck": ["sheeraz_qureshi"],
     "dr_general_back": ["sheeraz_qureshi"],
 
@@ -501,6 +507,109 @@ SURGEON_SPECIALTIES = {
                         "name": "Post-Traumatic Arthritis",
                         "description": "Arthritis following knee injury",
                         "procedures": ["Total Knee Replacement", "Unicompartmental Knee Replacement"]
+                    }
+                ]
+            }
+        ]
+    },
+    "jorge_chahla": {
+        "categories": [
+            {
+                "name": "Shoulder",
+                "icon": "shoulder",
+                "conditions": [
+                    {
+                        "name": "Rotator Cuff Tears",
+                        "description": "Partial or complete tears of the rotator cuff tendons",
+                        "procedures": ["Rotator Cuff Repair", "Rotator Cuff Reconstruction", "Superior Capsular Reconstruction"]
+                    },
+                    {
+                        "name": "Shoulder Instability",
+                        "description": "Recurrent shoulder dislocations or subluxations",
+                        "procedures": ["Bankart Repair", "Latarjet Procedure", "Remplissage"]
+                    },
+                    {
+                        "name": "Labral Tears (SLAP)",
+                        "description": "Superior labrum anterior-posterior tears",
+                        "procedures": ["SLAP Repair", "Biceps Tenodesis"]
+                    },
+                    {
+                        "name": "AC Joint Injuries",
+                        "description": "Acromioclavicular joint separations",
+                        "procedures": ["AC Joint Reconstruction", "Distal Clavicle Excision"]
+                    }
+                ]
+            },
+            {
+                "name": "Elbow",
+                "icon": "elbow",
+                "conditions": [
+                    {
+                        "name": "UCL Injuries",
+                        "description": "Ulnar collateral ligament tears common in throwing athletes",
+                        "procedures": ["UCL Reconstruction (Tommy John)", "UCL Repair with Internal Brace"]
+                    },
+                    {
+                        "name": "Tennis Elbow",
+                        "description": "Lateral epicondylitis causing outer elbow pain",
+                        "procedures": ["Lateral Epicondyle Release", "PRP Injection"]
+                    },
+                    {
+                        "name": "Elbow Instability",
+                        "description": "Recurrent elbow dislocations or laxity",
+                        "procedures": ["Ligament Reconstruction", "Elbow Arthroscopy"]
+                    }
+                ]
+            },
+            {
+                "name": "Knee",
+                "icon": "knee",
+                "conditions": [
+                    {
+                        "name": "ACL Tears",
+                        "description": "Anterior cruciate ligament injuries",
+                        "procedures": ["ACL Reconstruction", "ACL Repair", "Revision ACL Reconstruction"]
+                    },
+                    {
+                        "name": "Meniscus Tears",
+                        "description": "Tears of the knee meniscus cartilage",
+                        "procedures": ["Meniscus Repair", "Meniscal Transplant", "Root Repair"]
+                    },
+                    {
+                        "name": "Cartilage Injuries",
+                        "description": "Damage to knee articular cartilage",
+                        "procedures": ["Cartilage Restoration", "Osteochondral Allograft", "MACI"]
+                    },
+                    {
+                        "name": "Multiligament Knee Injuries",
+                        "description": "Complex injuries involving multiple knee ligaments",
+                        "procedures": ["Multiligament Reconstruction", "PCL Reconstruction"]
+                    }
+                ]
+            },
+            {
+                "name": "Hip",
+                "icon": "hip",
+                "conditions": [
+                    {
+                        "name": "Hip Labral Tears",
+                        "description": "Tears of the hip labrum",
+                        "procedures": ["Hip Arthroscopy", "Labral Repair", "Labral Reconstruction"]
+                    },
+                    {
+                        "name": "FAI (Femoroacetabular Impingement)",
+                        "description": "Hip impingement syndrome",
+                        "procedures": ["Hip Arthroscopy", "Cam/Pincer Resection"]
+                    },
+                    {
+                        "name": "Hip Cartilage Damage",
+                        "description": "Damage to hip articular cartilage",
+                        "procedures": ["Microfracture", "Cartilage Restoration"]
+                    },
+                    {
+                        "name": "Gluteal Tendon Tears",
+                        "description": "Tears of the hip abductor tendons",
+                        "procedures": ["Gluteal Tendon Repair", "Hip Arthroscopy"]
                     }
                 ]
             }
