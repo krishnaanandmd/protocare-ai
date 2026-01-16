@@ -972,9 +972,11 @@ async def rag_query(body: QueryRequest):
             doc_id = p.get("document_id", "unknown")
             page = p.get("page")
             section = p.get("section")
-            
+            author = p.get("author")
+            publication_year = p.get("publication_year")
+
             context_parts.append(f"[Source {i+1}: {title}]\n{text}\n")
-            
+
             if i < 4:
                 citations.append(
                     Citation(
@@ -982,6 +984,8 @@ async def rag_query(body: QueryRequest):
                         document_id=doc_id,
                         page=page,
                         section=section,
+                        author=author,
+                        publication_year=publication_year,
                     )
                 )
         

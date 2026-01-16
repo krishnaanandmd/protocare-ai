@@ -6,6 +6,8 @@ class Citation(BaseModel):
     document_id: str
     page: Optional[int] = None
     section: Optional[str] = None
+    author: Optional[str] = None
+    publication_year: Optional[int] = None
 
 class Answer(BaseModel):
     answer: str
