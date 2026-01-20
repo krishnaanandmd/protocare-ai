@@ -455,7 +455,7 @@ function AnswerCard({
       {/* Feedback Button */}
       <div className="border-t border-white/20 pt-6">
         <a
-          href="https://docs.google.com/forms/d/1Ov1F2T2CpxxnVOz0MTVnyAsJu1GEwOYK6j0zNtlFWs4/edit?usp=drivesdk"
+          href="https://forms.gle/Eve2QFNknvkLzWwS9"
           target="_blank"
           rel="noopener noreferrer"
           className="group flex items-center justify-center gap-3 w-full px-6 py-4 rounded-xl bg-gradient-to-r from-cyan-500/20 to-teal-500/20 border-2 border-cyan-500/30 hover:border-cyan-400/50 hover:from-cyan-500/30 hover:to-teal-500/30 transition-all shadow-lg hover:shadow-cyan-500/20"
