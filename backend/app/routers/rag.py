@@ -943,13 +943,23 @@ async def rag_query(body: QueryRequest):
 
     # Search across all relevant collections and aggregate results
     all_hits = []
+    search_errors = []
     for collection_name in collections_to_search:
         try:
             retrieval.ensure_collection(collection_name)
             hits = retrieval.search(q, top_k=8, collection_name=collection_name)
             all_hits.extend(hits)
         except Exception as e:
-            logger.warning("collection_search_failed", collection=collection_name, error=str(e))
+            error_msg = str(e)
+            logger.warning("collection_search_failed", collection=collection_name, error=error_msg)
+            search_errors.append(error_msg)
+
+            # Check for OpenAI API errors and fail fast
+            if "insufficient_quota" in error_msg.lower() or "rate_limit" in error_msg.lower():
+                raise HTTPException(
+                    status_code=503,
+                    detail="AI service temporarily unavailable. Please check API credits or try again later."
+                )
     
     # Sort by score and take top results
     all_hits.sort(key=lambda h: h.score, reverse=True)
