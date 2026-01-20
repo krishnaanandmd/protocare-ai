@@ -451,6 +451,26 @@ function AnswerCard({
           </p>
         </div>
       )}
+
+      {/* Feedback Button */}
+      <div className="border-t border-white/20 pt-6">
+        <a
+          href="https://docs.google.com/forms/d/1Ov1F2T2CpxxnVOz0MTVnyAsJu1GEwOYK6j0zNtlFWs4/edit?usp=drivesdk"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center justify-center gap-3 w-full px-6 py-4 rounded-xl bg-gradient-to-r from-cyan-500/20 to-teal-500/20 border-2 border-cyan-500/30 hover:border-cyan-400/50 hover:from-cyan-500/30 hover:to-teal-500/30 transition-all shadow-lg hover:shadow-cyan-500/20"
+        >
+          <svg className="w-5 h-5 text-cyan-400 group-hover:text-cyan-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+          </svg>
+          <span className="text-sm font-semibold text-white group-hover:text-cyan-100 transition-colors">
+            Enjoyed your experience? Share your feedback!
+          </span>
+          <svg className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+      </div>
     </div>
   );
 }
