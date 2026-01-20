@@ -45,12 +45,20 @@ def ensure_collection(collection_name: str = None):
     coll_name = collection_name or settings.collection
     try:
         c.get_collection(coll_name)
-    except Exception:
-        logger.info("creating_collection", name=coll_name)
-        c.recreate_collection(
-            collection_name=coll_name,
-            vectors_config=qmodels.VectorParams(size=1536, distance=qmodels.Distance.COSINE),
-        )
+    except Exception as e:
+        # Only create if collection doesn't exist (not on other errors like network issues)
+        error_msg = str(e).lower()
+        if "not found" in error_msg or "doesn't exist" in error_msg or "not exist" in error_msg:
+            logger.info("creating_collection", name=coll_name)
+            # Use create_collection instead of recreate_collection to avoid wiping existing data
+            c.create_collection(
+                collection_name=coll_name,
+                vectors_config=qmodels.VectorParams(size=1536, distance=qmodels.Distance.COSINE),
+            )
+        else:
+            # Re-raise other exceptions (network errors, timeouts, etc.)
+            logger.error("collection_check_failed", name=coll_name, error=str(e))
+            raise
 
 def embed(text: str) -> list[float]:
     """Return a single 1536-dim embedding using text-embedding-3-small."""
