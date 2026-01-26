@@ -23,13 +23,17 @@ documents/
 ├── neck/                       # Source type: CLINICAL_GUIDELINE
 ├── back/                       # Source type: CLINICAL_GUIDELINE
 ├── aaos_knee_oa/               # Source type: AAOS
-└── Chahla Documents/           # Source type: DOCTOR_PROTOCOL
+├── Chahla Documents/           # Source type: DOCTOR_PROTOCOL
+│   ├── subfolder1/
+│   ├── subfolder2/
+│   └── ...
+└── Bedi_CareGuide/             # Source type: DOCTOR_PROTOCOL (Word docs supported)
     ├── subfolder1/
     ├── subfolder2/
     └── ...
 ```
 
-**Important:** Place all PDF files for each category into its corresponding folder. The script will find all PDFs recursively.
+**Important:** Place all document files (PDF, DOCX) for each category into its corresponding folder. The script will find all documents recursively.
 
 ## Step 2: Upload Documents
 
@@ -190,6 +194,34 @@ python batch_upload_docs.py \
   --skip-errors
 ```
 
+### For Bedi CareGuide Documents (precedence: 95)
+
+Dr. Asheesh Bedi's CareGuide documents are stored in a "Bedi_CareGuide" folder with subfolders. Each subfolder becomes a separate collection. Supports both PDF and Word documents (.docx).
+
+**Option 1: Use the dedicated script (recommended)**
+
+```bash
+# Upload all Bedi CareGuide documents at once
+./upload_bedi_docs.sh ~/documents/
+```
+
+This will:
+- Find all subfolders in `~/documents/Bedi_CareGuide/`
+- Upload each subfolder as a separate collection (`dr_asheesh_bedi_{subfolder_slug}`)
+- Support both PDF and DOCX files
+
+**Option 2: Manual upload per subfolder**
+
+```bash
+# Example: Upload a specific subfolder
+python batch_upload_docs.py \
+  --doctor "Asheesh_Bedi" \
+  --protocol "CareGuide" \
+  --directory "~/documents/Bedi_CareGuide/subfolder_name/" \
+  --source-type DOCTOR_PROTOCOL \
+  --skip-errors
+```
+
 ## Step 3: Verify Upload
 
 After uploading, you can verify the collections were created:
@@ -218,6 +250,7 @@ The upload script will create the following collections:
 - `dr_general_back`
 - `dr_general_aaos_knee_oa`
 - `dr_jorge_chahla_*` (one collection per subfolder in Chahla Documents)
+- `dr_asheesh_bedi_*` (one collection per subfolder in Bedi_CareGuide)
 
 ## Next Steps
 

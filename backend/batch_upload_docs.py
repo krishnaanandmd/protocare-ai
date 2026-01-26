@@ -17,9 +17,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 # Import the single document upload logic
 from upload_docs import upload_to_s3, slugify, process_document
 
-def find_pdf_files(directory: str) -> List[str]:
-    """Find all PDF files in the given directory."""
-    pdf_files = []
+def find_document_files(directory: str) -> List[str]:
+    """Find all document files (PDF, DOCX) in the given directory."""
+    doc_files = []
     directory_path = Path(directory)
 
     if not directory_path.exists():
@@ -28,18 +28,32 @@ def find_pdf_files(directory: str) -> List[str]:
     # Find all PDF files recursively
     for pdf_file in directory_path.rglob("*.pdf"):
         if pdf_file.is_file():
-            pdf_files.append(str(pdf_file))
+            doc_files.append(str(pdf_file))
 
     # Also check for uppercase extension
     for pdf_file in directory_path.rglob("*.PDF"):
         if pdf_file.is_file():
-            pdf_files.append(str(pdf_file))
+            doc_files.append(str(pdf_file))
 
-    return sorted(pdf_files)
+    # Find all Word documents (.docx)
+    for docx_file in directory_path.rglob("*.docx"):
+        if docx_file.is_file():
+            doc_files.append(str(docx_file))
+
+    for docx_file in directory_path.rglob("*.DOCX"):
+        if docx_file.is_file():
+            doc_files.append(str(docx_file))
+
+    return sorted(doc_files)
+
+
+def find_pdf_files(directory: str) -> List[str]:
+    """Find all PDF files in the given directory (legacy function)."""
+    return find_document_files(directory)
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Batch upload multiple PDF documents for doctor-specific protocols"
+        description="Batch upload multiple documents (PDF, DOCX) for doctor-specific protocols"
     )
     parser.add_argument(
         "--doctor",
@@ -85,15 +99,15 @@ def main():
     print()
 
     try:
-        # Find all PDF files
-        print("🔍 Scanning for PDF files...")
-        pdf_files = find_pdf_files(args.directory)
+        # Find all document files (PDF, DOCX)
+        print("🔍 Scanning for document files (PDF, DOCX)...")
+        pdf_files = find_document_files(args.directory)
 
         if not pdf_files:
-            print(f"❌ No PDF files found in {args.directory}")
+            print(f"❌ No document files found in {args.directory}")
             sys.exit(1)
 
-        print(f"✅ Found {len(pdf_files)} PDF files\n")
+        print(f"✅ Found {len(pdf_files)} document files\n")
 
         # Process each file
         successful = 0

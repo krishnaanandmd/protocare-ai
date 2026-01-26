@@ -186,6 +186,12 @@ COLLECTION_PERMISSIONS = {
     # need access to specific Chahla collections.
     # Example: "dr_jorge_chahla_hip_protocols": ["jorge_chahla", "william_long"],
 
+    # Bedi-specific protocols (uploaded from "Bedi_CareGuide" folder)
+    # Note: Collections with prefix "dr_asheesh_bedi_*" are automatically
+    # accessible to Dr. Bedi. Add entries here only if other doctors
+    # need access to specific Bedi collections.
+    # Example: "dr_asheesh_bedi_hip_protocols": ["asheesh_bedi", "jorge_chahla"],
+
     # HSS protocols
     "dr_general_hss_protocols": ["joshua_dines", "ayoosh_pareek", "sheeraz_qureshi", "william_long"],
 

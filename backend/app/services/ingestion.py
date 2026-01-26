@@ -9,6 +9,14 @@ from qdrant_client.http.models import Distance, VectorParams, PointStruct
 from openai import OpenAI
 from app.core.config import settings
 
+# Word document support
+def _check_docx_available():
+    try:
+        from docx import Document
+        return True
+    except ImportError:
+        return False
+
 # OCR imports - check dynamically to avoid caching issues
 def _check_ocr_available():
     try:
@@ -124,6 +132,78 @@ def _parse_pdf_fast(path: str) -> List[NS]:
             raise RuntimeError("PDF appears to be scanned but OCR is not available. Install: pip install pytesseract pdf2image pillow")
     
     return out
+
+def _parse_docx(path: str) -> List[NS]:
+    """Parse a Word document (.docx) and extract text."""
+    if not _check_docx_available():
+        raise RuntimeError("python-docx not installed. Run: pip install python-docx")
+
+    from docx import Document
+
+    doc = Document(path)
+    elements = []
+    current_page = 1
+
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        if text:
+            elements.append(NS(
+                text=text,
+                metadata=NS(page_number=current_page, category=para.style.name if para.style else None)
+            ))
+
+    # Also extract text from tables
+    for table in doc.tables:
+        table_text = []
+        for row in table.rows:
+            row_text = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+            if row_text:
+                table_text.append(" | ".join(row_text))
+        if table_text:
+            elements.append(NS(
+                text="\n".join(table_text),
+                metadata=NS(page_number=current_page, category="table")
+            ))
+
+    return elements
+
+def _extract_docx_metadata(path: str) -> Tuple[Optional[str], Optional[str], Optional[int]]:
+    """Extract metadata from Word document."""
+    try:
+        if not _check_docx_available():
+            return (None, None, None)
+
+        from docx import Document
+        doc = Document(path)
+
+        title = None
+        author = None
+        year = None
+
+        # Get metadata from document properties
+        core_props = doc.core_properties
+        if core_props:
+            if core_props.title:
+                title = core_props.title
+            if core_props.author:
+                author = core_props.author
+            if core_props.created:
+                year = core_props.created.year
+            if not year and core_props.modified:
+                year = core_props.modified.year
+
+        # Fallback: try to extract from first paragraph
+        if not title and doc.paragraphs:
+            for para in doc.paragraphs[:3]:
+                text = para.text.strip()
+                if text and len(text) < 200:
+                    title = text
+                    break
+
+        return (title, author, year)
+    except Exception as e:
+        log.error(f"Failed to extract docx metadata: {e}")
+        return (None, None, None)
 
 def _extract_metadata(path: str) -> Tuple[Optional[str], Optional[str], Optional[int]]:
     """
@@ -253,17 +333,24 @@ def process_document(s3_key: str, source_type: str = "OTHER", org_id: str = "dem
         path = _download(bucket, s3_key)
         log.info("Downloaded %s", path)
 
-        # Extract metadata from PDF
-        doc_title, doc_author, doc_year = _extract_metadata(path)
+        # Determine file type and parse accordingly
+        file_ext = os.path.splitext(path)[1].lower()
+
+        if file_ext in ['.docx', '.doc']:
+            # Word document
+            doc_title, doc_author, doc_year = _extract_docx_metadata(path)
+            elems = _parse_docx(path)
+        else:
+            # PDF (default)
+            doc_title, doc_author, doc_year = _extract_metadata(path)
+            elems = _parse_pdf_fast(path)
 
         # Fallback to filename if no title extracted
         if not doc_title:
             doc_title = os.path.basename(s3_key)
 
-        elems = _parse_pdf_fast(path)
-
         if not elems:
-            raise RuntimeError("No text extracted. PDF may be scanned and OCR failed, or file is empty.")
+            raise RuntimeError("No text extracted. Document may be empty or parsing failed.")
 
         chunks = _to_chunks(elems)
         log.info("Chunks pre-embed=%d", len(chunks))
