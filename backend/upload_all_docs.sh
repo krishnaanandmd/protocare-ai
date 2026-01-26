@@ -24,7 +24,8 @@ if [ -z "$1" ]; then
     echo "  ├── hip_thigh/"
     echo "  ├── neck/"
     echo "  ├── back/"
-    echo "  └── aaos_knee_oa/"
+    echo "  ├── aaos_knee_oa/"
+    echo "  └── Chahla Documents/     (with subfolders)"
     exit 1
 fi
 
@@ -43,7 +44,7 @@ echo "Documents directory: $DOCS_DIR"
 echo ""
 
 # Counter for tracking progress
-TOTAL_SETS=14
+TOTAL_SETS=15
 CURRENT=0
 
 # Function to upload a document set
@@ -117,6 +118,26 @@ upload_set "elbow" "General" "Elbow" "CLINICAL_GUIDELINE"
 upload_set "hip_thigh" "General" "Hip_Thigh" "CLINICAL_GUIDELINE"
 upload_set "neck" "General" "Neck" "CLINICAL_GUIDELINE"
 upload_set "back" "General" "Back" "CLINICAL_GUIDELINE"
+
+# Doctor-Specific Protocols (precedence: 95)
+echo ""
+echo "================================================"
+echo "👨‍⚕️ UPLOADING DOCTOR-SPECIFIC PROTOCOLS (Precedence: 95)"
+echo "================================================"
+
+# Chahla Documents (has subfolders, use dedicated script)
+CURRENT=$((CURRENT + 1))
+echo ""
+echo "========================================="
+echo "[$CURRENT/$TOTAL_SETS] Uploading: Chahla Documents"
+echo "========================================="
+
+CHAHLA_DIR="$DOCS_DIR/Chahla Documents"
+if [ -d "$CHAHLA_DIR" ]; then
+    ./upload_chahla_docs.sh "$DOCS_DIR"
+else
+    echo "⚠️  Warning: Folder 'Chahla Documents' not found, skipping..."
+fi
 
 # Final summary
 echo ""

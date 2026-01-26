@@ -180,6 +180,12 @@ COLLECTION_PERMISSIONS = {
     # Dines-specific protocols
     "dr_joshua_dines_clinic_protocols": ["joshua_dines", "asheesh_bedi"],
 
+    # Chahla-specific protocols (uploaded from "Chahla Documents" folder)
+    # Note: Collections with prefix "dr_jorge_chahla_*" are automatically
+    # accessible to Dr. Chahla. Add entries here only if other doctors
+    # need access to specific Chahla collections.
+    # Example: "dr_jorge_chahla_hip_protocols": ["jorge_chahla", "william_long"],
+
     # HSS protocols
     "dr_general_hss_protocols": ["joshua_dines", "ayoosh_pareek", "sheeraz_qureshi", "william_long"],
 

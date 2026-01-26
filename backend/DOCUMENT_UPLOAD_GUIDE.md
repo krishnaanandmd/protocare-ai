@@ -22,7 +22,11 @@ documents/
 ├── hip_thigh/                  # Source type: CLINICAL_GUIDELINE
 ├── neck/                       # Source type: CLINICAL_GUIDELINE
 ├── back/                       # Source type: CLINICAL_GUIDELINE
-└── aaos_knee_oa/               # Source type: AAOS
+├── aaos_knee_oa/               # Source type: AAOS
+└── Chahla Documents/           # Source type: DOCTOR_PROTOCOL
+    ├── subfolder1/
+    ├── subfolder2/
+    └── ...
 ```
 
 **Important:** Place all PDF files for each category into its corresponding folder. The script will find all PDFs recursively.
@@ -159,6 +163,33 @@ python batch_upload_docs.py \
   --skip-errors
 ```
 
+### For Chahla Documents (precedence: 95)
+
+Dr. Jorge Chahla's documents are stored in a "Chahla Documents" folder with subfolders. Each subfolder becomes a separate collection.
+
+**Option 1: Use the dedicated script (recommended)**
+
+```bash
+# Upload all Chahla documents at once
+./upload_chahla_docs.sh ~/documents/
+```
+
+This will:
+- Find all subfolders in `~/documents/Chahla Documents/`
+- Upload each subfolder as a separate collection (`dr_jorge_chahla_{subfolder_slug}`)
+
+**Option 2: Manual upload per subfolder**
+
+```bash
+# Example: Upload a specific subfolder
+python batch_upload_docs.py \
+  --doctor "Jorge_Chahla" \
+  --protocol "Protocols" \
+  --directory "~/documents/Chahla Documents/subfolder_name/" \
+  --source-type DOCTOR_PROTOCOL \
+  --skip-errors
+```
+
 ## Step 3: Verify Upload
 
 After uploading, you can verify the collections were created:
@@ -186,6 +217,7 @@ The upload script will create the following collections:
 - `dr_general_neck`
 - `dr_general_back`
 - `dr_general_aaos_knee_oa`
+- `dr_jorge_chahla_*` (one collection per subfolder in Chahla Documents)
 
 ## Next Steps
 
