@@ -25,7 +25,8 @@ if [ -z "$1" ]; then
     echo "  ├── neck/"
     echo "  ├── back/"
     echo "  ├── aaos_knee_oa/"
-    echo "  └── Chahla Documents/     (with subfolders)"
+    echo "  ├── Chahla Documents/     (with subfolders)"
+    echo "  └── Bedi_CareGuide/       (with subfolders, Word docs supported)"
     exit 1
 fi
 
@@ -44,7 +45,7 @@ echo "Documents directory: $DOCS_DIR"
 echo ""
 
 # Counter for tracking progress
-TOTAL_SETS=15
+TOTAL_SETS=16
 CURRENT=0
 
 # Function to upload a document set
@@ -136,7 +137,21 @@ CHAHLA_DIR="$DOCS_DIR/Chahla Documents"
 if [ -d "$CHAHLA_DIR" ]; then
     ./upload_chahla_docs.sh "$DOCS_DIR"
 else
-    echo "⚠️  Warning: Folder 'Chahla Documents' not found, skipping..."
+    echo "Warning: Folder 'Chahla Documents' not found, skipping..."
+fi
+
+# Bedi CareGuide Documents (has subfolders, use dedicated script)
+CURRENT=$((CURRENT + 1))
+echo ""
+echo "========================================="
+echo "[$CURRENT/$TOTAL_SETS] Uploading: Bedi CareGuide Documents"
+echo "========================================="
+
+BEDI_DIR="$DOCS_DIR/Bedi_CareGuide"
+if [ -d "$BEDI_DIR" ]; then
+    ./upload_bedi_docs.sh "$DOCS_DIR"
+else
+    echo "Warning: Folder 'Bedi_CareGuide' not found, skipping..."
 fi
 
 # Final summary
