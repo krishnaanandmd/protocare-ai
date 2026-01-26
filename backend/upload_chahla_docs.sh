@@ -30,7 +30,8 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-DOCS_DIR="$1"
+# Remove trailing slash if present
+DOCS_DIR="${1%/}"
 CHAHLA_DIR="$DOCS_DIR/Chahla Documents"
 
 # Check if directory exists
@@ -47,15 +48,15 @@ echo "========================================="
 echo "Documents directory: $CHAHLA_DIR"
 echo ""
 
-# Find all subfolders
-SUBFOLDERS=$(find "$CHAHLA_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
+# Count subfolders first
+TOTAL_FOLDERS=$(find "$CHAHLA_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
 
-if [ -z "$SUBFOLDERS" ]; then
+if [ "$TOTAL_FOLDERS" -eq 0 ]; then
     echo "No subfolders found in '$CHAHLA_DIR'"
     echo ""
     echo "Checking for PDFs directly in the folder..."
 
-    pdf_count=$(find "$CHAHLA_DIR" -maxdepth 1 -name "*.pdf" -o -name "*.PDF" | wc -l)
+    pdf_count=$(find "$CHAHLA_DIR" -maxdepth 1 \( -name "*.pdf" -o -name "*.PDF" \) | wc -l)
     if [ "$pdf_count" -eq 0 ]; then
         echo "No PDF files found. Nothing to upload."
         exit 0
@@ -75,10 +76,6 @@ if [ -z "$SUBFOLDERS" ]; then
     exit 0
 fi
 
-# Count subfolders
-TOTAL_FOLDERS=$(echo "$SUBFOLDERS" | wc -l)
-CURRENT=0
-
 echo "Found $TOTAL_FOLDERS subfolder(s) to process"
 echo ""
 
@@ -87,8 +84,11 @@ to_slug() {
     echo "$1" | sed 's/ /_/g' | sed 's/[^a-zA-Z0-9_]//g' | tr '[:upper:]' '[:lower:]'
 }
 
-# Process each subfolder
-for folder_path in $SUBFOLDERS; do
+CURRENT=0
+PROCESSED_FOLDERS=()
+
+# Process each subfolder using a while loop to handle spaces in names
+while IFS= read -r -d '' folder_path; do
     CURRENT=$((CURRENT + 1))
     folder_name=$(basename "$folder_path")
     protocol_slug=$(to_slug "$folder_name")
@@ -99,7 +99,7 @@ for folder_path in $SUBFOLDERS; do
     echo "========================================="
 
     # Count PDFs in this folder (recursively)
-    pdf_count=$(find "$folder_path" -name "*.pdf" -o -name "*.PDF" | wc -l)
+    pdf_count=$(find "$folder_path" \( -name "*.pdf" -o -name "*.PDF" \) | wc -l)
 
     if [ "$pdf_count" -eq 0 ]; then
         echo "⚠️  Warning: No PDF files found in '$folder_name', skipping..."
@@ -117,20 +117,19 @@ for folder_path in $SUBFOLDERS; do
         --skip-errors
 
     echo "✅ Completed: $folder_name"
-done
+    PROCESSED_FOLDERS+=("$protocol_slug")
+done < <(find "$CHAHLA_DIR" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
 
 # Final summary
 echo ""
 echo "========================================="
 echo "🎉 CHAHLA DOCUMENTS UPLOAD COMPLETE!"
 echo "========================================="
-echo "Total folders processed: $TOTAL_FOLDERS"
+echo "Total folders processed: $CURRENT"
 echo ""
 echo "Collections created (format: dr_jorge_chahla_{subfolder}):"
-for folder_path in $SUBFOLDERS; do
-    folder_name=$(basename "$folder_path")
-    protocol_slug=$(to_slug "$folder_name")
-    echo "  - dr_jorge_chahla_$protocol_slug"
+for slug in "${PROCESSED_FOLDERS[@]}"; do
+    echo "  - dr_jorge_chahla_$slug"
 done
 echo ""
 echo "Next steps:"
