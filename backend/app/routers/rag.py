@@ -215,6 +215,22 @@ PROCEDURES = {
     "rotator_cuff": {"id": "rotator_cuff", "name": "Rotator Cuff Repair", "description": "Surgical repair of torn rotator cuff"}
 }
 
+# Map body parts to related collection name keywords.
+# Used to find relevant collections when a body part is selected.
+BODY_PART_COLLECTION_KEYWORDS = {
+    "elbow": ["ucl", "elbow"],
+    "knee": ["acl", "meniscus", "knee", "aaos_knee", "lower_leg"],
+    "shoulder": ["rotator_cuff", "shoulder"],
+    "hip": ["hip", "thigh"],
+    "back": ["back"],
+    "neck": ["neck"],
+    "spine": ["back", "neck"],
+    "foot": ["foot", "ankle"],
+    "ankle": ["foot", "ankle"],
+    "hand": ["hand", "wrist"],
+    "wrist": ["hand", "wrist"],
+}
+
 # Detailed conditions and procedures by surgeon specialty
 SURGEON_SPECIALTIES = {
     "joshua_dines": {
@@ -887,17 +903,34 @@ async def rag_query(body: QueryRequest):
         if body.doctor_id in SHARED_COLLECTIONS:
             doctors_to_search.extend(SHARED_COLLECTIONS[body.doctor_id])
 
+        # Get all collections from Qdrant
+        c = retrieval.client()
+        all_collections = c.get_collections().collections
+
         if body.body_part:
-            # Search specific body part collection for all relevant doctors
+            # Search doctor collections whose names match body-part keywords
             body_part_slug = slugify(body.body_part)
+            body_part_name = body.body_part.title()
+            keywords = BODY_PART_COLLECTION_KEYWORDS.get(body_part_slug, [body_part_slug])
+
             for doc_id in doctors_to_search:
                 doc_slug = slugify(doc_id)
-                collections_to_search.append(f"dr_{doc_slug}_{body_part_slug}")
-            body_part_name = body.body_part.title()
+                doctor_prefix = f"dr_{doc_slug}_"
+                for col in all_collections:
+                    if col.name.startswith(doctor_prefix):
+                        col_suffix = col.name[len(doctor_prefix):]
+                        if any(kw in col_suffix for kw in keywords):
+                            collections_to_search.append(col.name)
+
+            # Also include matching COLLECTION_PERMISSIONS collections
+            for collection_name, allowed_doctors in COLLECTION_PERMISSIONS.items():
+                if body.doctor_id in allowed_doctors:
+                    if any(kw in collection_name for kw in keywords):
+                        collections_to_search.append(collection_name)
+
+            logger.info("searching_doctor_body_part_collections", doctor=doctor_slug, body_part=body_part_slug, keywords=keywords, collections=collections_to_search)
         else:
             # Search ALL collections for this doctor and shared doctors
-            c = retrieval.client()
-            all_collections = c.get_collections().collections
             for doc_id in doctors_to_search:
                 doc_slug = slugify(doc_id)
                 doctor_prefix = f"dr_{doc_slug}_"
@@ -928,22 +961,7 @@ async def rag_query(body: QueryRequest):
             col_name = col.name
             # Include collections like: dr_general_ucl_rct, dr_general_shoulder, etc.
             if col_name.startswith("dr_general_"):
-                # Map body parts to related procedures/collections
-                body_part_matches = {
-                    "elbow": ["ucl", "elbow"],
-                    "knee": ["acl", "meniscus", "knee", "aaos_knee", "lower_leg"],
-                    "shoulder": ["rotator_cuff", "shoulder"],
-                    "hip": ["hip", "thigh"],
-                    "back": ["back"],
-                    "neck": ["neck"],
-                    "spine": ["back", "neck"],
-                    "foot": ["foot", "ankle"],
-                    "ankle": ["foot", "ankle"],
-                    "hand": ["hand", "wrist"],
-                    "wrist": ["hand", "wrist"],
-                }
-
-                matches = body_part_matches.get(body_part_slug, [body_part_slug])
+                matches = BODY_PART_COLLECTION_KEYWORDS.get(body_part_slug, [body_part_slug])
                 for match in matches:
                     if match in col_name:
                         collections_to_search.append(col_name)
@@ -953,6 +971,9 @@ async def rag_query(body: QueryRequest):
     else:
         # Fallback to demo collection
         collections_to_search = ["org_demo_chunks"]
+
+    # Deduplicate collections while preserving order
+    collections_to_search = list(dict.fromkeys(collections_to_search))
 
     # Search across all relevant collections and aggregate results
     all_hits = []
