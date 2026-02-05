@@ -102,12 +102,15 @@ class MigrateTitlesResponse(BaseModel):
 @router.post("/migrate/titles", response_model=MigrateTitlesResponse)
 async def migrate_document_titles(dry_run: bool = True):
     """
-    Migrate existing documents to have proper titles based on original filenames.
+    Migrate existing documents to have proper titles based on original filenames from S3 metadata.
 
     This endpoint:
     1. Scans all Qdrant collections for documents with UUID-like titles
     2. Fetches the original filename from S3 metadata
     3. Updates the title in Qdrant to a readable format
+
+    Note: This only works for documents uploaded AFTER the original filename was stored in S3 metadata.
+    For older documents, use /migrate/re-extract-titles instead.
 
     Args:
         dry_run: If True (default), only report what would be changed without making changes.
@@ -129,10 +132,10 @@ async def migrate_document_titles(dry_run: bool = True):
             collections_processed += 1
             log.info(f"Processing collection: {collection_name}")
 
-            # Track which document_ids we've already processed
-            processed_doc_ids = set()
+            # Track document_ids -> list of point_ids for batch updates
+            doc_to_points: dict[str, list] = {}
 
-            # Scroll through all points in the collection
+            # First pass: collect all points grouped by document_id
             offset = None
             while True:
                 scroll_result = qdrant.scroll(
@@ -155,68 +158,57 @@ async def migrate_document_titles(dry_run: bool = True):
                     if not document_id:
                         continue
 
-                    # Skip if already processed this document_id
-                    if document_id in processed_doc_ids:
-                        continue
-                    processed_doc_ids.add(document_id)
-
-                    # Check if title looks like UUID filename
-                    if not _is_uuid_filename(current_title):
-                        documents_skipped += 1
-                        continue
-
-                    # Try to get original filename from S3 metadata
-                    try:
-                        head_resp = s3.head_object(Bucket=settings.s3_bucket, Key=document_id)
-                        original_filename = head_resp.get('Metadata', {}).get('original-filename')
-
-                        if not original_filename:
-                            log.info(f"No original filename in S3 metadata for {document_id}")
-                            documents_skipped += 1
-                            continue
-
-                        new_title = _filename_to_title(original_filename)
-
-                        if new_title and new_title != current_title:
-                            log.info(f"Would update '{current_title}' -> '{new_title}' for {document_id}")
-
-                            if not dry_run:
-                                # Update all points with this document_id in this collection
-                                # Find all point IDs for this document
-                                search_result = qdrant.scroll(
-                                    collection_name=collection_name,
-                                    scroll_filter=qmodels.Filter(
-                                        must=[
-                                            qmodels.FieldCondition(
-                                                key="document_id",
-                                                match=qmodels.MatchValue(value=document_id)
-                                            )
-                                        ]
-                                    ),
-                                    limit=1000,
-                                    with_payload=True,
-                                    with_vectors=False,
-                                )
-
-                                doc_points, _ = search_result
-                                for doc_point in doc_points:
-                                    qdrant.set_payload(
-                                        collection_name=collection_name,
-                                        payload={"title": new_title, "original_filename": original_filename},
-                                        points=[doc_point.id],
-                                    )
-
-                            documents_updated += 1
-                        else:
-                            documents_skipped += 1
-
-                    except Exception as e:
-                        error_msg = f"Error processing {document_id}: {str(e)}"
-                        log.error(error_msg)
-                        errors.append(error_msg)
+                    if document_id not in doc_to_points:
+                        doc_to_points[document_id] = {
+                            "point_ids": [],
+                            "current_title": current_title
+                        }
+                    doc_to_points[document_id]["point_ids"].append(point.id)
 
                 if offset is None:
                     break
+
+            # Second pass: process each unique document
+            for document_id, doc_info in doc_to_points.items():
+                current_title = doc_info["current_title"]
+                point_ids = doc_info["point_ids"]
+
+                # Check if title looks like UUID filename
+                if not _is_uuid_filename(current_title):
+                    documents_skipped += 1
+                    continue
+
+                # Try to get original filename from S3 metadata
+                try:
+                    head_resp = s3.head_object(Bucket=settings.s3_bucket, Key=document_id)
+                    original_filename = head_resp.get('Metadata', {}).get('original-filename')
+
+                    if not original_filename:
+                        log.info(f"No original filename in S3 metadata for {document_id}")
+                        documents_skipped += 1
+                        continue
+
+                    new_title = _filename_to_title(original_filename)
+
+                    if new_title and new_title != current_title:
+                        log.info(f"Would update '{current_title}' -> '{new_title}' for {document_id}")
+
+                        if not dry_run:
+                            # Batch update all points for this document
+                            qdrant.set_payload(
+                                collection_name=collection_name,
+                                payload={"title": new_title, "original_filename": original_filename},
+                                points=point_ids,
+                            )
+
+                        documents_updated += 1
+                    else:
+                        documents_skipped += 1
+
+                except Exception as e:
+                    error_msg = f"Error processing {document_id}: {str(e)}"
+                    log.error(error_msg)
+                    errors.append(error_msg)
 
     except Exception as e:
         error_msg = f"Migration failed: {str(e)}"
@@ -299,29 +291,35 @@ async def update_document_title(body: UpdateTitleRequest):
     qdrant = _get_qdrant_client()
 
     try:
-        # Find all points with this document_id
-        scroll_result = qdrant.scroll(
-            collection_name=body.collection_name,
-            scroll_filter=qmodels.Filter(
-                must=[
-                    qmodels.FieldCondition(
-                        key="document_id",
-                        match=qmodels.MatchValue(value=body.document_id)
-                    )
-                ]
-            ),
-            limit=1000,
-            with_payload=True,
-            with_vectors=False,
-        )
+        # Find all points with this document_id by scrolling (no filter to avoid index requirement)
+        point_ids = []
+        offset = None
 
-        points, _ = scroll_result
+        while True:
+            scroll_result = qdrant.scroll(
+                collection_name=body.collection_name,
+                limit=100,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            points, offset = scroll_result
 
-        if not points:
+            if not points:
+                break
+
+            for point in points:
+                payload = point.payload or {}
+                if payload.get("document_id") == body.document_id:
+                    point_ids.append(point.id)
+
+            if offset is None:
+                break
+
+        if not point_ids:
             raise HTTPException(status_code=404, detail=f"Document not found: {body.document_id}")
 
         # Update title for all points
-        point_ids = [point.id for point in points]
         qdrant.set_payload(
             collection_name=body.collection_name,
             payload={"title": body.new_title},
@@ -392,10 +390,10 @@ async def migrate_reextract_titles(
             collections_processed += 1
             log.info(f"Processing collection: {coll_name}")
 
-            # Track which document_ids we've already processed
-            processed_doc_ids = set()
+            # Track document_ids -> list of point_ids for batch updates
+            doc_to_points: dict[str, list] = {}
 
-            # Scroll through all points
+            # First pass: collect all points grouped by document_id
             offset = None
             while True:
                 scroll_result = qdrant.scroll(
@@ -415,98 +413,97 @@ async def migrate_reextract_titles(
                     document_id = payload.get("document_id")
                     current_title = payload.get("title", "")
 
-                    if not document_id or document_id in processed_doc_ids:
+                    if not document_id:
                         continue
-                    processed_doc_ids.add(document_id)
-                    documents_processed += 1
 
-                    # Check if title needs updating (UUID-like or "Unknown")
-                    if not _is_uuid_filename(current_title) and current_title not in ["Unknown", "Unknown Document"]:
-                        continue
+                    # Initialize or append to the list of points for this document
+                    if document_id not in doc_to_points:
+                        doc_to_points[document_id] = {
+                            "point_ids": [],
+                            "current_title": current_title
+                        }
+                    doc_to_points[document_id]["point_ids"].append(point.id)
+
+                if offset is None:
+                    break
+
+            # Second pass: process each unique document
+            for document_id, doc_info in doc_to_points.items():
+                current_title = doc_info["current_title"]
+                point_ids = doc_info["point_ids"]
+                documents_processed += 1
+
+                # Check if title needs updating (UUID-like or "Unknown")
+                if not _is_uuid_filename(current_title) and current_title not in ["Unknown", "Unknown Document"]:
+                    continue
+
+                try:
+                    # Download file from S3
+                    file_ext = os.path.splitext(document_id)[1].lower()
+                    fd, temp_path = tempfile.mkstemp(suffix=file_ext)
+                    os.close(fd)
 
                     try:
-                        # Download file from S3
-                        file_ext = os.path.splitext(document_id)[1].lower()
-                        fd, temp_path = tempfile.mkstemp(suffix=file_ext)
-                        os.close(fd)
+                        with open(temp_path, "wb") as f:
+                            s3.download_fileobj(settings.s3_bucket, document_id, f)
 
-                        try:
-                            with open(temp_path, "wb") as f:
-                                s3.download_fileobj(settings.s3_bucket, document_id, f)
+                        # Extract metadata based on file type
+                        if file_ext in ['.docx', '.doc']:
+                            doc_title, doc_author, doc_year = _extract_docx_metadata(temp_path)
+                        else:
+                            doc_title, doc_author, doc_year = _extract_metadata(temp_path)
 
-                            # Extract metadata based on file type
-                            if file_ext in ['.docx', '.doc']:
-                                doc_title, doc_author, doc_year = _extract_docx_metadata(temp_path)
-                            else:
-                                doc_title, doc_author, doc_year = _extract_metadata(temp_path)
-
-                            # Check S3 metadata for original filename as fallback
-                            if not doc_title:
+                        # Check S3 metadata for original filename as fallback
+                        if not doc_title:
+                            try:
                                 head_resp = s3.head_object(Bucket=settings.s3_bucket, Key=document_id)
                                 original_filename = head_resp.get('Metadata', {}).get('original-filename')
                                 if original_filename:
                                     doc_title = _filename_to_title(original_filename)
-
-                            if doc_title and doc_title != current_title:
-                                update_info = {
-                                    "document_id": document_id,
-                                    "old_title": current_title,
-                                    "new_title": doc_title,
-                                    "author": doc_author,
-                                    "year": doc_year,
-                                }
-                                updates.append(update_info)
-                                log.info(f"Would update: {current_title} -> {doc_title}")
-
-                                if not dry_run:
-                                    # Find all points for this document
-                                    doc_scroll = qdrant.scroll(
-                                        collection_name=coll_name,
-                                        scroll_filter=qmodels.Filter(
-                                            must=[
-                                                qmodels.FieldCondition(
-                                                    key="document_id",
-                                                    match=qmodels.MatchValue(value=document_id)
-                                                )
-                                            ]
-                                        ),
-                                        limit=1000,
-                                        with_payload=False,
-                                        with_vectors=False,
-                                    )
-                                    doc_points, _ = doc_scroll
-
-                                    # Update payload
-                                    update_payload = {"title": doc_title}
-                                    if doc_author:
-                                        update_payload["author"] = doc_author
-                                    if doc_year:
-                                        update_payload["publication_year"] = doc_year
-
-                                    for doc_point in doc_points:
-                                        qdrant.set_payload(
-                                            collection_name=coll_name,
-                                            payload=update_payload,
-                                            points=[doc_point.id],
-                                        )
-
-                                documents_updated += 1
-
-                        finally:
-                            # Clean up temp file
-                            try:
-                                os.unlink(temp_path)
-                            except:
+                            except Exception:
                                 pass
 
-                    except Exception as e:
-                        error_msg = f"Error processing {document_id}: {str(e)}"
-                        log.error(error_msg)
-                        errors.append(error_msg)
-                        documents_failed += 1
+                        if doc_title and doc_title != current_title:
+                            update_info = {
+                                "document_id": document_id,
+                                "old_title": current_title,
+                                "new_title": doc_title,
+                                "author": doc_author,
+                                "year": doc_year,
+                                "chunks": len(point_ids),
+                            }
+                            updates.append(update_info)
+                            log.info(f"Would update: {current_title} -> {doc_title} ({len(point_ids)} chunks)")
 
-                if offset is None:
-                    break
+                            if not dry_run:
+                                # Update payload for all points at once
+                                update_payload = {"title": doc_title}
+                                if doc_author:
+                                    update_payload["author"] = doc_author
+                                if doc_year:
+                                    update_payload["publication_year"] = doc_year
+
+                                # Batch update all points for this document
+                                qdrant.set_payload(
+                                    collection_name=coll_name,
+                                    payload=update_payload,
+                                    points=point_ids,
+                                )
+
+                            documents_updated += 1
+
+                    finally:
+                        # Clean up temp file
+                        try:
+                            os.unlink(temp_path)
+                        except:
+                            pass
+
+                except Exception as e:
+                    error_msg = f"Error processing {document_id}: {str(e)}"
+                    log.error(error_msg)
+                    errors.append(error_msg)
+                    documents_failed += 1
 
     except Exception as e:
         error_msg = f"Migration failed: {str(e)}"
