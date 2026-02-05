@@ -7,7 +7,7 @@ import { DoctorAutocomplete } from "@/components/DoctorAutocomplete";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 
-type Citation = { title: string; document_id: string; page?: number; section?: string; author?: string; publication_year?: number; };
+type Citation = { title: string; document_id: string; page?: number; section?: string; author?: string; publication_year?: number; document_url?: string; };
 type Answer = { answer: string; citations: Citation[]; guardrails: Record<string, any>; latency_ms: number; };
 type Doctor = { id: string; name: string; specialty: string; };
 type BodyPart = { id: string; name: string; description: string; };
@@ -419,13 +419,20 @@ function AnswerCard({
                 ? `${c.author} (${c.publication_year})`
                 : c.author || null;
 
-              return (
-                <div key={idx} className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+              const citationContent = (
+                <>
                   <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-600 text-white text-xs font-bold flex-shrink-0 shadow-lg">
                     {idx + 1}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-white text-sm">{c.title}</p>
+                    <p className="font-semibold text-white text-sm flex items-center gap-2">
+                      {c.title}
+                      {c.document_url && (
+                        <svg className="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      )}
+                    </p>
                     {authorCitation && (
                       <p className="text-sm text-slate-300 mt-1">{authorCitation}</p>
                     )}
@@ -434,6 +441,27 @@ function AnswerCard({
                       {typeof c.page === "number" && <span>Page {c.page}</span>}
                     </p>
                   </div>
+                </>
+              );
+
+              // Make citation clickable if document_url is available
+              if (c.document_url) {
+                return (
+                  <a
+                    key={idx}
+                    href={c.document_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/30 transition-all cursor-pointer group"
+                  >
+                    {citationContent}
+                  </a>
+                );
+              }
+
+              return (
+                <div key={idx} className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                  {citationContent}
                 </div>
               );
             })}

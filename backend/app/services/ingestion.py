@@ -59,13 +59,43 @@ def _ensure_collection(cli: QdrantClient, collection_name: str):
             vectors_config=VectorParams(size=1536, distance=Distance.COSINE)
         )
 
-def _download(bucket: str, key: str) -> str:
-    _s3().head_object(Bucket=bucket, Key=key)
+def _download(bucket: str, key: str) -> Tuple[str, Optional[str]]:
+    """Download file from S3 and return (local_path, original_filename)."""
+    head_resp = _s3().head_object(Bucket=bucket, Key=key)
+    # Get original filename from S3 metadata
+    original_filename = head_resp.get('Metadata', {}).get('original-filename')
+
     fd, path = tempfile.mkstemp(prefix="doc-", suffix=os.path.splitext(key)[1])
     os.close(fd)
-    with open(path, "wb") as f: 
+    with open(path, "wb") as f:
         _s3().download_fileobj(bucket, key, f)
-    return path
+    return path, original_filename
+
+
+def _filename_to_title(filename: str) -> str:
+    """Convert a filename to a readable title.
+
+    Examples:
+        "Rotator_Cuff_Repair_Protocol.pdf" -> "Rotator Cuff Repair Protocol"
+        "UCL-reconstruction-2023.docx" -> "UCL Reconstruction 2023"
+    """
+    if not filename:
+        return "Unknown Document"
+
+    # Remove file extension
+    name = os.path.splitext(filename)[0]
+
+    # Replace underscores and hyphens with spaces
+    name = name.replace('_', ' ').replace('-', ' ')
+
+    # Clean up multiple spaces
+    name = ' '.join(name.split())
+
+    # Title case if all lowercase or all uppercase
+    if name.islower() or name.isupper():
+        name = name.title()
+
+    return name.strip() if name.strip() else "Unknown Document"
 
 def _ocr_pdf(path: str) -> List[NS]:
     """Extract text from scanned PDF using OCR."""
@@ -323,15 +353,15 @@ def _embed(texts: List[str]) -> List[List[float]]:
 def process_document(s3_key: str, source_type: str = "OTHER", org_id: str = "demo"):
     bucket = settings.s3_bucket
     doc_id = s3_key
-    
+
     # Extract collection name from org_id (which is dr_name_protocol format)
     collection_name = org_id if org_id.startswith("dr_") else settings.collection
-    
+
     STATUS[doc_id] = {"state":"processing"}
     log.info("INGEST start %s", s3_key)
     try:
-        path = _download(bucket, s3_key)
-        log.info("Downloaded %s", path)
+        path, original_filename = _download(bucket, s3_key)
+        log.info("Downloaded %s (original filename: %s)", path, original_filename)
 
         # Determine file type and parse accordingly
         file_ext = os.path.splitext(path)[1].lower()
@@ -345,9 +375,13 @@ def process_document(s3_key: str, source_type: str = "OTHER", org_id: str = "dem
             doc_title, doc_author, doc_year = _extract_metadata(path)
             elems = _parse_pdf_fast(path)
 
-        # Fallback to filename if no title extracted
+        # Fallback to original filename (from S3 metadata) if no title extracted
         if not doc_title:
-            doc_title = os.path.basename(s3_key)
+            if original_filename:
+                doc_title = _filename_to_title(original_filename)
+            else:
+                # Last resort: use S3 key basename
+                doc_title = _filename_to_title(os.path.basename(s3_key))
 
         if not elems:
             raise RuntimeError("No text extracted. Document may be empty or parsing failed.")
@@ -379,7 +413,8 @@ def process_document(s3_key: str, source_type: str = "OTHER", org_id: str = "dem
                 "title": doc_title,
                 "author": doc_author,
                 "publication_year": doc_year,
-                "chunk_index": i  # Add chunk index to payload for reference
+                "chunk_index": i,  # Add chunk index to payload for reference
+                "original_filename": original_filename,  # Preserve original filename for reference
             }
             points.append(PointStruct(id=pid, vector=v, payload=payload))
         

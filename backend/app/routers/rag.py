@@ -4,6 +4,7 @@ from app.models.schemas import QueryRequest, Answer, Citation, DoctorProfile
 from app.core.logging import logger
 from app.core.config import settings
 from app.services import retrieval
+from app.services.s3_uploads import presign_get
 
 router = APIRouter()
 
@@ -990,6 +991,14 @@ async def rag_query(body: QueryRequest):
             context_parts.append(f"[Source {i+1}: {title}]\n{text}\n")
 
             if i < 4:
+                # Generate presigned URL for document viewing
+                document_url = None
+                if doc_id and doc_id != "unknown" and doc_id.startswith("uploads/"):
+                    try:
+                        document_url = presign_get(doc_id, expiry_seconds=3600)  # 1 hour expiry
+                    except Exception as e:
+                        logger.warning("presign_url_failed", document_id=doc_id, error=str(e))
+
                 citations.append(
                     Citation(
                         title=title,
@@ -998,6 +1007,7 @@ async def rag_query(body: QueryRequest):
                         section=section,
                         author=author,
                         publication_year=publication_year,
+                        document_url=document_url,
                     )
                 )
         
