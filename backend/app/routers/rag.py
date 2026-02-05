@@ -895,57 +895,31 @@ async def rag_query(body: QueryRequest):
     collections_to_search = []
 
     if body.doctor_id:
+        # Path 1: Specific Surgeon — search ALL of this doctor's collections
         doctor_slug = slugify(body.doctor_id)
         doctor_name = DOCTORS.get(body.doctor_id, {}).get("name", body.doctor_id)
 
-        # Get list of doctors whose collections to search (including shared collections)
+        # Include shared doctors (e.g. Bedi also searches Dines' collections)
         doctors_to_search = [body.doctor_id]
         if body.doctor_id in SHARED_COLLECTIONS:
             doctors_to_search.extend(SHARED_COLLECTIONS[body.doctor_id])
 
-        # Get all collections from Qdrant
+        # Find every collection belonging to this doctor (and shared doctors)
         c = retrieval.client()
         all_collections = c.get_collections().collections
+        for doc_id in doctors_to_search:
+            doc_slug = slugify(doc_id)
+            doctor_prefix = f"dr_{doc_slug}_"
+            for col in all_collections:
+                if col.name.startswith(doctor_prefix):
+                    collections_to_search.append(col.name)
 
-        if body.body_part:
-            # Search doctor collections whose names match body-part keywords
-            body_part_slug = slugify(body.body_part)
-            body_part_name = body.body_part.title()
-            keywords = BODY_PART_COLLECTION_KEYWORDS.get(body_part_slug, [body_part_slug])
+        # Add collections from COLLECTION_PERMISSIONS
+        for collection_name, allowed_doctors in COLLECTION_PERMISSIONS.items():
+            if body.doctor_id in allowed_doctors:
+                collections_to_search.append(collection_name)
 
-            for doc_id in doctors_to_search:
-                doc_slug = slugify(doc_id)
-                doctor_prefix = f"dr_{doc_slug}_"
-                for col in all_collections:
-                    if col.name.startswith(doctor_prefix):
-                        col_suffix = col.name[len(doctor_prefix):]
-                        if any(kw in col_suffix for kw in keywords):
-                            collections_to_search.append(col.name)
-
-            # Also include matching COLLECTION_PERMISSIONS collections
-            for collection_name, allowed_doctors in COLLECTION_PERMISSIONS.items():
-                if body.doctor_id in allowed_doctors:
-                    if any(kw in collection_name for kw in keywords):
-                        collections_to_search.append(collection_name)
-
-            logger.info("searching_doctor_body_part_collections", doctor=doctor_slug, body_part=body_part_slug, keywords=keywords, collections=collections_to_search)
-        else:
-            # Search ALL collections for this doctor and shared doctors
-            for doc_id in doctors_to_search:
-                doc_slug = slugify(doc_id)
-                doctor_prefix = f"dr_{doc_slug}_"
-                doctor_collections = [
-                    col.name for col in all_collections
-                    if col.name.startswith(doctor_prefix)
-                ]
-                collections_to_search.extend(doctor_collections)
-
-            # Add collections from COLLECTION_PERMISSIONS
-            for collection_name, allowed_doctors in COLLECTION_PERMISSIONS.items():
-                if body.doctor_id in allowed_doctors:
-                    collections_to_search.append(collection_name)
-
-            logger.info("searching_all_doctor_collections", doctor=doctor_slug, shared_doctors=doctors_to_search, collections=len(collections_to_search))
+        logger.info("searching_doctor_collections", doctor=doctor_slug, shared_doctors=doctors_to_search, collections=collections_to_search)
     elif body.body_part:
         # CareGuide MSK Model: body part selected without specific doctor
         # Search general collections and body-part specific collections
@@ -1035,18 +1009,7 @@ async def rag_query(body: QueryRequest):
         context = "\n".join(context_parts)
         
         if body.actor == "PROVIDER":
-            if doctor_name and body_part_name:
-                system_prompt = f"""You are a clinical assistant helping providers understand Dr. {doctor_name}'s protocols for {body_part_name}.
-
-Guidelines:
-- Provide evidence-based answers using ONLY the provided protocols
-- Use appropriate medical terminology
-- Include specific clinical details from Dr. {doctor_name}'s preferences
-- When making specific claims or recommendations, cite the source using (Author Year) format if the author and publication year are evident in the source text, otherwise use (Source N) format
-- Multiple citations should be formatted as (Author1 Year; Author2 Year) or (Source 1; Source 2)
-- If protocols are unclear, acknowledge limitations
-- Never fabricate information or citations"""
-            elif doctor_name:
+            if doctor_name:
                 system_prompt = f"""You are a clinical assistant helping providers understand Dr. {doctor_name}'s protocols.
 
 Guidelines:
@@ -1057,20 +1020,12 @@ Guidelines:
 - Multiple citations should be formatted as (Author1 Year; Author2 Year) or (Source 1; Source 2)
 - If protocols are unclear, acknowledge limitations
 - Never fabricate information or citations"""
+            elif body_part_name:
+                system_prompt = f"""You are a clinical decision support assistant for {body_part_name} conditions. Provide evidence-based answers using ONLY the provided sources. When making specific claims, cite sources using (Author Year) format if evident in the text, otherwise use (Source N) format."""
             else:
                 system_prompt = """You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. When making specific claims, cite sources using (Author Year) format if evident in the text, otherwise use (Source N) format."""
         else:
-            if doctor_name and body_part_name:
-                system_prompt = f"""You are a patient education assistant explaining Dr. {doctor_name}'s approach to {body_part_name}.
-
-Guidelines:
-- Use clear, patient-friendly language
-- Base answers strictly on Dr. {doctor_name}'s protocols
-- When making specific points, reference the research by mentioning the lead author's last name and publication year if evident in the source (e.g., "Research by Smith in 2020 found that...")
-- This helps patients understand the evidence behind recommendations
-- Encourage patients to discuss specifics with their care team
-- Never provide medical advice or fabricate information or citations"""
-            elif doctor_name:
+            if doctor_name:
                 system_prompt = f"""You are a patient education assistant explaining Dr. {doctor_name}'s treatment approaches.
 
 Guidelines:
@@ -1080,6 +1035,8 @@ Guidelines:
 - This helps patients understand the evidence behind recommendations
 - Encourage patients to discuss specifics with their care team
 - Never provide medical advice or fabricate information or citations"""
+            elif body_part_name:
+                system_prompt = f"""You are a patient education assistant for {body_part_name} conditions. Answer using ONLY the provided sources in clear language. When making specific points, reference the research by author and year if evident in the source text. Encourage patients to discuss specifics with their care team."""
             else:
                 system_prompt = """You are a patient education assistant. Answer using ONLY the provided sources in clear language. When making specific points, reference the research by author and year if evident in the source text."""
         
