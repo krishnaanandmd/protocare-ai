@@ -1009,9 +1009,25 @@ async def rag_query(body: QueryRequest):
         except Exception as e:
             logger.warning("collection_search_failed", collection=collection_name, error=str(e))
 
-    # Sort by score and take top results
-    all_hits.sort(key=lambda h: h.score, reverse=True)
-    hits = all_hits[:8]
+    # Tiered ranking: surgeon's own protocols are the primary source of truth,
+    # supplemented by shared collections and general evidence (RCTs, guidelines).
+    if body.doctor_id:
+        doctor_prefix = f"dr_{slugify(body.doctor_id)}_"
+        primary_hits = sorted(
+            [h for h in all_hits if (h.payload or {}).get("_source_collection", "").startswith(doctor_prefix)],
+            key=lambda h: h.score, reverse=True,
+        )
+        supplementary_hits = sorted(
+            [h for h in all_hits if not (h.payload or {}).get("_source_collection", "").startswith(doctor_prefix)],
+            key=lambda h: h.score, reverse=True,
+        )
+        # Guarantee the surgeon's own protocols are represented, then fill with evidence
+        hits = primary_hits[:8] + supplementary_hits[:7]
+        hits.sort(key=lambda h: h.score, reverse=True)
+    else:
+        # CareGuide path: flat ranking across general collections
+        all_hits.sort(key=lambda h: h.score, reverse=True)
+        hits = all_hits[:12]
 
     # Log which collections contributed to the top results
     if hits:
@@ -1028,8 +1044,8 @@ async def rag_query(body: QueryRequest):
     else:
         context_parts = []
         citations = []
-        
-        for i, h in enumerate(hits[:6]):
+
+        for i, h in enumerate(hits):
             p = h.payload or {}
             text = p.get("text", "")
             title = p.get("title", "Unknown")
@@ -1041,26 +1057,34 @@ async def rag_query(body: QueryRequest):
 
             context_parts.append(f"[Source {i+1}: {title}]\n{text}\n")
 
-            if i < 4:
-                # Generate presigned URL for document viewing
-                document_url = None
-                if doc_id and doc_id != "unknown" and doc_id.startswith("uploads/"):
-                    try:
-                        document_url = presign_get(doc_id, expiry_seconds=3600)  # 1 hour expiry
-                    except Exception as e:
-                        logger.warning("presign_url_failed", document_id=doc_id, error=str(e))
+            # Generate presigned URL for document viewing
+            document_url = None
+            if doc_id and doc_id != "unknown" and doc_id.startswith("uploads/"):
+                try:
+                    document_url = presign_get(doc_id, expiry_seconds=3600)
+                except Exception as e:
+                    logger.warning("presign_url_failed", document_id=doc_id, error=str(e))
 
-                citations.append(
-                    Citation(
-                        title=title,
-                        document_id=doc_id,
-                        page=page,
-                        section=section,
-                        author=author,
-                        publication_year=publication_year,
-                        document_url=document_url,
-                    )
+            citations.append(
+                Citation(
+                    title=title,
+                    document_id=doc_id,
+                    page=page,
+                    section=section,
+                    author=author,
+                    publication_year=publication_year,
+                    document_url=document_url,
                 )
+            )
+
+        # Deduplicate citations by document_id (same doc may appear in multiple chunks)
+        seen_docs = set()
+        unique_citations = []
+        for c in citations:
+            if c.document_id not in seen_docs:
+                seen_docs.add(c.document_id)
+                unique_citations.append(c)
+        citations = unique_citations
         
         context = "\n".join(context_parts)
         
@@ -1112,7 +1136,7 @@ Provide a helpful, accurate answer based solely on these sources."""
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.3,
-            max_tokens=800
+            max_tokens=1200
         )
         
         answer_text = response.choices[0].message.content or "I couldn't generate an answer."
