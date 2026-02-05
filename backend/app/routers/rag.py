@@ -114,8 +114,51 @@ async def list_collections():
     except Exception as e:
         return {"error": str(e)}
 
+@router.get("/debug/doctor-collections/{doctor_id}")
+async def debug_doctor_collections(doctor_id: str):
+    """Show exactly which collections would be searched for a given doctor."""
+    try:
+        c = retrieval.client()
+        all_collections = c.get_collections().collections
 
+        doctors_to_search = [doctor_id]
+        if doctor_id in SHARED_COLLECTIONS:
+            doctors_to_search.extend(SHARED_COLLECTIONS[doctor_id])
 
+        # Doctor-prefixed collections
+        own_collections = []
+        shared_collections = []
+        for doc_id in doctors_to_search:
+            doc_slug = slugify(doc_id)
+            prefix = f"dr_{doc_slug}_"
+            for col in all_collections:
+                if col.name.startswith(prefix):
+                    col_info = c.get_collection(col.name)
+                    entry = {"name": col.name, "points_count": col_info.points_count}
+                    if doc_id == doctor_id:
+                        own_collections.append(entry)
+                    else:
+                        shared_collections.append(entry)
+
+        # Permission-based collections
+        permission_collections = []
+        for col_name, allowed in COLLECTION_PERMISSIONS.items():
+            if doctor_id in allowed:
+                try:
+                    col_info = c.get_collection(col_name)
+                    permission_collections.append({"name": col_name, "points_count": col_info.points_count})
+                except Exception:
+                    permission_collections.append({"name": col_name, "points_count": 0, "note": "collection not found"})
+
+        return {
+            "doctor_id": doctor_id,
+            "own_collections": own_collections,
+            "shared_collections": shared_collections,
+            "permission_collections": permission_collections,
+            "total_searched": len(own_collections) + len(shared_collections) + len(permission_collections),
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 # Sample doctor profiles (in production, this would be a database)
 DOCTORS = {
@@ -213,6 +256,22 @@ PROCEDURES = {
     "ucl": {"id": "ucl", "name": "UCL Reconstruction (Tommy John)", "description": "Ulnar collateral ligament reconstruction"},
     "acl": {"id": "acl", "name": "ACL Reconstruction", "description": "Anterior cruciate ligament reconstruction"},
     "rotator_cuff": {"id": "rotator_cuff", "name": "Rotator Cuff Repair", "description": "Surgical repair of torn rotator cuff"}
+}
+
+# Map body parts to related collection name keywords.
+# Used to find relevant collections when a body part is selected.
+BODY_PART_COLLECTION_KEYWORDS = {
+    "elbow": ["ucl", "elbow"],
+    "knee": ["acl", "meniscus", "knee", "aaos_knee", "lower_leg"],
+    "shoulder": ["rotator_cuff", "shoulder"],
+    "hip": ["hip", "thigh"],
+    "back": ["back"],
+    "neck": ["neck"],
+    "spine": ["back", "neck"],
+    "foot": ["foot", "ankle"],
+    "ankle": ["foot", "ankle"],
+    "hand": ["hand", "wrist"],
+    "wrist": ["hand", "wrist"],
 }
 
 # Detailed conditions and procedures by surgeon specialty
@@ -879,40 +938,31 @@ async def rag_query(body: QueryRequest):
     collections_to_search = []
 
     if body.doctor_id:
+        # Path 1: Specific Surgeon — search ALL of this doctor's collections
         doctor_slug = slugify(body.doctor_id)
         doctor_name = DOCTORS.get(body.doctor_id, {}).get("name", body.doctor_id)
 
-        # Get list of doctors whose collections to search (including shared collections)
+        # Include shared doctors (e.g. Bedi also searches Dines' collections)
         doctors_to_search = [body.doctor_id]
         if body.doctor_id in SHARED_COLLECTIONS:
             doctors_to_search.extend(SHARED_COLLECTIONS[body.doctor_id])
 
-        if body.body_part:
-            # Search specific body part collection for all relevant doctors
-            body_part_slug = slugify(body.body_part)
-            for doc_id in doctors_to_search:
-                doc_slug = slugify(doc_id)
-                collections_to_search.append(f"dr_{doc_slug}_{body_part_slug}")
-            body_part_name = body.body_part.title()
-        else:
-            # Search ALL collections for this doctor and shared doctors
-            c = retrieval.client()
-            all_collections = c.get_collections().collections
-            for doc_id in doctors_to_search:
-                doc_slug = slugify(doc_id)
-                doctor_prefix = f"dr_{doc_slug}_"
-                doctor_collections = [
-                    col.name for col in all_collections
-                    if col.name.startswith(doctor_prefix)
-                ]
-                collections_to_search.extend(doctor_collections)
+        # Find every collection belonging to this doctor (and shared doctors)
+        c = retrieval.client()
+        all_collections = c.get_collections().collections
+        for doc_id in doctors_to_search:
+            doc_slug = slugify(doc_id)
+            doctor_prefix = f"dr_{doc_slug}_"
+            for col in all_collections:
+                if col.name.startswith(doctor_prefix):
+                    collections_to_search.append(col.name)
 
-            # Add collections from COLLECTION_PERMISSIONS
-            for collection_name, allowed_doctors in COLLECTION_PERMISSIONS.items():
-                if body.doctor_id in allowed_doctors:
-                    collections_to_search.append(collection_name)
+        # Add collections from COLLECTION_PERMISSIONS
+        for collection_name, allowed_doctors in COLLECTION_PERMISSIONS.items():
+            if body.doctor_id in allowed_doctors:
+                collections_to_search.append(collection_name)
 
-            logger.info("searching_all_doctor_collections", doctor=doctor_slug, shared_doctors=doctors_to_search, collections=len(collections_to_search))
+        logger.info("searching_doctor_collections", doctor=doctor_slug, shared_doctors=doctors_to_search, collections=collections_to_search)
     elif body.body_part:
         # CareGuide MSK Model: body part selected without specific doctor
         # Search general collections and body-part specific collections
@@ -928,22 +978,7 @@ async def rag_query(body: QueryRequest):
             col_name = col.name
             # Include collections like: dr_general_ucl_rct, dr_general_shoulder, etc.
             if col_name.startswith("dr_general_"):
-                # Map body parts to related procedures/collections
-                body_part_matches = {
-                    "elbow": ["ucl", "elbow"],
-                    "knee": ["acl", "meniscus", "knee", "aaos_knee", "lower_leg"],
-                    "shoulder": ["rotator_cuff", "shoulder"],
-                    "hip": ["hip", "thigh"],
-                    "back": ["back"],
-                    "neck": ["neck"],
-                    "spine": ["back", "neck"],
-                    "foot": ["foot", "ankle"],
-                    "ankle": ["foot", "ankle"],
-                    "hand": ["hand", "wrist"],
-                    "wrist": ["hand", "wrist"],
-                }
-
-                matches = body_part_matches.get(body_part_slug, [body_part_slug])
+                matches = BODY_PART_COLLECTION_KEYWORDS.get(body_part_slug, [body_part_slug])
                 for match in matches:
                     if match in col_name:
                         collections_to_search.append(col_name)
@@ -954,19 +989,35 @@ async def rag_query(body: QueryRequest):
         # Fallback to demo collection
         collections_to_search = ["org_demo_chunks"]
 
+    # Deduplicate collections while preserving order
+    collections_to_search = list(dict.fromkeys(collections_to_search))
+
     # Search across all relevant collections and aggregate results
     all_hits = []
+    hits_by_collection = {}
     for collection_name in collections_to_search:
         try:
             retrieval.ensure_collection(collection_name)
             hits = retrieval.search(q, top_k=8, collection_name=collection_name)
+            hits_by_collection[collection_name] = len(hits)
+            # Tag each hit with its source collection for debugging
+            for h in hits:
+                if h.payload is None:
+                    h.payload = {}
+                h.payload["_source_collection"] = collection_name
             all_hits.extend(hits)
         except Exception as e:
             logger.warning("collection_search_failed", collection=collection_name, error=str(e))
-    
+
     # Sort by score and take top results
     all_hits.sort(key=lambda h: h.score, reverse=True)
     hits = all_hits[:8]
+
+    # Log which collections contributed to the top results
+    if hits:
+        top_sources = [(h.payload or {}).get("_source_collection", "?") for h in hits]
+        top_scores = [round(h.score, 4) for h in hits]
+        logger.info("rag_top_hits", sources=top_sources, scores=top_scores, hits_per_collection=hits_by_collection)
 
     if not hits:
         if doctor_name:
@@ -1014,18 +1065,7 @@ async def rag_query(body: QueryRequest):
         context = "\n".join(context_parts)
         
         if body.actor == "PROVIDER":
-            if doctor_name and body_part_name:
-                system_prompt = f"""You are a clinical assistant helping providers understand Dr. {doctor_name}'s protocols for {body_part_name}.
-
-Guidelines:
-- Provide evidence-based answers using ONLY the provided protocols
-- Use appropriate medical terminology
-- Include specific clinical details from Dr. {doctor_name}'s preferences
-- When making specific claims or recommendations, cite the source using (Author Year) format if the author and publication year are evident in the source text, otherwise use (Source N) format
-- Multiple citations should be formatted as (Author1 Year; Author2 Year) or (Source 1; Source 2)
-- If protocols are unclear, acknowledge limitations
-- Never fabricate information or citations"""
-            elif doctor_name:
+            if doctor_name:
                 system_prompt = f"""You are a clinical assistant helping providers understand Dr. {doctor_name}'s protocols.
 
 Guidelines:
@@ -1036,20 +1076,12 @@ Guidelines:
 - Multiple citations should be formatted as (Author1 Year; Author2 Year) or (Source 1; Source 2)
 - If protocols are unclear, acknowledge limitations
 - Never fabricate information or citations"""
+            elif body_part_name:
+                system_prompt = f"""You are a clinical decision support assistant for {body_part_name} conditions. Provide evidence-based answers using ONLY the provided sources. When making specific claims, cite sources using (Author Year) format if evident in the text, otherwise use (Source N) format."""
             else:
                 system_prompt = """You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. When making specific claims, cite sources using (Author Year) format if evident in the text, otherwise use (Source N) format."""
         else:
-            if doctor_name and body_part_name:
-                system_prompt = f"""You are a patient education assistant explaining Dr. {doctor_name}'s approach to {body_part_name}.
-
-Guidelines:
-- Use clear, patient-friendly language
-- Base answers strictly on Dr. {doctor_name}'s protocols
-- When making specific points, reference the research by mentioning the lead author's last name and publication year if evident in the source (e.g., "Research by Smith in 2020 found that...")
-- This helps patients understand the evidence behind recommendations
-- Encourage patients to discuss specifics with their care team
-- Never provide medical advice or fabricate information or citations"""
-            elif doctor_name:
+            if doctor_name:
                 system_prompt = f"""You are a patient education assistant explaining Dr. {doctor_name}'s treatment approaches.
 
 Guidelines:
@@ -1059,6 +1091,8 @@ Guidelines:
 - This helps patients understand the evidence behind recommendations
 - Encourage patients to discuss specifics with their care team
 - Never provide medical advice or fabricate information or citations"""
+            elif body_part_name:
+                system_prompt = f"""You are a patient education assistant for {body_part_name} conditions. Answer using ONLY the provided sources in clear language. When making specific points, reference the research by author and year if evident in the source text. Encourage patients to discuss specifics with their care team."""
             else:
                 system_prompt = """You are a patient education assistant. Answer using ONLY the provided sources in clear language. When making specific points, reference the research by author and year if evident in the source text."""
         
