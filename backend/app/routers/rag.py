@@ -114,8 +114,51 @@ async def list_collections():
     except Exception as e:
         return {"error": str(e)}
 
+@router.get("/debug/doctor-collections/{doctor_id}")
+async def debug_doctor_collections(doctor_id: str):
+    """Show exactly which collections would be searched for a given doctor."""
+    try:
+        c = retrieval.client()
+        all_collections = c.get_collections().collections
 
+        doctors_to_search = [doctor_id]
+        if doctor_id in SHARED_COLLECTIONS:
+            doctors_to_search.extend(SHARED_COLLECTIONS[doctor_id])
 
+        # Doctor-prefixed collections
+        own_collections = []
+        shared_collections = []
+        for doc_id in doctors_to_search:
+            doc_slug = slugify(doc_id)
+            prefix = f"dr_{doc_slug}_"
+            for col in all_collections:
+                if col.name.startswith(prefix):
+                    col_info = c.get_collection(col.name)
+                    entry = {"name": col.name, "points_count": col_info.points_count}
+                    if doc_id == doctor_id:
+                        own_collections.append(entry)
+                    else:
+                        shared_collections.append(entry)
+
+        # Permission-based collections
+        permission_collections = []
+        for col_name, allowed in COLLECTION_PERMISSIONS.items():
+            if doctor_id in allowed:
+                try:
+                    col_info = c.get_collection(col_name)
+                    permission_collections.append({"name": col_name, "points_count": col_info.points_count})
+                except Exception:
+                    permission_collections.append({"name": col_name, "points_count": 0, "note": "collection not found"})
+
+        return {
+            "doctor_id": doctor_id,
+            "own_collections": own_collections,
+            "shared_collections": shared_collections,
+            "permission_collections": permission_collections,
+            "total_searched": len(own_collections) + len(shared_collections) + len(permission_collections),
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 # Sample doctor profiles (in production, this would be a database)
 DOCTORS = {
@@ -951,17 +994,30 @@ async def rag_query(body: QueryRequest):
 
     # Search across all relevant collections and aggregate results
     all_hits = []
+    hits_by_collection = {}
     for collection_name in collections_to_search:
         try:
             retrieval.ensure_collection(collection_name)
             hits = retrieval.search(q, top_k=8, collection_name=collection_name)
+            hits_by_collection[collection_name] = len(hits)
+            # Tag each hit with its source collection for debugging
+            for h in hits:
+                if h.payload is None:
+                    h.payload = {}
+                h.payload["_source_collection"] = collection_name
             all_hits.extend(hits)
         except Exception as e:
             logger.warning("collection_search_failed", collection=collection_name, error=str(e))
-    
+
     # Sort by score and take top results
     all_hits.sort(key=lambda h: h.score, reverse=True)
     hits = all_hits[:8]
+
+    # Log which collections contributed to the top results
+    if hits:
+        top_sources = [(h.payload or {}).get("_source_collection", "?") for h in hits]
+        top_scores = [round(h.score, 4) for h in hits]
+        logger.info("rag_top_hits", sources=top_sources, scores=top_scores, hits_per_collection=hits_by_collection)
 
     if not hits:
         if doctor_name:
