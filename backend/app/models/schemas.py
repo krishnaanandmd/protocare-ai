@@ -8,6 +8,7 @@ class Citation(BaseModel):
     section: Optional[str] = None
     author: Optional[str] = None
     publication_year: Optional[int] = None
+    document_url: Optional[str] = None  # Presigned URL to view the document
 
 class Answer(BaseModel):
     answer: str
