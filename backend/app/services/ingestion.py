@@ -316,19 +316,63 @@ def _extract_metadata(path: str) -> Tuple[Optional[str], Optional[str], Optional
         return (None, None, None)
 
 def _split(text: str, max_chars=1800, overlap=200) -> List[str]:
+    """Split text into chunks, preferring section/paragraph boundaries over mid-sentence splits.
+
+    For structured protocol documents (e.g., post-op protocols organized by time period),
+    this preserves section headers with their content so the LLM can correctly associate
+    instructions with the right time period.
+    """
     if not text: return []
     chunks = []
     i = 0
     L = len(text)
     while i < L:
         j = min(L, i+max_chars)
-        cut = text.rfind(". ", i, j)
-        cut = j if cut == -1 or cut < i+max_chars*0.6 else cut+1
+        if j >= L:
+            piece = text[i:j].strip()
+            if piece:
+                chunks.append(piece)
+            break
+
+        # Priority 1: split at a section header boundary (newline before a header-like line).
+        # This keeps headers attached to the content that follows them.
+        header_cut = -1
+        search_start = i + int(max_chars * 0.4)
+        for m in re.finditer(
+            r'\n(?=(?:Post[- ]?Op|Phase|Week|Day|Month|Stage|Goal|Precaution|Weight|ROM|Range|Brace|Exercise|Rehab|Return|Activity|Restrict)\b)',
+            text[search_start:j],
+            re.IGNORECASE,
+        ):
+            header_cut = search_start + m.start()
+
+        # Priority 2: split at a double newline (paragraph boundary)
+        if header_cut == -1:
+            para_cut = text.rfind("\n\n", search_start, j)
+            if para_cut != -1:
+                header_cut = para_cut
+
+        # Priority 3: fall back to sentence boundary
+        if header_cut != -1:
+            cut = header_cut
+        else:
+            cut = text.rfind(". ", i, j)
+            cut = j if cut == -1 or cut < i+max_chars*0.6 else cut+1
+
         piece = text[i:cut].strip()
-        if piece: 
+        if piece:
             chunks.append(piece)
         i = max(cut-overlap, 0) if cut != j else j
     return chunks
+
+_SECTION_HEADER_RE = re.compile(
+    r'^((?:Post[- ]?Op(?:erative)?|Phase|Week|Day|Month|Stage)\s*[^\n]{0,60})',
+    re.IGNORECASE | re.MULTILINE,
+)
+
+def _detect_section(text: str) -> Optional[str]:
+    """Try to detect a section header at the start of the chunk text."""
+    m = _SECTION_HEADER_RE.search(text[:200])
+    return m.group(1).strip() if m else None
 
 def _to_chunks(elems: List[NS]) -> List[Dict[str, Any]]:
     out = []
@@ -336,8 +380,9 @@ def _to_chunks(elems: List[NS]) -> List[Dict[str, Any]]:
         txt = (getattr(el,"text","") or "").strip()
         if not txt: continue
         page = getattr(getattr(el,"metadata",NS()),"page_number",None)
-        for sub in _split(txt): 
-            out.append({"text":sub,"page":page,"section":None})
+        for sub in _split(txt):
+            section = _detect_section(sub)
+            out.append({"text":sub,"page":page,"section":section})
     return out
 
 def _embed(texts: List[str]) -> List[List[float]]:

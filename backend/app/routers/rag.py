@@ -1022,9 +1022,10 @@ async def rag_query(body: QueryRequest):
             [h for h in all_hits if not (h.payload or {}).get("_source_collection", "").startswith(doctor_prefix)],
             key=lambda h: h.score, reverse=True,
         )
-        # Guarantee the surgeon's own protocols are represented, then fill with evidence
+        # Guarantee the surgeon's own protocols are represented, then fill with evidence.
+        # Primary protocol chunks come first so the LLM sees them as Source 1, 2, 3...
+        # This ensures the surgeon's own protocol is always the leading answer.
         hits = primary_hits[:8] + supplementary_hits[:7]
-        hits.sort(key=lambda h: h.score, reverse=True)
     else:
         # CareGuide path: flat ranking across general collections
         all_hits.sort(key=lambda h: h.score, reverse=True)
@@ -1092,6 +1093,7 @@ async def rag_query(body: QueryRequest):
         # Build system prompt based on actor and path.
         # CRITICAL: Every factual claim MUST have an inline (Source N) citation.
         citation_rule = "IMPORTANT: You MUST cite every factual claim with an inline (Source N) tag. For example: \"Patients should remain toe-touch weight-bearing for 6 weeks (Source 3).\" Every sentence with a factual claim needs a source tag. Do not write any claims without a citation."
+        accuracy_rule = "ACCURACY: When stating specific numbers, percentages, weight-bearing status, ROM restrictions, or timeframes from the source, quote them EXACTLY as written. Do NOT combine or confuse separate restrictions. For example, a flexion restriction (e.g., 'no knee flexion past 90 degrees for 6 weeks') is NOT a weight-bearing restriction (e.g., 'PWB 0-25%'). State each restriction separately and precisely as it appears in the source. If the source says 'PWB 0-25%', do NOT say 'no weight bearing'. If the source specifies instructions by time period (e.g., Days 1-7, Weeks 2-3), organize your answer by those same time periods."
 
         if body.actor == "PROVIDER":
             if doctor_name:
@@ -1104,6 +1106,7 @@ Rules:
 - Use appropriate medical terminology.
 - If the protocol does not address the specific question, say so clearly.
 - Never fabricate information or citations.
+- {accuracy_rule}
 - {citation_rule}"""
             elif body_part_name:
                 system_prompt = f"""You are a clinical decision support assistant for {body_part_name} conditions.
@@ -1112,9 +1115,10 @@ Rules:
 - Provide evidence-based answers using ONLY the provided sources.
 - State findings directly — do not hedge when sources are clear.
 - Never fabricate information or citations.
+- {accuracy_rule}
 - {citation_rule}"""
             else:
-                system_prompt = f"""You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. Never fabricate information or citations. {citation_rule}"""
+                system_prompt = f"""You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. Never fabricate information or citations. {accuracy_rule} {citation_rule}"""
         else:
             if doctor_name:
                 system_prompt = f"""You are a patient education assistant explaining Dr. {doctor_name}'s protocols.
@@ -1126,6 +1130,7 @@ Rules:
 - Supplementary research may support the protocol but should not contradict or dilute it.
 - Encourage patients to discuss specifics with their care team for personalized guidance.
 - Never provide medical advice or fabricate information or citations.
+- {accuracy_rule}
 - {citation_rule}"""
             elif body_part_name:
                 system_prompt = f"""You are a patient education assistant for {body_part_name} conditions.
@@ -1136,16 +1141,20 @@ Rules:
 - State findings directly — do not hedge when sources are clear.
 - Encourage patients to discuss specifics with their care team.
 - Never provide medical advice or fabricate information or citations.
+- {accuracy_rule}
 - {citation_rule}"""
             else:
-                system_prompt = f"""You are a patient education assistant. Answer using ONLY the provided sources in clear language. Never provide medical advice or fabricate information or citations. {citation_rule}"""
+                system_prompt = f"""You are a patient education assistant. Answer using ONLY the provided sources in clear language. Never provide medical advice or fabricate information or citations. {accuracy_rule} {citation_rule}"""
 
         user_prompt = f"""Sources:
 {context}
 
 Question: {q}
 
-Answer the question using the sources above. Remember: every factual claim MUST include an inline (Source N) citation."""
+Answer the question using the sources above. Rules:
+1. Every factual claim MUST include an inline (Source N) citation.
+2. Quote specific numbers, percentages, weight-bearing status, and timeframes EXACTLY as they appear in the source — do not paraphrase or combine different restrictions.
+3. If the source organizes instructions by time period, present your answer in the same time-period structure."""
 
         # Use OpenAI
         oa = retrieval.openai_client()
@@ -1155,8 +1164,8 @@ Answer the question using the sources above. Remember: every factual claim MUST 
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.3,
-            max_tokens=1200
+            temperature=0,
+            max_tokens=1500
         )
 
         raw_answer = response.choices[0].message.content or "I couldn't generate an answer."
