@@ -191,7 +191,7 @@ COLLECTION_PERMISSIONS = {
     # Note: Collections with prefix "dr_asheesh_bedi_*" are automatically
     # accessible to Dr. Bedi. Add entries here only if other doctors
     # need access to specific Bedi collections.
-    # Example: "dr_asheesh_bedi_hip_protocols": ["asheesh_bedi", "jorge_chahla"],
+    "dr_asheesh_bedi_acl_meniscus": ["asheesh_bedi", "ayoosh_pareek", "jorge_chahla"],  # ACL + Meniscus repair protocol
 
     # HSS protocols
     "dr_general_hss_protocols": ["joshua_dines", "ayoosh_pareek", "sheeraz_qureshi", "william_long"],

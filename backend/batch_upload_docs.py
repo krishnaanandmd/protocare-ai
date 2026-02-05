@@ -80,6 +80,10 @@ def main():
         action="store_true",
         help="Continue processing even if individual files fail"
     )
+    parser.add_argument(
+        "--file",
+        help="Process a single file instead of scanning the directory"
+    )
 
     args = parser.parse_args()
 
@@ -99,15 +103,28 @@ def main():
     print()
 
     try:
-        # Find all document files (PDF, DOCX)
-        print("🔍 Scanning for document files (PDF, DOCX)...")
-        pdf_files = find_document_files(args.directory)
+        # Handle single file or directory scan
+        if args.file:
+            # Single file mode
+            single_file_path = os.path.join(args.directory, args.file)
+            if not os.path.exists(single_file_path):
+                # Try as absolute path
+                single_file_path = args.file
+            if not os.path.exists(single_file_path):
+                print(f"❌ File not found: {args.file}")
+                sys.exit(1)
+            pdf_files = [single_file_path]
+            print(f"📄 Processing single file: {args.file}\n")
+        else:
+            # Find all document files (PDF, DOCX)
+            print("🔍 Scanning for document files (PDF, DOCX)...")
+            pdf_files = find_document_files(args.directory)
 
-        if not pdf_files:
-            print(f"❌ No document files found in {args.directory}")
-            sys.exit(1)
+            if not pdf_files:
+                print(f"❌ No document files found in {args.directory}")
+                sys.exit(1)
 
-        print(f"✅ Found {len(pdf_files)} document files\n")
+            print(f"✅ Found {len(pdf_files)} document files\n")
 
         # Process each file
         successful = 0
