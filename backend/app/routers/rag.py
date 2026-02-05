@@ -1,3 +1,4 @@
+import re
 import time
 from fastapi import APIRouter, HTTPException
 from app.models.schemas import QueryRequest, Answer, Citation, DoctorProfile
@@ -1088,44 +1089,60 @@ async def rag_query(body: QueryRequest):
         
         context = "\n".join(context_parts)
         
+        # Build system prompt based on actor and path
         if body.actor == "PROVIDER":
             if doctor_name:
-                system_prompt = f"""You are a clinical assistant helping providers understand Dr. {doctor_name}'s protocols.
+                system_prompt = f"""You are a clinical assistant presenting Dr. {doctor_name}'s protocols.
 
 Guidelines:
-- Provide evidence-based answers using ONLY the provided protocols
+- State Dr. {doctor_name}'s protocol directly and confidently — do not hedge or equivocate when the protocol is clear
+- If Dr. {doctor_name}'s own protocol addresses the question, lead with it as the definitive answer
+- Supplementary research sources may be referenced to support the protocol, but should not contradict or dilute it
 - Use appropriate medical terminology
-- Include specific clinical details from Dr. {doctor_name}'s preferences
-- When making specific claims or recommendations, cite the source using (Author Year) format if the author and publication year are evident in the source text, otherwise use (Source N) format
-- Multiple citations should be formatted as (Author1 Year; Author2 Year) or (Source 1; Source 2)
-- If protocols are unclear, acknowledge limitations
+- Cite each source you use with (Source N) inline — only cite sources you actually reference
+- If the protocol does not address the specific question, say so clearly
 - Never fabricate information or citations"""
             elif body_part_name:
-                system_prompt = f"""You are a clinical decision support assistant for {body_part_name} conditions. Provide evidence-based answers using ONLY the provided sources. When making specific claims, cite sources using (Author Year) format if evident in the text, otherwise use (Source N) format."""
+                system_prompt = f"""You are a clinical decision support assistant for {body_part_name} conditions.
+
+Guidelines:
+- Provide evidence-based answers using ONLY the provided sources
+- State findings directly — do not hedge when sources are clear
+- Cite each source you use with (Source N) inline — only cite sources you actually reference
+- Never fabricate information or citations"""
             else:
-                system_prompt = """You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. When making specific claims, cite sources using (Author Year) format if evident in the text, otherwise use (Source N) format."""
+                system_prompt = """You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. Cite each source you use with (Source N) inline — only cite sources you actually reference."""
         else:
             if doctor_name:
-                system_prompt = f"""You are a patient education assistant explaining Dr. {doctor_name}'s treatment approaches.
+                system_prompt = f"""You are a patient education assistant explaining Dr. {doctor_name}'s protocols.
 
 Guidelines:
 - Use clear, patient-friendly language
-- Base answers strictly on Dr. {doctor_name}'s protocols
-- When making specific points, reference the research by mentioning the lead author's last name and publication year if evident in the source (e.g., "Research by Smith in 2020 found that...")
-- This helps patients understand the evidence behind recommendations
-- Encourage patients to discuss specifics with their care team
+- State Dr. {doctor_name}'s protocol directly and confidently — patients chose this surgeon and want to know what their doctor recommends
+- If Dr. {doctor_name}'s own protocol addresses the question, lead with it as the definitive answer
+- Supplementary research sources may be mentioned to support the protocol, but should not contradict or dilute it
+- Cite each source you use with (Source N) inline — only cite sources you actually reference
+- Encourage patients to discuss specifics with their care team for personalized guidance
 - Never provide medical advice or fabricate information or citations"""
             elif body_part_name:
-                system_prompt = f"""You are a patient education assistant for {body_part_name} conditions. Answer using ONLY the provided sources in clear language. When making specific points, reference the research by author and year if evident in the source text. Encourage patients to discuss specifics with their care team."""
+                system_prompt = f"""You are a patient education assistant for {body_part_name} conditions.
+
+Guidelines:
+- Use clear, patient-friendly language
+- Answer using ONLY the provided sources
+- State findings directly — do not hedge when sources are clear
+- Cite each source you use with (Source N) inline — only cite sources you actually reference
+- Encourage patients to discuss specifics with their care team
+- Never provide medical advice or fabricate information or citations"""
             else:
-                system_prompt = """You are a patient education assistant. Answer using ONLY the provided sources in clear language. When making specific points, reference the research by author and year if evident in the source text."""
-        
+                system_prompt = """You are a patient education assistant. Answer using ONLY the provided sources in clear language. Cite each source you use with (Source N) inline — only cite sources you actually reference."""
+
         user_prompt = f"""Sources:
 {context}
 
 Question: {q}
 
-Provide a helpful, accurate answer based solely on these sources."""
+Answer the question based on these sources. After your answer, on a new line write SOURCES_USED: followed by a comma-separated list of the source numbers you cited, in the order they first appear in your answer (e.g., SOURCES_USED: 3, 1, 5)."""
 
         # Use OpenAI
         oa = retrieval.openai_client()
@@ -1138,8 +1155,33 @@ Provide a helpful, accurate answer based solely on these sources."""
             temperature=0.3,
             max_tokens=1200
         )
-        
-        answer_text = response.choices[0].message.content or "I couldn't generate an answer."
+
+        raw_answer = response.choices[0].message.content or "I couldn't generate an answer."
+
+        # Parse out SOURCES_USED line, filter to only cited sources, and
+        # renumber inline references so they match the final citation list.
+        sources_match = re.search(r'SOURCES_USED:\s*([\d,\s]+)', raw_answer)
+        if sources_match:
+            answer_text = raw_answer[:sources_match.start()].strip()
+            used_indices = []
+            for num in sources_match.group(1).split(","):
+                num = num.strip()
+                if num.isdigit():
+                    idx = int(num) - 1  # Convert 1-based to 0-based
+                    if 0 <= idx < len(citations) and idx not in used_indices:
+                        used_indices.append(idx)
+            if used_indices:
+                # Build old→new number mapping (1-based)
+                renumber = {old_idx + 1: new_pos + 1 for new_pos, old_idx in enumerate(used_indices)}
+                # Single-pass replacement of (Source N) references
+                answer_text = re.sub(
+                    r'\(Source\s+(\d+)\)',
+                    lambda m: f'(Source {renumber.get(int(m.group(1)), m.group(1))})',
+                    answer_text,
+                )
+                citations = [citations[i] for i in used_indices]
+        else:
+            answer_text = raw_answer
 
     latency_ms = int((time.time() - t0) * 1000)
     logger.info("rag_query", latency_ms=latency_ms, k=len(hits or []), collections=collections_to_search)
