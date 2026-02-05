@@ -1044,7 +1044,12 @@ async def rag_query(body: QueryRequest):
         citations = []
     else:
         context_parts = []
-        citations = []
+        # Build a deduped citation list and map each source number to it.
+        # All chunks go into context (LLM needs the full text), but the
+        # citation list shown to the user is deduplicated by title.
+        citations = []           # unique citations for display
+        title_to_cite_idx = {}   # title → index in citations[]
+        source_to_cite_idx = {}  # 1-based source number → index in citations[]
 
         for i, h in enumerate(hits):
             p = h.payload or {}
@@ -1058,35 +1063,29 @@ async def rag_query(body: QueryRequest):
 
             context_parts.append(f"[Source {i+1}: {title}]\n{text}\n")
 
-            # Generate presigned URL for document viewing
-            document_url = None
-            if doc_id and doc_id != "unknown" and doc_id.startswith("uploads/"):
-                try:
-                    document_url = presign_get(doc_id, expiry_seconds=3600)
-                except Exception as e:
-                    logger.warning("presign_url_failed", document_id=doc_id, error=str(e))
+            if title not in title_to_cite_idx:
+                # First chunk from this document — create citation
+                document_url = None
+                if doc_id and doc_id != "unknown" and doc_id.startswith("uploads/"):
+                    try:
+                        document_url = presign_get(doc_id, expiry_seconds=3600)
+                    except Exception as e:
+                        logger.warning("presign_url_failed", document_id=doc_id, error=str(e))
 
-            citations.append(
-                Citation(
-                    title=title,
-                    document_id=doc_id,
-                    page=page,
-                    section=section,
-                    author=author,
-                    publication_year=publication_year,
-                    document_url=document_url,
+                title_to_cite_idx[title] = len(citations)
+                citations.append(
+                    Citation(
+                        title=title,
+                        document_id=doc_id,
+                        page=page,
+                        section=section,
+                        author=author,
+                        publication_year=publication_year,
+                        document_url=document_url,
+                    )
                 )
-            )
 
-        # Deduplicate citations by title (same doc may have different S3 keys per chunk)
-        seen_titles = set()
-        unique_citations = []
-        for c in citations:
-            key = c.title
-            if key not in seen_titles:
-                seen_titles.add(key)
-                unique_citations.append(c)
-        citations = unique_citations
+            source_to_cite_idx[i + 1] = title_to_cite_idx[title]
         
         context = "\n".join(context_parts)
         
@@ -1165,22 +1164,31 @@ Answer the question using the sources above. Remember: every factual claim MUST 
         # Strip any SOURCES_USED footer the model may have appended
         answer_text = re.sub(r'\n*SOURCES_USED:.*$', '', raw_answer, flags=re.DOTALL).strip()
 
-        # Extract inline (Source N) references in the order they appear,
-        # filter citations to only those actually used, and renumber.
-        cited_nums = list(dict.fromkeys(
+        # Map inline (Source N) references to the deduped citation list,
+        # keep only cited documents, and renumber sequentially.
+        cited_source_nums = list(dict.fromkeys(
             int(m.group(1)) for m in re.finditer(r'\(Source\s+(\d+)\)', answer_text)
-        ))  # unique, preserving first-appearance order
-        used_indices = [n - 1 for n in cited_nums if 0 <= n - 1 < len(citations)]
+        ))  # unique source numbers in order of first appearance
 
-        if used_indices:
-            # Build old→new number mapping (1-based)
-            renumber = {old_idx + 1: new_pos + 1 for new_pos, old_idx in enumerate(used_indices)}
+        # Resolve to unique citation indices in appearance order
+        cited_cite_indices = list(dict.fromkeys(
+            source_to_cite_idx[n] for n in cited_source_nums if n in source_to_cite_idx
+        ))
+
+        if cited_cite_indices:
+            # Build source_num → new citation number (1-based)
+            old_cite_to_new = {old_ci: new_pos + 1 for new_pos, old_ci in enumerate(cited_cite_indices)}
+            renumber = {
+                src_num: old_cite_to_new[source_to_cite_idx[src_num]]
+                for src_num in cited_source_nums
+                if src_num in source_to_cite_idx and source_to_cite_idx[src_num] in old_cite_to_new
+            }
             answer_text = re.sub(
                 r'\(Source\s+(\d+)\)',
                 lambda m: f'(Source {renumber.get(int(m.group(1)), m.group(1))})',
                 answer_text,
             )
-            citations = [citations[i] for i in used_indices]
+            citations = [citations[i] for i in cited_cite_indices]
 
     latency_ms = int((time.time() - t0) * 1000)
     logger.info("rag_query", latency_ms=latency_ms, k=len(hits or []), collections=collections_to_search)
