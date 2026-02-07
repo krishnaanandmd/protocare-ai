@@ -39,6 +39,43 @@ STATUS: Dict[str, Dict[str, Any]] = {}
 EMBED_MODEL = "text-embedding-3-small"
 PRECEDENCE = {"AAOS":100, "RCT":100, "CLINICAL_GUIDELINE":100, "HOSPITAL_POLICY":90, "PEER_REVIEW":80, "DOCTOR_PROTOCOL":95, "OTHER":50}
 
+# Mapping from doctor slug (as used in collection names) to display name.
+# For protocol documents, the author is the doctor themselves — not whatever
+# is embedded in the PDF metadata (which is often the typist or blank).
+DOCTOR_SLUG_TO_NAME: Dict[str, str] = {
+    "joshua_dines": "Dr. Joshua Dines",
+    "asheesh_bedi": "Dr. Asheesh Bedi",
+    "ayoosh_pareek": "Dr. Ayoosh Pareek",
+    "sheeraz_qureshi": "Dr. Sheeraz Qureshi",
+    "khalid_alkhelaifi": "Dr. Khalid Alkhelaifi",
+    "william_long": "Dr. William Long",
+    "jorge_chahla": "Dr. Jorge Chahla",
+}
+
+# Source types that represent research / external evidence.
+# These keep their extracted PDF metadata author (the paper's actual authors).
+_RESEARCH_SOURCE_TYPES = frozenset({"AAOS", "RCT", "CLINICAL_GUIDELINE", "PEER_REVIEW"})
+
+
+def _resolve_protocol_author(collection_name: str, source_type: str) -> Optional[str]:
+    """Return the doctor's display name when the document is a doctor protocol.
+
+    For doctor-specific collections (not ``dr_general_*``) where the source
+    type is *not* a research article, the author should be the doctor who
+    owns the collection — regardless of what the PDF metadata says.
+
+    Research articles (RCTs, AAOS guidelines, etc.) keep their extracted
+    author metadata so that the citation reads correctly.
+    """
+    if source_type.upper() in _RESEARCH_SOURCE_TYPES:
+        return None
+    if not collection_name.startswith("dr_") or collection_name.startswith("dr_general_"):
+        return None
+    for slug, name in DOCTOR_SLUG_TO_NAME.items():
+        if collection_name.startswith(f"dr_{slug}_"):
+            return name
+    return None
+
 def _s3():
     return boto3.client("s3", region_name=settings.aws_region, config=BotoConfig(retries={"max_attempts": 3}))
 
@@ -427,6 +464,14 @@ def process_document(s3_key: str, source_type: str = "OTHER", org_id: str = "dem
             else:
                 # Last resort: use S3 key basename
                 doc_title = _filename_to_title(os.path.basename(s3_key))
+
+        # For doctor protocol documents, the author is the doctor — not
+        # whatever was embedded in the PDF (often a typist or blank).
+        # Research articles keep their extracted author metadata.
+        protocol_author = _resolve_protocol_author(collection_name, source_type)
+        if protocol_author:
+            log.info("Overriding author for doctor protocol: %s -> %s", doc_author, protocol_author)
+            doc_author = protocol_author
 
         if not elems:
             raise RuntimeError("No text extracted. Document may be empty or parsing failed.")
