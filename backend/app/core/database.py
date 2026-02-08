@@ -1,6 +1,9 @@
+import logging
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+
+log = logging.getLogger("database")
 
 # Store the SQLite database alongside the backend code.
 # In production, switch to PostgreSQL via DATABASE_URL env var.
@@ -25,5 +28,13 @@ def get_db():
 
 
 def init_db():
-    """Create all tables. Call once at startup."""
-    Base.metadata.create_all(bind=engine)
+    """Create all tables. Call once at startup.
+
+    Non-fatal: if the database is unreachable (e.g. Railway internal DNS
+    not yet available), log a warning and let the app start anyway.
+    Core functionality (RAG, uploads, doctors) does not need PostgreSQL.
+    """
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        log.warning("Database unavailable at startup — question logging will be degraded: %s", e)

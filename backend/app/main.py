@@ -28,8 +28,8 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "https://care-guide.ai",
         "https://www.care-guide.ai",
-        "https://*.vercel.app",  # For Vercel preview deployments
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

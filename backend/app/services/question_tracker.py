@@ -25,33 +25,45 @@ def log_question(
     had_follow_up: bool = False,
     follow_up_question: Optional[str] = None,
     guardrail_triggered: bool = False,
-) -> QuestionLog:
-    """Persist a question record. Called after each /rag/query response."""
-    entry = QuestionLog(
-        actor=actor,
-        question=question,
-        doctor_id=doctor_id,
-        doctor_name=doctor_name,
-        body_part=body_part,
-        session_id=session_id,
-        answer_snippet=answer_snippet[:500] if answer_snippet else None,
-        citations_count=citations_count,
-        latency_ms=latency_ms,
-        had_follow_up=had_follow_up,
-        follow_up_question=follow_up_question,
-        guardrail_triggered=guardrail_triggered,
-    )
-    db.add(entry)
-    db.commit()
-    db.refresh(entry)
-    logger.info(
-        "question_logged",
-        question_id=entry.id,
-        actor=actor,
-        doctor_id=doctor_id,
-        body_part=body_part,
-    )
-    return entry
+) -> Optional[QuestionLog]:
+    """Persist a question record. Called after each /rag/query response.
+
+    Non-fatal: if the database is unavailable the RAG query should still
+    succeed — we just skip logging and return None.
+    """
+    try:
+        entry = QuestionLog(
+            actor=actor,
+            question=question,
+            doctor_id=doctor_id,
+            doctor_name=doctor_name,
+            body_part=body_part,
+            session_id=session_id,
+            answer_snippet=answer_snippet[:500] if answer_snippet else None,
+            citations_count=citations_count,
+            latency_ms=latency_ms,
+            had_follow_up=had_follow_up,
+            follow_up_question=follow_up_question,
+            guardrail_triggered=guardrail_triggered,
+        )
+        db.add(entry)
+        db.commit()
+        db.refresh(entry)
+        logger.info(
+            "question_logged",
+            question_id=entry.id,
+            actor=actor,
+            doctor_id=doctor_id,
+            body_part=body_part,
+        )
+        return entry
+    except Exception as e:
+        logger.warning("question_log_failed", error=str(e))
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        return None
 
 
 def list_questions(
