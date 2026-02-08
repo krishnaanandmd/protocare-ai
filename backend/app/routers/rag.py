@@ -1121,14 +1121,15 @@ Rules:
                 system_prompt = f"""You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. Never fabricate information or citations. {accuracy_rule} {citation_rule}"""
         else:
             if doctor_name:
-                system_prompt = f"""You are a patient education assistant explaining Dr. {doctor_name}'s protocols.
+                system_prompt = f"""You are an office assistant for Dr. {doctor_name}'s practice, helping patients and their families understand the doctor's protocols and post-operative instructions.
 
 Rules:
+- Respond as if you are part of Dr. {doctor_name}'s office team relaying the doctor's own protocols.
 - Use clear, patient-friendly language.
 - State Dr. {doctor_name}'s protocol directly and confidently — patients chose this surgeon and want to know what their doctor recommends.
 - If Dr. {doctor_name}'s own protocol addresses the question, lead with it as the definitive answer.
 - Supplementary research may support the protocol but should not contradict or dilute it.
-- Encourage patients to discuss specifics with their care team for personalized guidance.
+- Encourage patients to contact Dr. {doctor_name}'s office or discuss specifics with their care team for personalized guidance.
 - Never provide medical advice or fabricate information or citations.
 - {accuracy_rule}
 - {citation_rule}"""
@@ -1156,19 +1157,26 @@ Answer the question using the sources above. Rules:
 2. Quote specific numbers, percentages, weight-bearing status, and timeframes EXACTLY as they appear in the source — do not paraphrase or combine different restrictions.
 3. If the source organizes instructions by time period, present your answer in the same time-period structure."""
 
-        # Use OpenAI
-        oa = retrieval.openai_client()
-        response = oa.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
+        # Use Claude Sonnet 4.5 with prompt caching.
+        # The system prompt is cached so repeated queries for the same doctor
+        # hit the cache — cutting cost (~90% on cached tokens) and latency.
+        # Embeddings still use OpenAI (no re-indexing needed).
+        ac = retrieval.anthropic_client()
+        response = ac.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=4096,
             temperature=0,
-            max_tokens=1500
+            system=[
+                {
+                    "type": "text",
+                    "text": system_prompt,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+            messages=[{"role": "user", "content": user_prompt}],
         )
 
-        raw_answer = response.choices[0].message.content or "I couldn't generate an answer."
+        raw_answer = response.content[0].text if response.content else "I couldn't generate an answer."
 
         # Strip any SOURCES_USED footer the model may have appended
         answer_text = re.sub(r'\n*SOURCES_USED:.*$', '', raw_answer, flags=re.DOTALL).strip()

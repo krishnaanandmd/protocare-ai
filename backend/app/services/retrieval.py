@@ -1,5 +1,6 @@
 from typing import Optional
 from openai import OpenAI
+import anthropic
 import uuid
 
 from qdrant_client import QdrantClient
@@ -9,6 +10,7 @@ from app.core.logging import logger
 
 _client: Optional[QdrantClient] = None
 _oa: Optional[OpenAI] = None
+_anthropic: Optional[anthropic.Anthropic] = None
 
 def client() -> QdrantClient:
     global _client
@@ -35,10 +37,19 @@ def client() -> QdrantClient:
     return _client
 
 def openai_client() -> OpenAI:
+    """OpenAI client — used for embeddings only."""
     global _oa
     if _oa is None:
         _oa = OpenAI(api_key=settings.openai_api_key)
     return _oa
+
+def anthropic_client() -> anthropic.Anthropic:
+    """Anthropic client — used for LLM generation (Claude Sonnet 4.5)."""
+    global _anthropic
+    if _anthropic is None:
+        _anthropic = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        logger.info("anthropic_client_initialized")
+    return _anthropic
 
 def ensure_collection(collection_name: str = None):
     c = client()
