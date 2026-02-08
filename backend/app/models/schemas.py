@@ -24,6 +24,7 @@ class QueryRequest(BaseModel):
     doctor_id: Optional[str] = None  # e.g., "joshua_dines"
     body_part: Optional[str] = None  # e.g., "shoulder", "knee", "elbow"
     org_id: str = "demo"  # Legacy - will be replaced by doctor_id_procedure
+    session_id: Optional[str] = None  # Browser session ID for grouping related questions
 
 class UploadInitResponse(BaseModel):
     upload_url: str

@@ -1,10 +1,12 @@
 import re
 import time
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 from app.models.schemas import QueryRequest, Answer, Citation, DoctorProfile
 from app.core.logging import logger
 from app.core.config import settings
-from app.services import retrieval
+from app.core.database import get_db
+from app.services import retrieval, question_tracker
 from app.services.s3_uploads import presign_get
 
 router = APIRouter()
@@ -921,15 +923,26 @@ async def list_doctors_with_documents():
         raise HTTPException(status_code=500, detail=f"Failed to retrieve doctors with documents: {str(e)}")
 
 @router.post("/query", response_model=Answer)
-async def rag_query(body: QueryRequest):
+async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
     t0 = time.time()
     q = body.question.strip()
 
     # Guardrails
     ql = q.lower()
     if any(x in ql for x in ["chest pain", "shortness of breath", "suicid", "overdose"]):
+        # Log the blocked query before raising
+        question_tracker.log_question(
+            db,
+            actor=body.actor,
+            question=q,
+            doctor_id=body.doctor_id,
+            doctor_name=DOCTORS.get(body.doctor_id, {}).get("name") if body.doctor_id else None,
+            body_part=body.body_part,
+            session_id=body.session_id,
+            guardrail_triggered=True,
+        )
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail="This service can't provide emergency advice. Call your local emergency number."
         )
 
@@ -1252,6 +1265,23 @@ Answer the question using the sources above. Rules:
 
     latency_ms = int((time.time() - t0) * 1000)
     logger.info("rag_query", latency_ms=latency_ms, k=len(hits or []), collections=collections_to_search)
+
+    # Track the question for provider feedback and research
+    question_tracker.log_question(
+        db,
+        actor=body.actor,
+        question=q,
+        doctor_id=body.doctor_id,
+        doctor_name=doctor_name,
+        body_part=body.body_part,
+        session_id=body.session_id,
+        answer_snippet=answer_text,
+        citations_count=len(citations),
+        latency_ms=latency_ms,
+        had_follow_up=follow_up_question is not None,
+        follow_up_question=follow_up_question,
+    )
+
     return Answer(
         answer=answer_text,
         citations=citations,
