@@ -109,6 +109,12 @@ export default function LandingPage() {
                 >
                   {t('common.skipToApp')}
                 </Link>
+                <Link
+                  href={`/${locale}/upload`}
+                  className="text-sm font-semibold text-slate-400 hover:text-slate-200 transition-colors"
+                >
+                  For CareGuide Team
+                </Link>
               </div>
             </div>
           </div>
