@@ -16,6 +16,7 @@ class Answer(BaseModel):
     citations: List[Citation]
     guardrails: dict
     latency_ms: int
+    follow_up_question: Optional[str] = None
 
 class QueryRequest(BaseModel):
     question: str
