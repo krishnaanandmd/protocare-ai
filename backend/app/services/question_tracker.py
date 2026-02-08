@@ -1,9 +1,9 @@
 """Service for logging and querying patient/provider questions."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from sqlalchemy import func
+from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
 from app.core.logging import logger
@@ -165,4 +165,147 @@ def get_analytics(
         ],
         "avg_latency_ms": round(avg_latency) if avg_latency else None,
         "guardrail_triggers": guardrail_count,
+    }
+
+
+def get_weekly_report(
+    db: Session,
+    *,
+    week_of: Optional[datetime] = None,
+) -> dict:
+    """Generate a weekly summary report.
+
+    If week_of is None, defaults to the most recent completed week
+    (Monday 00:00 UTC to Sunday 23:59 UTC).
+    """
+    if week_of is None:
+        now = datetime.now(timezone.utc)
+        # Most recent Monday at midnight
+        days_since_monday = now.weekday()
+        end = (now - timedelta(days=days_since_monday)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        start = end - timedelta(days=7)
+    else:
+        # Start from the Monday of the given week
+        days_since_monday = week_of.weekday()
+        start = (week_of - timedelta(days=days_since_monday)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        end = start + timedelta(days=7)
+
+    base = db.query(QuestionLog).filter(
+        QuestionLog.created_at >= start,
+        QuestionLog.created_at < end,
+    )
+
+    total = base.count()
+
+    # Per-doctor breakdown with patient vs provider split
+    doctor_rows = (
+        base.with_entities(
+            QuestionLog.doctor_id,
+            QuestionLog.doctor_name,
+            func.count().label("total"),
+            func.sum(case((QuestionLog.actor == "PATIENT", 1), else_=0)).label("patient_count"),
+            func.sum(case((QuestionLog.actor == "PROVIDER", 1), else_=0)).label("provider_count"),
+            func.avg(QuestionLog.latency_ms).label("avg_latency"),
+        )
+        .filter(QuestionLog.doctor_id.isnot(None))
+        .group_by(QuestionLog.doctor_id, QuestionLog.doctor_name)
+        .order_by(func.count().desc())
+        .all()
+    )
+
+    # Per body-part breakdown (CareGuide MSK usage)
+    body_part_rows = (
+        base.with_entities(
+            QuestionLog.body_part,
+            func.count().label("total"),
+        )
+        .filter(QuestionLog.body_part.isnot(None))
+        .group_by(QuestionLog.body_part)
+        .order_by(func.count().desc())
+        .all()
+    )
+
+    # Unique sessions (proxy for unique users)
+    unique_sessions = (
+        base.with_entities(func.count(func.distinct(QuestionLog.session_id)))
+        .filter(QuestionLog.session_id.isnot(None))
+        .scalar()
+    ) or 0
+
+    # Top 10 most-asked questions (exact duplicates)
+    top_questions = (
+        base.with_entities(
+            QuestionLog.question,
+            QuestionLog.doctor_name,
+            QuestionLog.body_part,
+            func.count().label("times_asked"),
+        )
+        .group_by(QuestionLog.question, QuestionLog.doctor_name, QuestionLog.body_part)
+        .order_by(func.count().desc())
+        .limit(10)
+        .all()
+    )
+
+    # Guardrail triggers
+    guardrail_count = base.filter(QuestionLog.guardrail_triggered.is_(True)).count()
+
+    # Avg latency overall
+    avg_latency = (
+        base.with_entities(func.avg(QuestionLog.latency_ms))
+        .filter(QuestionLog.latency_ms.isnot(None))
+        .scalar()
+    )
+
+    # Previous week for comparison
+    prev_start = start - timedelta(days=7)
+    prev_total = (
+        db.query(func.count(QuestionLog.id))
+        .filter(
+            QuestionLog.created_at >= prev_start,
+            QuestionLog.created_at < start,
+        )
+        .scalar()
+    ) or 0
+
+    return {
+        "period": {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+        },
+        "summary": {
+            "total_questions": total,
+            "previous_week_total": prev_total,
+            "week_over_week_change": total - prev_total,
+            "unique_sessions": unique_sessions,
+            "avg_latency_ms": round(avg_latency) if avg_latency else None,
+            "guardrail_triggers": guardrail_count,
+        },
+        "by_doctor": [
+            {
+                "doctor_id": r.doctor_id,
+                "doctor_name": r.doctor_name,
+                "total": r.total,
+                "from_patients": r.patient_count,
+                "from_providers": r.provider_count,
+                "avg_latency_ms": round(r.avg_latency) if r.avg_latency else None,
+            }
+            for r in doctor_rows
+        ],
+        "by_body_part": [
+            {"body_part": r.body_part, "total": r.total}
+            for r in body_part_rows
+        ],
+        "top_questions": [
+            {
+                "question": r.question,
+                "doctor_name": r.doctor_name,
+                "body_part": r.body_part,
+                "times_asked": r.times_asked,
+            }
+            for r in top_questions
+        ],
     }

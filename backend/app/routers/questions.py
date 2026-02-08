@@ -79,6 +79,19 @@ async def question_analytics(
     )
 
 
+@router.get("/report/weekly")
+async def weekly_report(
+    week_of: Optional[datetime] = None,
+    db: Session = Depends(get_db),
+):
+    """Weekly usage report with per-doctor breakdown, top questions, and trends.
+
+    Defaults to the most recent completed week (Mon-Sun).
+    Pass ?week_of=2026-01-26 to get a specific week's report.
+    """
+    return question_tracker.get_weekly_report(db, week_of=week_of)
+
+
 @router.get("/export")
 async def export_questions_csv(
     doctor_id: Optional[str] = None,
