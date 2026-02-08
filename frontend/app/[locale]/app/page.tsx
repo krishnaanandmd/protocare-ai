@@ -402,7 +402,7 @@ function AnswerCard({
         </span>
       </div>
 
-      <div className="prose prose-invert prose-lg max-w-none prose-headings:text-white prose-h1:text-xl prose-h1:font-bold prose-h1:mb-3 prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-5 prose-h2:mb-2 prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-strong:text-white prose-strong:font-bold prose-ul:my-2 prose-li:my-0.5 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-200">
+      <div className="text-white prose prose-invert prose-lg max-w-none prose-headings:text-white prose-h1:text-xl prose-h1:font-bold prose-h1:mb-3 prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-5 prose-h2:mb-2 prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-strong:text-white prose-strong:font-bold prose-ul:my-2 prose-li:my-0.5 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-200">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
       </div>
 
