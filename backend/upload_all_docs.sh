@@ -45,7 +45,7 @@ echo "Documents directory: $DOCS_DIR"
 echo ""
 
 # Counter for tracking progress
-TOTAL_SETS=16
+TOTAL_SETS=17
 CURRENT=0
 
 # Function to upload a document set
@@ -152,6 +152,20 @@ if [ -d "$BEDI_DIR" ]; then
     ./upload_bedi_docs.sh "$DOCS_DIR"
 else
     echo "Warning: Folder 'Bedi_CareGuide' not found, skipping..."
+fi
+
+# DeFroda Protocol Documents (has subfolders, use dedicated script)
+CURRENT=$((CURRENT + 1))
+echo ""
+echo "========================================="
+echo "[$CURRENT/$TOTAL_SETS] Uploading: DeFroda Protocol Documents"
+echo "========================================="
+
+DEFRODA_DIR="$DOCS_DIR/DeFroda_Protocols"
+if [ -d "$DEFRODA_DIR" ]; then
+    ./upload_defroda_docs.sh "$DOCS_DIR"
+else
+    echo "Warning: Folder 'DeFroda_Protocols' not found, skipping..."
 fi
 
 # Final summary
