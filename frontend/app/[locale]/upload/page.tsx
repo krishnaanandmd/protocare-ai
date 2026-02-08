@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useLocale } from "next-intl";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8080";
 
+const UPLOAD_PASSWORD = "CareGuide2025";
+
 type Item = { file: File; status: string };
 type Doctor = { id: string; name: string; specialty: string };
 type UploadMode = "general" | "doctor_protocol";
@@ -14,6 +16,32 @@ function slugify(text: string): string {
 
 export default function UploadPage() {
   const locale = useLocale();
+
+  // Password gate state
+  const [authenticated, setAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
+
+  // Check sessionStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem("cg_upload_auth") === "true") {
+      setAuthenticated(true);
+    }
+  }, []);
+
+  function handlePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (passwordInput === UPLOAD_PASSWORD) {
+      setAuthenticated(true);
+      setPasswordError(false);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("cg_upload_auth", "true");
+      }
+    } else {
+      setPasswordError(true);
+    }
+  }
+
   const [uploadMode, setUploadMode] = useState<UploadMode>("doctor_protocol");
   const [orgId, setOrgId] = useState("demo");
   const [items, setItems] = useState<Item[]>([]);
@@ -26,6 +54,7 @@ export default function UploadPage() {
 
   // Fetch doctors list
   useEffect(() => {
+    if (!authenticated) return;
     const fetchDoctors = async () => {
       try {
         const res = await fetch(`${API_BASE}/rag/doctors`);
@@ -38,7 +67,7 @@ export default function UploadPage() {
       }
     };
     fetchDoctors();
-  }, []);
+  }, [authenticated]);
 
   // Compute the effective org_id and source_type based on upload mode
   const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId);
@@ -106,6 +135,64 @@ export default function UploadPage() {
     items.length > 0 &&
     !busy &&
     (uploadMode === "general" || selectedDoctorId);
+
+  // Password gate screen
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-6">
+        <div className="max-w-md w-full">
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center shadow-2xl shadow-cyan-500/50 mx-auto">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-black bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text">
+                CareGuide Team Access
+              </h1>
+              <p className="text-slate-400 text-sm">Enter the team password to access document uploads</p>
+            </div>
+
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <input
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
+                  placeholder="Enter password"
+                  autoFocus
+                  className={`w-full rounded-xl bg-white/10 border-2 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-400 focus:ring-4 transition-all outline-none ${
+                    passwordError
+                      ? "border-red-500/50 focus:border-red-400 focus:ring-red-500/20"
+                      : "border-white/20 focus:border-cyan-400 focus:ring-cyan-500/20"
+                  }`}
+                />
+                {passwordError && (
+                  <p className="text-sm text-red-400 mt-2">Incorrect password. Please try again.</p>
+                )}
+              </div>
+              <button
+                type="submit"
+                className="w-full px-6 py-3 rounded-xl font-bold text-lg bg-gradient-to-r from-cyan-500 to-teal-600 text-white shadow-2xl shadow-cyan-500/50 hover:shadow-cyan-500/70 hover:scale-105 active:scale-95 transition-all"
+              >
+                Enter
+              </button>
+            </form>
+
+            <div className="text-center">
+              <Link
+                href={`/${locale}/app`}
+                className="text-sm text-slate-400 hover:text-white transition-colors"
+              >
+                Back to App
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
