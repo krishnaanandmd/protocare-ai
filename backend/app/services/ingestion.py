@@ -5,7 +5,7 @@ import boto3
 from botocore.config import Config as BotoConfig
 from pypdf import PdfReader
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, VectorParams, PointStruct
+from qdrant_client.http.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
 from openai import OpenAI
 from app.core.config import settings
 
@@ -541,6 +541,22 @@ def process_document(s3_key: str, source_type: str = "OTHER", org_id: str = "dem
 
         cli = _qdrant()
         _ensure_collection(cli, collection_name)
+
+        # Remove any existing chunks for this document so re-ingestion
+        # doesn't create duplicates (e.g., old fragmented chunks alongside
+        # new properly-chunked ones).
+        try:
+            cli.delete(
+                collection_name=collection_name,
+                points_selector=FilterSelector(
+                    filter=Filter(
+                        must=[FieldCondition(key="document_id", match=MatchValue(value=doc_id))]
+                    )
+                ),
+            )
+            log.info("Cleared existing chunks for %s in %s", doc_id, collection_name)
+        except Exception as exc:
+            log.warning("Could not clear old chunks for %s: %s", doc_id, exc)
 
         rank = PRECEDENCE.get(source_type.upper(), PRECEDENCE["OTHER"])
 
