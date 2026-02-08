@@ -1,30 +1,47 @@
 #!/usr/bin/env python3
-"""Fetch the weekly question report and print a formatted summary.
+"""Fetch the weekly question report and email a CSV + summary to the team.
 
 Usage:
-    # Most recent completed week (Mon-Sun):
+    # Send the report now:
     python weekly_report.py
 
     # Specific week:
     python weekly_report.py --week-of 2026-02-01
 
-    # Custom API base URL:
-    python weekly_report.py --api-url https://api.care-guide.ai
+    # Preview without sending (prints to stdout):
+    python weekly_report.py --dry-run
 
-    # Automate with cron (every Monday at 8am):
-    # 0 8 * * 1  cd /path/to/backend && python weekly_report.py >> /var/log/weekly_report.log 2>&1
+Environment variables (set these in Railway or .env):
+    API_URL          - Backend base URL  (default: http://localhost:8000)
+    SMTP_HOST        - Mail server       (default: smtp.gmail.com)
+    SMTP_PORT        - Mail server port  (default: 587)
+    SMTP_USER        - Gmail address used to send
+    SMTP_PASSWORD    - Gmail App Password (NOT your regular password)
+    REPORT_RECIPIENT - Comma-separated emails (default: krishnaanandmd@gmail.com)
 """
 
 import argparse
 import json
 import os
+import smtplib
 import sys
 import urllib.request
+from datetime import datetime, timezone
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
-DEFAULT_API_URL = os.getenv("API_URL", "http://localhost:8000")
+# ---------- Config from env ----------
+API_URL = os.getenv("API_URL", "http://localhost:8000")
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+REPORT_RECIPIENT = os.getenv("REPORT_RECIPIENT", "krishnaanandmd@gmail.com")
 
 
-def fetch_report(api_url: str, week_of: str | None = None) -> dict:
+def fetch_weekly_json(api_url: str, week_of: str | None = None) -> dict:
     url = f"{api_url}/rag/questions/report/weekly"
     if week_of:
         url += f"?week_of={week_of}"
@@ -33,87 +50,126 @@ def fetch_report(api_url: str, week_of: str | None = None) -> dict:
         return json.loads(resp.read())
 
 
-def format_report(data: dict) -> str:
-    lines = []
+def fetch_csv(api_url: str, since: str, until: str) -> bytes:
+    url = f"{api_url}/rag/questions/export?since={since}&until={until}"
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        return resp.read()
+
+
+def format_summary(data: dict) -> str:
+    """Build a plain-text email body from the weekly report JSON."""
     period = data["period"]
-    summary = data["summary"]
+    s = data["summary"]
 
-    lines.append("=" * 60)
-    lines.append("  PROTOCARE AI — WEEKLY QUESTION REPORT")
-    lines.append(f"  {period['start'][:10]}  to  {period['end'][:10]}")
-    lines.append("=" * 60)
-    lines.append("")
+    lines = [
+        "ProtoCare AI — Weekly Question Report",
+        f"{period['start'][:10]}  to  {period['end'][:10]}",
+        "",
+        f"Total questions:     {s['total_questions']}",
+        f"Previous week:       {s['previous_week_total']}  ({'+' if s['week_over_week_change'] >= 0 else ''}{s['week_over_week_change']})",
+        f"Unique sessions:     {s['unique_sessions']}",
+        f"Avg response time:   {s['avg_latency_ms'] or 'N/A'} ms",
+        f"Guardrail triggers:  {s['guardrail_triggers']}",
+        "",
+    ]
 
-    # Summary
-    change = summary["week_over_week_change"]
-    arrow = "+" if change > 0 else "" if change == 0 else ""
-    lines.append(f"  Total questions:    {summary['total_questions']}")
-    lines.append(f"  Previous week:      {summary['previous_week_total']}  ({arrow}{change})")
-    lines.append(f"  Unique sessions:    {summary['unique_sessions']}")
-    latency = summary.get("avg_latency_ms")
-    lines.append(f"  Avg response time:  {latency} ms" if latency else "  Avg response time:  N/A")
-    lines.append(f"  Guardrail triggers: {summary['guardrail_triggers']}")
-    lines.append("")
-
-    # Per-doctor
     doctors = data.get("by_doctor", [])
     if doctors:
-        lines.append("-" * 60)
-        lines.append("  QUESTIONS BY PROVIDER")
-        lines.append("-" * 60)
+        lines.append("QUESTIONS BY PROVIDER")
+        lines.append("-" * 50)
         for d in doctors:
             name = d["doctor_name"] or d["doctor_id"]
             lines.append(
-                f"  {name:<30}  {d['total']:>4} total  "
+                f"  {name:<28}  {d['total']:>4} total  "
                 f"({d['from_patients']} patient, {d['from_providers']} provider)"
             )
         lines.append("")
 
-    # Per body part
     body_parts = data.get("by_body_part", [])
     if body_parts:
-        lines.append("-" * 60)
-        lines.append("  QUESTIONS BY BODY PART (CareGuide MSK)")
-        lines.append("-" * 60)
+        lines.append("QUESTIONS BY BODY PART (CareGuide MSK)")
+        lines.append("-" * 50)
         for bp in body_parts:
-            lines.append(f"  {bp['body_part']:<30}  {bp['total']:>4}")
+            lines.append(f"  {bp['body_part']:<28}  {bp['total']:>4}")
         lines.append("")
 
-    # Top questions
     top_qs = data.get("top_questions", [])
     if top_qs:
-        lines.append("-" * 60)
-        lines.append("  TOP QUESTIONS")
-        lines.append("-" * 60)
+        lines.append("TOP QUESTIONS")
+        lines.append("-" * 50)
         for i, q in enumerate(top_qs, 1):
             target = q["doctor_name"] or q["body_part"] or "general"
-            times = q["times_asked"]
             text = q["question"][:80] + ("..." if len(q["question"]) > 80 else "")
-            lines.append(f"  {i:>2}. [{target}] ({times}x)")
+            lines.append(f"  {i:>2}. [{target}] ({q['times_asked']}x)")
             lines.append(f"      \"{text}\"")
         lines.append("")
 
-    lines.append("=" * 60)
+    lines.append("Full data attached as CSV.")
     return "\n".join(lines)
 
 
+def send_email(subject: str, body: str, csv_bytes: bytes, csv_filename: str):
+    recipients = [r.strip() for r in REPORT_RECIPIENT.split(",")]
+
+    msg = MIMEMultipart()
+    msg["From"] = SMTP_USER
+    msg["To"] = ", ".join(recipients)
+    msg["Subject"] = subject
+
+    msg.attach(MIMEText(body, "plain"))
+
+    attachment = MIMEBase("text", "csv")
+    attachment.set_payload(csv_bytes)
+    encoders.encode_base64(attachment)
+    attachment.add_header("Content-Disposition", f"attachment; filename={csv_filename}")
+    msg.attach(attachment)
+
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASSWORD)
+        server.sendmail(SMTP_USER, recipients, msg.as_string())
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Fetch and display weekly question report")
-    parser.add_argument("--api-url", default=DEFAULT_API_URL, help="Backend API base URL")
+    parser = argparse.ArgumentParser(description="Email weekly ProtoCare question report")
+    parser.add_argument("--api-url", default=API_URL)
     parser.add_argument("--week-of", default=None, help="Date within the target week (YYYY-MM-DD)")
-    parser.add_argument("--json", action="store_true", help="Output raw JSON instead of formatted text")
+    parser.add_argument("--dry-run", action="store_true", help="Print report without sending email")
+    parser.add_argument("--json", action="store_true", help="Print raw JSON")
     args = parser.parse_args()
 
-    try:
-        data = fetch_report(args.api_url, args.week_of)
-    except Exception as e:
-        print(f"Error fetching report: {e}", file=sys.stderr)
-        sys.exit(1)
+    # 1. Fetch the weekly summary
+    report = fetch_weekly_json(args.api_url, args.week_of)
 
     if args.json:
-        print(json.dumps(data, indent=2))
-    else:
-        print(format_report(data))
+        print(json.dumps(report, indent=2))
+        return
+
+    summary_text = format_summary(report)
+
+    if args.dry_run:
+        print(summary_text)
+        return
+
+    # 2. Fetch the raw CSV for the same period
+    period = report["period"]
+    csv_bytes = fetch_csv(args.api_url, period["start"], period["end"])
+
+    # 3. Email it
+    week_label = period["start"][:10]
+    subject = f"ProtoCare Weekly Report — {week_label}"
+    csv_filename = f"protocare_questions_{week_label}.csv"
+
+    if not SMTP_USER or not SMTP_PASSWORD:
+        print("ERROR: SMTP_USER and SMTP_PASSWORD env vars are required to send email.", file=sys.stderr)
+        print("Set these in Railway variables or your .env file.", file=sys.stderr)
+        print("\nReport preview:\n")
+        print(summary_text)
+        sys.exit(1)
+
+    send_email(subject, summary_text, csv_bytes, csv_filename)
+    print(f"Report sent to {REPORT_RECIPIENT} for week of {week_label}")
 
 
 if __name__ == "__main__":
