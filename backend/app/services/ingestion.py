@@ -5,7 +5,7 @@ import boto3
 from botocore.config import Config as BotoConfig
 from pypdf import PdfReader
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
+from qdrant_client.http.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, FilterSelector, PayloadSchemaType
 from openai import OpenAI
 from app.core.config import settings
 
@@ -89,13 +89,23 @@ def _openai():
     return OpenAI(api_key=settings.openai_api_key)
 
 def _ensure_collection(cli: QdrantClient, collection_name: str):
-    try: 
+    try:
         cli.get_collection(collection_name)
     except Exception:
         cli.recreate_collection(
-            collection_name=collection_name, 
+            collection_name=collection_name,
             vectors_config=VectorParams(size=1536, distance=Distance.COSINE)
         )
+    # Ensure a keyword index on document_id so we can filter/delete by it.
+    # create_payload_index is idempotent — no-ops if it already exists.
+    try:
+        cli.create_payload_index(
+            collection_name=collection_name,
+            field_name="document_id",
+            field_schema=PayloadSchemaType.KEYWORD,
+        )
+    except Exception:
+        pass  # Index already exists or collection just created with it
 
 def _download(bucket: str, key: str) -> Tuple[str, Optional[str]]:
     """Download file from S3 and return (local_path, original_filename)."""
