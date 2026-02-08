@@ -9,6 +9,7 @@ class Citation(BaseModel):
     author: Optional[str] = None
     publication_year: Optional[int] = None
     document_url: Optional[str] = None  # Presigned URL to view the document
+    display_label: Optional[str] = None  # Simplified label shown in UI (e.g. "Dr. Bedi protocol")
 
 class Answer(BaseModel):
     answer: str

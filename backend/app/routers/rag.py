@@ -1081,6 +1081,13 @@ async def rag_query(body: QueryRequest):
                     except Exception as e:
                         logger.warning("presign_url_failed", document_id=doc_id, error=str(e))
 
+                # Compute a simplified display label for the UI
+                if doctor_name and i < num_primary_hits:
+                    last_name = doctor_name.split()[-1]
+                    display_label = f"Dr. {last_name} protocol"
+                else:
+                    display_label = "Published research"
+
                 title_to_cite_idx[title] = len(citations)
                 citations.append(
                     Citation(
@@ -1091,6 +1098,7 @@ async def rag_query(body: QueryRequest):
                         author=author,
                         publication_year=publication_year,
                         document_url=document_url,
+                        display_label=display_label,
                     )
                 )
 
