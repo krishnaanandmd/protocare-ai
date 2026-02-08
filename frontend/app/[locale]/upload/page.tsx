@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8080";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 
 const UPLOAD_PASSWORD = "CareGuide2025";
 
@@ -49,23 +49,33 @@ export default function UploadPage() {
 
   // Doctor protocol mode state
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [doctorsLoading, setDoctorsLoading] = useState(false);
+  const [doctorsError, setDoctorsError] = useState<string | null>(null);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [protocolName, setProtocolName] = useState("Protocols");
 
   // Fetch doctors list
+  const fetchDoctors = async () => {
+    setDoctorsLoading(true);
+    setDoctorsError(null);
+    try {
+      const res = await fetch(`${API_BASE}/rag/doctors`);
+      if (res.ok) {
+        const data = await res.json();
+        setDoctors(data);
+      } else {
+        setDoctorsError(`Server returned ${res.status}. Check that the backend is running.`);
+      }
+    } catch (err) {
+      setDoctorsError("Could not connect to the API. Check that the backend is running.");
+      console.error("Failed to fetch doctors:", err);
+    } finally {
+      setDoctorsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!authenticated) return;
-    const fetchDoctors = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/rag/doctors`);
-        if (res.ok) {
-          const data = await res.json();
-          setDoctors(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch doctors:", err);
-      }
-    };
     fetchDoctors();
   }, [authenticated]);
 
@@ -256,15 +266,30 @@ export default function UploadPage() {
                 <select
                   value={selectedDoctorId || ""}
                   onChange={(e) => setSelectedDoctorId(e.target.value || null)}
-                  className="w-full rounded-xl bg-white/10 border-2 border-white/20 backdrop-blur-sm px-4 py-3 text-white focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 transition-all outline-none appearance-none"
+                  disabled={doctorsLoading}
+                  className="w-full rounded-xl bg-white/10 border-2 border-white/20 backdrop-blur-sm px-4 py-3 text-white focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 transition-all outline-none appearance-none disabled:opacity-50"
                 >
-                  <option value="" className="bg-slate-900">Select a doctor...</option>
+                  <option value="" className="bg-slate-900">
+                    {doctorsLoading ? "Loading doctors..." : "Select a doctor..."}
+                  </option>
                   {doctors.map((doc) => (
                     <option key={doc.id} value={doc.id} className="bg-slate-900">
                       {doc.name} — {doc.specialty}
                     </option>
                   ))}
                 </select>
+                {doctorsError && (
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-red-400">{doctorsError}</p>
+                    <button
+                      type="button"
+                      onClick={fetchDoctors}
+                      className="text-sm text-cyan-400 hover:text-cyan-300 underline"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Protocol Name */}
