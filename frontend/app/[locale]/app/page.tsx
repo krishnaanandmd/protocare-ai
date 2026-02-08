@@ -9,7 +9,7 @@ import remarkGfm from "remark-gfm";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 
-type Citation = { title: string; document_id: string; page?: number; section?: string; author?: string; publication_year?: number; document_url?: string; };
+type Citation = { title: string; document_id: string; page?: number; section?: string; author?: string; publication_year?: number; document_url?: string; display_label?: string; };
 type Answer = { answer: string; citations: Citation[]; guardrails: Record<string, any>; latency_ms: number; };
 type Doctor = { id: string; name: string; specialty: string; };
 type BodyPart = { id: string; name: string; description: string; };
@@ -400,7 +400,7 @@ function AnswerCard({
         </span>
       </div>
 
-      <div className="prose prose-invert max-w-none prose-headings:text-white prose-h1:text-2xl prose-h1:font-bold prose-h1:mb-4 prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-2 prose-p:text-slate-200 prose-p:text-base prose-p:leading-relaxed prose-li:text-slate-200 prose-li:text-base prose-strong:text-white prose-ul:my-2 prose-li:my-0.5">
+      <div className="prose prose-invert max-w-none prose-headings:text-white prose-h1:text-xl prose-h1:font-bold prose-h1:mb-3 prose-h2:text-base prose-h2:font-semibold prose-h2:mt-5 prose-h2:mb-2 prose-p:text-white/90 prose-p:text-base prose-p:leading-relaxed prose-li:text-white/90 prose-li:text-base prose-strong:text-white prose-ul:my-2 prose-li:my-0.5 prose-a:text-white/90 prose-a:no-underline">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
       </div>
 
@@ -414,39 +414,24 @@ function AnswerCard({
         {citations.length === 0 ? (
           <p className="text-sm text-slate-400 italic">{t('qa.answer.noSources')}</p>
         ) : (
-          <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
             {citations.map((c, idx) => {
-              // Build author citation format if author and year are available
-              const authorCitation = c.author && c.publication_year
-                ? `${c.author} (${c.publication_year})`
-                : c.author || null;
+              const label = c.display_label || c.title;
 
-              const citationContent = (
-                <>
-                  <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-600 text-white text-xs font-bold flex-shrink-0 shadow-lg">
+              const badge = (
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/30 transition-all text-sm text-slate-200">
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-600 text-white text-xs font-bold flex-shrink-0">
                     {idx + 1}
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-white text-sm flex items-center gap-2">
-                      {c.title}
-                      {c.document_url && (
-                        <svg className="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      )}
-                    </p>
-                    {authorCitation && (
-                      <p className="text-sm text-slate-300 mt-1">{authorCitation}</p>
-                    )}
-                    <p className="text-xs text-slate-400 mt-1">
-                      {c.section && <span>{c.section} • </span>}
-                      {typeof c.page === "number" && <span>Page {c.page}</span>}
-                    </p>
-                  </div>
-                </>
+                  {label}
+                  {c.document_url && (
+                    <svg className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  )}
+                </span>
               );
 
-              // Make citation clickable if document_url is available
               if (c.document_url) {
                 return (
                   <a
@@ -454,18 +439,14 @@ function AnswerCard({
                     href={c.document_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/30 transition-all cursor-pointer group"
+                    className="cursor-pointer"
                   >
-                    {citationContent}
+                    {badge}
                   </a>
                 );
               }
 
-              return (
-                <div key={idx} className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                  {citationContent}
-                </div>
-              );
+              return <span key={idx}>{badge}</span>;
             })}
           </div>
         )}
