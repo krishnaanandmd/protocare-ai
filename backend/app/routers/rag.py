@@ -1040,6 +1040,8 @@ async def rag_query(body: QueryRequest):
         top_scores = [round(h.score, 4) for h in hits]
         logger.info("rag_top_hits", sources=top_sources, scores=top_scores, hits_per_collection=hits_by_collection)
 
+    follow_up_question = None
+
     if not hits:
         if doctor_name:
             answer_text = f"I couldn't find specific protocols from {doctor_name}. Please contact the office for details."
@@ -1110,6 +1112,7 @@ async def rag_query(body: QueryRequest):
         # CRITICAL: Every factual claim MUST have an inline (Source N) citation.
         citation_rule = "IMPORTANT: You MUST cite every factual claim with an inline (Source N) tag. For example: \"Patients should remain toe-touch weight-bearing for 6 weeks (Source 3).\" Every sentence with a factual claim needs a source tag. Do not write any claims without a citation. Cite each source INDIVIDUALLY — write (Source 1) (Source 2), NEVER (Source 1, Source 2)."
         accuracy_rule = "ACCURACY: When stating specific numbers, percentages, weight-bearing status, ROM restrictions, or timeframes from the source, quote them EXACTLY as written. Do NOT combine or confuse separate restrictions. For example, a flexion restriction (e.g., 'no knee flexion past 90 degrees for 6 weeks') is NOT a weight-bearing restriction (e.g., 'PWB 0-25%'). State each restriction separately and precisely as it appears in the source. If the source says 'PWB 0-25%', do NOT say 'no weight bearing'. If the source specifies instructions by time period (e.g., Days 1-7, Weeks 2-3), organize your answer by those same time periods."
+        follow_up_rule = "FOLLOW-UP: After your answer, if there is a natural follow-up question the user might want to ask that would let you give a more specific or helpful answer, add it on its own line at the very end in this exact format: FOLLOW_UP_QUESTION: <your question here>. The question should be relevant, concise, and help the user get more targeted information from the available sources. Only include one follow-up question. If there is no useful follow-up, omit this line entirely."
 
         if body.actor == "PROVIDER":
             if doctor_name:
@@ -1123,7 +1126,8 @@ Rules:
 - If the protocol does not address the specific question, say so clearly.
 - Never fabricate information or citations.
 - {accuracy_rule}
-- {citation_rule}"""
+- {citation_rule}
+- {follow_up_rule}"""
             elif body_part_name:
                 system_prompt = f"""You are a clinical decision support assistant for {body_part_name} conditions.
 
@@ -1132,9 +1136,10 @@ Rules:
 - State findings directly — do not hedge when sources are clear.
 - Never fabricate information or citations.
 - {accuracy_rule}
-- {citation_rule}"""
+- {citation_rule}
+- {follow_up_rule}"""
             else:
-                system_prompt = f"""You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. Never fabricate information or citations. {accuracy_rule} {citation_rule}"""
+                system_prompt = f"""You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. Never fabricate information or citations. {accuracy_rule} {citation_rule} {follow_up_rule}"""
         else:
             if doctor_name:
                 system_prompt = f"""You are an office assistant for Dr. {doctor_name}'s practice, helping patients and their families understand the doctor's protocols and post-operative instructions.
@@ -1148,7 +1153,8 @@ Rules:
 - Encourage patients to contact Dr. {doctor_name}'s office or discuss specifics with their care team for personalized guidance.
 - Never provide medical advice or fabricate information or citations.
 - {accuracy_rule}
-- {citation_rule}"""
+- {citation_rule}
+- {follow_up_rule}"""
             elif body_part_name:
                 system_prompt = f"""You are a patient education assistant for {body_part_name} conditions.
 
@@ -1159,9 +1165,10 @@ Rules:
 - Encourage patients to discuss specifics with their care team.
 - Never provide medical advice or fabricate information or citations.
 - {accuracy_rule}
-- {citation_rule}"""
+- {citation_rule}
+- {follow_up_rule}"""
             else:
-                system_prompt = f"""You are a patient education assistant. Answer using ONLY the provided sources in clear language. Never provide medical advice or fabricate information or citations. {accuracy_rule} {citation_rule}"""
+                system_prompt = f"""You are a patient education assistant. Answer using ONLY the provided sources in clear language. Never provide medical advice or fabricate information or citations. {accuracy_rule} {citation_rule} {follow_up_rule}"""
 
         user_prompt = f"""Sources:
 {context}
@@ -1194,6 +1201,13 @@ Answer the question using the sources above. Rules:
         )
 
         raw_answer = response.content[0].text if response.content else "I couldn't generate an answer."
+
+        # Extract follow-up question if present
+        follow_up_question = None
+        follow_up_match = re.search(r'\n*FOLLOW_UP_QUESTION:\s*(.+?)$', raw_answer, flags=re.MULTILINE)
+        if follow_up_match:
+            follow_up_question = follow_up_match.group(1).strip()
+            raw_answer = raw_answer[:follow_up_match.start()].strip()
 
         # Strip any SOURCES_USED footer the model may have appended
         answer_text = re.sub(r'\n*SOURCES_USED:.*$', '', raw_answer, flags=re.DOTALL).strip()
@@ -1239,10 +1253,11 @@ Answer the question using the sources above. Rules:
     latency_ms = int((time.time() - t0) * 1000)
     logger.info("rag_query", latency_ms=latency_ms, k=len(hits or []), collections=collections_to_search)
     return Answer(
-        answer=answer_text, 
-        citations=citations, 
-        guardrails={"in_scope": True, "emergency": False}, 
-        latency_ms=latency_ms
+        answer=answer_text,
+        citations=citations,
+        guardrails={"in_scope": True, "emergency": False},
+        latency_ms=latency_ms,
+        follow_up_question=follow_up_question,
     )
 
 @router.post("/dev/seed")

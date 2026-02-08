@@ -10,7 +10,7 @@ import remarkGfm from "remark-gfm";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 
 type Citation = { title: string; document_id: string; page?: number; section?: string; author?: string; publication_year?: number; document_url?: string; display_label?: string; };
-type Answer = { answer: string; citations: Citation[]; guardrails: Record<string, any>; latency_ms: number; };
+type Answer = { answer: string; citations: Citation[]; guardrails: Record<string, any>; latency_ms: number; follow_up_question?: string; };
 type Doctor = { id: string; name: string; specialty: string; };
 type BodyPart = { id: string; name: string; description: string; };
 
@@ -295,7 +295,7 @@ export default function PatientQA() {
             </div>
           )}
 
-          {data && <AnswerCard mode={mode} data={data} doctorName={selectedDoctorName} />}
+          {data && <AnswerCard mode={mode} data={data} doctorName={selectedDoctorName} onFollowUp={(q) => { setQuestion(q); }} />}
 
         </div>
 
@@ -371,14 +371,15 @@ function Disclaimer({ mode }: { mode: "PATIENT" | "PROVIDER" }) {
 }
 
 function AnswerCard({
-  mode, data, doctorName
+  mode, data, doctorName, onFollowUp
 }: {
   mode: "PATIENT" | "PROVIDER";
   data: Answer;
   doctorName?: string;
+  onFollowUp?: (question: string) => void;
 }) {
   const t = useTranslations();
-  const { answer, citations, latency_ms } = data;
+  const { answer, citations, latency_ms, follow_up_question } = data;
 
   return (
     <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6">
@@ -400,7 +401,7 @@ function AnswerCard({
         </span>
       </div>
 
-      <div className="prose prose-invert max-w-none prose-headings:text-white prose-h1:text-xl prose-h1:font-bold prose-h1:mb-3 prose-h2:text-base prose-h2:font-semibold prose-h2:mt-5 prose-h2:mb-2 prose-p:text-white/90 prose-p:text-base prose-p:leading-relaxed prose-li:text-white/90 prose-li:text-base prose-strong:text-white prose-ul:my-2 prose-li:my-0.5 prose-a:text-white/90 prose-a:no-underline">
+      <div className="prose prose-invert prose-lg max-w-none prose-headings:text-white prose-h1:text-xl prose-h1:font-bold prose-h1:mb-3 prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-5 prose-h2:mb-2 prose-p:text-white prose-p:leading-relaxed prose-li:text-white prose-strong:text-white prose-strong:font-bold prose-ul:my-2 prose-li:my-0.5 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-200">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
       </div>
 
@@ -460,6 +461,24 @@ function AnswerCard({
             </svg>
             {t('qa.answer.disclaimer', { doctorName: doctorName || t('qa.answer.title.default') })}
           </p>
+        </div>
+      )}
+
+      {/* Follow-up Question */}
+      {follow_up_question && (
+        <div className="border-t border-white/20 pt-6">
+          <p className="text-sm font-semibold text-slate-300 mb-3">Want to dive deeper?</p>
+          <button
+            onClick={() => onFollowUp?.(follow_up_question)}
+            className="group w-full text-left px-5 py-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-teal-500/10 border border-cyan-500/30 hover:border-cyan-400/50 hover:from-cyan-500/20 hover:to-teal-500/20 transition-all"
+          >
+            <span className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-cyan-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-white font-medium group-hover:text-cyan-100 transition-colors">{follow_up_question}</span>
+            </span>
+          </button>
         </div>
       )}
 
