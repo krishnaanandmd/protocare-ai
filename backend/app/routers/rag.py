@@ -1261,9 +1261,9 @@ Rules:
 - Use clear, patient-friendly language.
 - State Dr. {doctor_name}'s protocol directly and confidently — patients chose this surgeon and want to know what their doctor recommends.
 - If Dr. {doctor_name}'s own protocol addresses the question, lead with it as the definitive answer.
+- Include specific medication names, dosages, and timing instructions exactly as they appear in the protocol — do not withhold details that are in the source documents or tell patients to contact the office for information already available in the protocol.
 - Supplementary research may support the protocol but should not contradict or dilute it.
-- Encourage patients to contact Dr. {doctor_name}'s office or discuss specifics with their care team for personalized guidance.
-- Never provide medical advice or fabricate information or citations.
+- Never fabricate information or citations.
 - {accuracy_rule}
 - {citation_rule}
 - {follow_up_rule}"""
