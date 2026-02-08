@@ -1025,11 +1025,14 @@ async def rag_query(body: QueryRequest):
         # Guarantee the surgeon's own protocols are represented, then fill with evidence.
         # Primary protocol chunks come first so the LLM sees them as Source 1, 2, 3...
         # This ensures the surgeon's own protocol is always the leading answer.
-        hits = primary_hits[:8] + supplementary_hits[:7]
+        primary_used = primary_hits[:8]
+        hits = primary_used + supplementary_hits[:7]
+        num_primary_hits = len(primary_used)
     else:
         # CareGuide path: flat ranking across general collections
         all_hits.sort(key=lambda h: h.score, reverse=True)
         hits = all_hits[:12]
+        num_primary_hits = 0
 
     # Log which collections contributed to the top results
     if hits:
@@ -1062,7 +1065,12 @@ async def rag_query(body: QueryRequest):
             author = p.get("author")
             publication_year = p.get("publication_year")
 
-            context_parts.append(f"[Source {i+1}: {title}]\n{text}\n")
+            # Label protocol sources distinctly so the LLM prioritises them
+            if doctor_name and i < num_primary_hits:
+                label = f"[Source {i+1} — {doctor_name}'s Protocol: {title}]"
+            else:
+                label = f"[Source {i+1}: {title}]"
+            context_parts.append(f"{label}\n{text}\n")
 
             if title not in title_to_cite_idx:
                 # First chunk from this document — create citation
@@ -1092,7 +1100,7 @@ async def rag_query(body: QueryRequest):
         
         # Build system prompt based on actor and path.
         # CRITICAL: Every factual claim MUST have an inline (Source N) citation.
-        citation_rule = "IMPORTANT: You MUST cite every factual claim with an inline (Source N) tag. For example: \"Patients should remain toe-touch weight-bearing for 6 weeks (Source 3).\" Every sentence with a factual claim needs a source tag. Do not write any claims without a citation."
+        citation_rule = "IMPORTANT: You MUST cite every factual claim with an inline (Source N) tag. For example: \"Patients should remain toe-touch weight-bearing for 6 weeks (Source 3).\" Every sentence with a factual claim needs a source tag. Do not write any claims without a citation. Cite each source INDIVIDUALLY — write (Source 1) (Source 2), NEVER (Source 1, Source 2)."
         accuracy_rule = "ACCURACY: When stating specific numbers, percentages, weight-bearing status, ROM restrictions, or timeframes from the source, quote them EXACTLY as written. Do NOT combine or confuse separate restrictions. For example, a flexion restriction (e.g., 'no knee flexion past 90 degrees for 6 weeks') is NOT a weight-bearing restriction (e.g., 'PWB 0-25%'). State each restriction separately and precisely as it appears in the source. If the source says 'PWB 0-25%', do NOT say 'no weight bearing'. If the source specifies instructions by time period (e.g., Days 1-7, Weeks 2-3), organize your answer by those same time periods."
 
         if body.actor == "PROVIDER":
@@ -1153,9 +1161,10 @@ Rules:
 Question: {q}
 
 Answer the question using the sources above. Rules:
-1. Every factual claim MUST include an inline (Source N) citation.
+1. Every factual claim MUST include an inline (Source N) citation. Cite each source individually — write (Source 1) (Source 2), NEVER (Source 1, Source 2).
 2. Quote specific numbers, percentages, weight-bearing status, and timeframes EXACTLY as they appear in the source — do not paraphrase or combine different restrictions.
-3. If the source organizes instructions by time period, present your answer in the same time-period structure."""
+3. If the source organizes instructions by time period, present your answer in the same time-period structure.
+4. Sources labelled as the surgeon's Protocol are the PRIMARY authority — cite and lead with those first. Supplementary research sources should only be used to support or add context, not to replace or contradict the surgeon's protocol."""
 
         # Use Claude Sonnet 4.5 with prompt caching.
         # The system prompt is cached so repeated queries for the same doctor
@@ -1180,6 +1189,18 @@ Answer the question using the sources above. Rules:
 
         # Strip any SOURCES_USED footer the model may have appended
         answer_text = re.sub(r'\n*SOURCES_USED:.*$', '', raw_answer, flags=re.DOTALL).strip()
+
+        # Normalize comma-separated citations like (Source 9, Source 10)
+        # into individual citations (Source 9) (Source 10).
+        def _expand_multi_cite(m: re.Match) -> str:
+            nums = re.findall(r'\d+', m.group(0))
+            return " ".join(f"(Source {n})" for n in nums)
+
+        answer_text = re.sub(
+            r'\(Source\s+\d+(?:\s*,\s*Source\s+\d+)+\)',
+            _expand_multi_cite,
+            answer_text,
+        )
 
         # Map inline (Source N) references to the deduped citation list,
         # keep only cited documents, and renumber sequentially.

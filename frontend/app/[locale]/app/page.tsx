@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { DoctorAutocomplete } from "@/components/DoctorAutocomplete";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 
@@ -398,8 +400,8 @@ function AnswerCard({
         </span>
       </div>
 
-      <div className="prose prose-invert max-w-none">
-        <p className="text-slate-200 text-lg leading-relaxed whitespace-pre-wrap">{answer}</p>
+      <div className="prose prose-invert max-w-none prose-headings:text-white prose-h1:text-2xl prose-h1:font-bold prose-h1:mb-4 prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-2 prose-p:text-slate-200 prose-p:text-base prose-p:leading-relaxed prose-li:text-slate-200 prose-li:text-base prose-strong:text-white prose-ul:my-2 prose-li:my-0.5">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
       </div>
 
       <div className="border-t border-white/20 pt-6">
