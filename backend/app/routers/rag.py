@@ -1157,19 +1157,26 @@ Answer the question using the sources above. Rules:
 2. Quote specific numbers, percentages, weight-bearing status, and timeframes EXACTLY as they appear in the source — do not paraphrase or combine different restrictions.
 3. If the source organizes instructions by time period, present your answer in the same time-period structure."""
 
-        # Use OpenAI
-        oa = retrieval.openai_client()
-        response = oa.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
+        # Use Claude Sonnet 4.5 with prompt caching.
+        # The system prompt is cached so repeated queries for the same doctor
+        # hit the cache — cutting cost (~90% on cached tokens) and latency.
+        # Embeddings still use OpenAI (no re-indexing needed).
+        ac = retrieval.anthropic_client()
+        response = ac.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=4096,
             temperature=0,
-            max_tokens=1500
+            system=[
+                {
+                    "type": "text",
+                    "text": system_prompt,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+            messages=[{"role": "user", "content": user_prompt}],
         )
 
-        raw_answer = response.choices[0].message.content or "I couldn't generate an answer."
+        raw_answer = response.content[0].text if response.content else "I couldn't generate an answer."
 
         # Strip any SOURCES_USED footer the model may have appended
         answer_text = re.sub(r'\n*SOURCES_USED:.*$', '', raw_answer, flags=re.DOTALL).strip()
