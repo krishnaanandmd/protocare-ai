@@ -242,7 +242,8 @@ export default function PatientQA() {
             </div>
 
             <textarea
-              className="w-full rounded-2xl bg-white/10 border-2 border-white/20 backdrop-blur-sm px-4 py-4 text-white placeholder-slate-400 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 transition-all outline-none resize-none disabled:opacity-30"
+              className="w-full rounded-2xl bg-white/10 border-2 border-white/20 backdrop-blur-sm px-4 py-4 !text-white placeholder-slate-400 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 transition-all outline-none resize-none disabled:opacity-30"
+              style={{ color: '#ffffff' }}
               rows={4}
               placeholder={
                 selectedDoctorName
