@@ -202,7 +202,13 @@ def _parse_pdf_fast(path: str) -> List[NS]:
     return out
 
 def _parse_docx(path: str) -> List[NS]:
-    """Parse a Word document (.docx) and extract text."""
+    """Parse a Word document (.docx) and extract text.
+
+    Tries paragraphs and tables first. If nothing is found, falls back to
+    extracting all ``<w:t>`` text runs from the document XML, which catches
+    content stored in text boxes, shapes, content controls, headers/footers,
+    and other structures that python-docx doesn't expose via ``.paragraphs``.
+    """
     if not _check_docx_available():
         raise RuntimeError("python-docx not installed. Run: pip install python-docx")
 
@@ -232,6 +238,40 @@ def _parse_docx(path: str) -> List[NS]:
                 text="\n".join(table_text),
                 metadata=NS(page_number=current_page, category="table")
             ))
+
+    # Fallback: if no text was found via paragraphs/tables, extract all <w:t>
+    # text runs from the raw XML.  This catches content in text boxes, shapes,
+    # content controls, headers, footers, and other structures.
+    if not elements:
+        log.warning("No text from paragraphs/tables in %s – trying raw XML extraction", path)
+        try:
+            import zipfile
+            from xml.etree import ElementTree as ET
+
+            ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+            text_parts: List[str] = []
+
+            with zipfile.ZipFile(path) as zf:
+                # Collect XML parts that may contain text
+                xml_targets = [
+                    n for n in zf.namelist()
+                    if n.startswith("word/") and n.endswith(".xml")
+                ]
+                for target in xml_targets:
+                    tree = ET.parse(zf.open(target))
+                    for t_el in tree.iter(f"{{{ns['w']}}}t"):
+                        if t_el.text:
+                            text_parts.append(t_el.text)
+
+            full_text = " ".join(text_parts).strip()
+            if full_text:
+                elements.append(NS(
+                    text=full_text,
+                    metadata=NS(page_number=1, category="xml_fallback"),
+                ))
+                log.info("XML fallback extracted %d chars from %s", len(full_text), path)
+        except Exception as exc:
+            log.error("XML fallback extraction failed for %s: %s", path, exc)
 
     return elements
 
@@ -522,7 +562,6 @@ def process_document(s3_key: str, source_type: str = "OTHER", org_id: str = "dem
     except Exception as e:
         STATUS[doc_id] = {"state":"error","error":str(e)}
         log.exception("INGEST failed %s: %s", s3_key, e)
-        raise
     finally:
         # Clean up temp file
         try:
