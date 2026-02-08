@@ -2,13 +2,13 @@ import re
 import os
 import logging
 from typing import Optional, List
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 import boto3
 from botocore.config import Config as BotoConfig
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
-from app.services.s3_uploads import presign_post
+from app.services.s3_uploads import presign_post, new_object_key
 from app.services.ingestion import (
     process_document,
     STATUS,
@@ -65,6 +65,31 @@ async def upload_init(body: UploadInitRequest):
         bucket=signed["bucket"], 
         document_id=signed["key"]
     )
+
+@router.post("/upload")
+async def upload_file(
+    background: BackgroundTasks,
+    file: UploadFile = File(...),
+    org_id: str = Form("demo"),
+    source_type: str = Form("OTHER"),
+):
+    """Direct file upload: receives the file, uploads to S3, and queues processing."""
+    key = new_object_key(org_id, file.filename or "document.pdf")
+    content_type = file.content_type or "application/octet-stream"
+    s3_client = _get_s3_client()
+    s3_client.upload_fileobj(
+        file.file,
+        settings.s3_bucket,
+        key,
+        ExtraArgs={
+            "ContentType": content_type,
+            "Metadata": {"original-filename": file.filename or "unknown"},
+        },
+    )
+    STATUS[key] = {"state": "queued"}
+    background.add_task(process_document, key, source_type, org_id)
+    return {"document_id": key, "status": "queued"}
+
 
 @router.post("/{document_id:path}/publish")
 def publish(document_id: str, background: BackgroundTasks, source_type: str = "OTHER", org_id: str = "demo"):

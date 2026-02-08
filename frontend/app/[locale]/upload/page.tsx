@@ -105,32 +105,20 @@ export default function UploadPage() {
       };
 
       try {
-        set("Requesting presign...");
-        const initRes = await fetch(`${API_BASE}/documents/upload:init`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: it.file.name,
-            content_type: it.file.type || "application/pdf",
-            org_id: effectiveOrgId,
-          }),
-        });
-        if (!initRes.ok) throw new Error(`init ${it.file.name}: ${await initRes.text()}`);
-        const init = await initRes.json();
-
-        set("Uploading to S3...");
+        set("Uploading...");
         const form = new FormData();
-        Object.entries(init.fields).forEach(([k, v]: any) => form.append(k, v));
         form.append("file", it.file);
-        const s3Res = await fetch(init.upload_url, { method: "POST", body: form });
-        if (!s3Res.ok) throw new Error(`S3 ${it.file.name}: ${await s3Res.text()}`);
+        form.append("org_id", effectiveOrgId);
+        form.append("source_type", effectiveSourceType);
 
-        set("Publishing...");
-        const pub = await fetch(
-          `${API_BASE}/documents/${encodeURIComponent(init.key)}/publish?source_type=${encodeURIComponent(effectiveSourceType)}&org_id=${encodeURIComponent(effectiveOrgId)}`,
-          { method: "POST" }
-        );
-        if (!pub.ok) throw new Error(`publish ${it.file.name}: ${await pub.text()}`);
+        const res = await fetch(`${API_BASE}/documents/upload`, {
+          method: "POST",
+          body: form,
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || `Server returned ${res.status}`);
+        }
 
         set("Queued ✅");
       } catch (err: any) {
