@@ -5,7 +5,7 @@ import boto3
 from botocore.config import Config as BotoConfig
 from pypdf import PdfReader
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, VectorParams, PointStruct
+from qdrant_client.http.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
 from openai import OpenAI
 from app.core.config import settings
 
@@ -204,10 +204,17 @@ def _parse_pdf_fast(path: str) -> List[NS]:
 def _parse_docx(path: str) -> List[NS]:
     """Parse a Word document (.docx) and extract text.
 
-    Tries paragraphs and tables first. If nothing is found, falls back to
-    extracting all ``<w:t>`` text runs from the document XML, which catches
-    content stored in text boxes, shapes, content controls, headers/footers,
-    and other structures that python-docx doesn't expose via ``.paragraphs``.
+    Concatenates all paragraph text into a single string so that the
+    downstream ``_split`` function can create coherent chunks that
+    preserve section context (e.g., a medication name stays with its
+    dosage and timing instructions).
+
+    Without concatenation, each paragraph/bullet becomes its own tiny
+    chunk with a separate embedding, causing retrieval to miss related
+    details (e.g., returning "Ibuprofen:" but not its dosage).
+
+    If no text is found via paragraphs/tables, falls back to extracting
+    all ``<w:t>`` text runs from the document XML.
     """
     if not _check_docx_available():
         raise RuntimeError("python-docx not installed. Run: pip install python-docx")
@@ -216,15 +223,23 @@ def _parse_docx(path: str) -> List[NS]:
 
     doc = Document(path)
     elements = []
-    current_page = 1
 
+    # Collect all paragraph text into a single string.
+    # python-docx treats each line/bullet as a separate paragraph;
+    # concatenating them lets _split() create coherent chunks that
+    # keep related content (e.g., medication name + dosage) together,
+    # mirroring how the PDF parser returns all text per page.
+    para_texts = []
     for para in doc.paragraphs:
         text = para.text.strip()
         if text:
-            elements.append(NS(
-                text=text,
-                metadata=NS(page_number=current_page, category=para.style.name if para.style else None)
-            ))
+            para_texts.append(text)
+
+    if para_texts:
+        elements.append(NS(
+            text="\n".join(para_texts),
+            metadata=NS(page_number=1, category=None)
+        ))
 
     # Also extract text from tables
     for table in doc.tables:
@@ -236,7 +251,7 @@ def _parse_docx(path: str) -> List[NS]:
         if table_text:
             elements.append(NS(
                 text="\n".join(table_text),
-                metadata=NS(page_number=current_page, category="table")
+                metadata=NS(page_number=1, category="table")
             ))
 
     # Fallback: if no text was found via paragraphs/tables, extract all <w:t>
@@ -526,6 +541,22 @@ def process_document(s3_key: str, source_type: str = "OTHER", org_id: str = "dem
 
         cli = _qdrant()
         _ensure_collection(cli, collection_name)
+
+        # Remove any existing chunks for this document so re-ingestion
+        # doesn't create duplicates (e.g., old fragmented chunks alongside
+        # new properly-chunked ones).
+        try:
+            cli.delete(
+                collection_name=collection_name,
+                points_selector=FilterSelector(
+                    filter=Filter(
+                        must=[FieldCondition(key="document_id", match=MatchValue(value=doc_id))]
+                    )
+                ),
+            )
+            log.info("Cleared existing chunks for %s in %s", doc_id, collection_name)
+        except Exception as exc:
+            log.warning("Could not clear old chunks for %s: %s", doc_id, exc)
 
         rank = PRECEDENCE.get(source_type.upper(), PRECEDENCE["OTHER"])
 
