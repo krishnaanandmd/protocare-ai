@@ -199,10 +199,43 @@ All document collections have been assigned according to your spreadsheet specif
 
 ---
 
+### 15. Shoulder Replacement Reviews
+**Collection:** `dr_general_shoulder_replacement_reviews`
+**Source Type:** CLINICAL_GUIDELINE (Precedence: 100)
+
+**Assigned Surgeons:**
+- ✅ Dr. Joshua Dines
+- ✅ Dr. Asheesh Bedi
+- ✅ Dr. Steven DeFroda
+- ✅ Dr. Ayoosh Pareek
+- ✅ Dr. William Long
+- ✅ Dr. Khalid Alkhelaifi
+- ✅ Dr. Jorge Chahla
+
+**CareGuide Models:**
+- ✅ CareGuide Shoulder (auto-discovered via "shoulder" keyword)
+
+---
+
+### 16. FAI Reviews
+**Collection:** `dr_general_fai_reviews`
+**Source Type:** CLINICAL_GUIDELINE (Precedence: 100)
+
+**Assigned Surgeons:**
+- ✅ Dr. Joshua Dines
+- ✅ Dr. Asheesh Bedi
+- ✅ Dr. Steven DeFroda
+- ✅ Dr. Ayoosh Pareek
+
+**CareGuide Models:**
+- ✅ CareGuide Hip (via "fai" keyword added to hip body-part mapping)
+
+---
+
 ## Summary by Surgeon
 
 ### Dr. Joshua Dines (Sports Medicine)
-**Has access to 9 collections:**
+**Has access to 11 collections:**
 1. UCL RCT
 2. Rotator Cuff RCT
 3. Meniscus RCT
@@ -211,12 +244,14 @@ All document collections have been assigned according to your spreadsheet specif
 6. HSS Protocols
 7. Shoulder
 8. Elbow
-9. His own collections (`dr_joshua_dines_*`)
+9. Shoulder Replacement Reviews
+10. FAI Reviews
+11. His own collections (`dr_joshua_dines_*`)
 
 ---
 
 ### Dr. Asheesh Bedi (Sports Medicine)
-**Has access to 9 collections:**
+**Has access to 11 collections:**
 1. UCL RCT
 2. Rotator Cuff RCT
 3. Meniscus RCT
@@ -224,13 +259,15 @@ All document collections have been assigned according to your spreadsheet specif
 5. Dines-specific Clinic Protocols
 6. Shoulder
 7. Hip and Thigh
-8. Joshua Dines' collections (via SHARED_COLLECTIONS)
-9. His own collections (`dr_asheesh_bedi_*`)
+8. Shoulder Replacement Reviews
+9. FAI Reviews
+10. Joshua Dines' collections (via SHARED_COLLECTIONS)
+11. His own collections (`dr_asheesh_bedi_*`)
 
 ---
 
 ### Dr. Ayoosh Pareek (Sports Medicine)
-**Has access to 8 collections:**
+**Has access to 10 collections:**
 1. UCL RCT
 2. Rotator Cuff RCT
 3. Meniscus RCT
@@ -238,7 +275,9 @@ All document collections have been assigned according to your spreadsheet specif
 5. HSS Protocols
 6. Shoulder
 7. Elbow
-8. His own collections (`dr_ayoosh_pareek_*`)
+8. Shoulder Replacement Reviews
+9. FAI Reviews
+10. His own collections (`dr_ayoosh_pareek_*`)
 
 ---
 
@@ -252,17 +291,18 @@ All document collections have been assigned according to your spreadsheet specif
 ---
 
 ### Dr. William Long (Joint Replacement)
-**Has access to 4 collections:**
+**Has access to 5 collections:**
 1. HSS Protocols
 2. Knee and Lower Leg
 3. Hip and Thigh
 4. AAOS Knee OA Guidelines
-5. His own collections (`dr_william_long_*`)
+5. Shoulder Replacement Reviews
+6. His own collections (`dr_william_long_*`)
 
 ---
 
 ### Dr. Khalid Alkhelaifi (Sports Medicine)
-**Has access to 8 collections:**
+**Has access to 9 collections:**
 1. UCL RCT
 2. Rotator Cuff RCT
 3. Meniscus RCT
@@ -270,7 +310,37 @@ All document collections have been assigned according to your spreadsheet specif
 5. Knee and Lower Leg
 6. Shoulder
 7. Elbow
-8. His own collections (`dr_khalid_alkhelaifi_*`)
+8. Shoulder Replacement Reviews
+9. His own collections (`dr_khalid_alkhelaifi_*`)
+
+---
+
+### Dr. Jorge Chahla (Sports Medicine)
+**Has access to 10 collections:**
+1. UCL RCT
+2. Rotator Cuff RCT
+3. Meniscus RCT
+4. ACL RCT
+5. Knee and Lower Leg
+6. Shoulder
+7. Elbow
+8. Hip and Thigh
+9. Shoulder Replacement Reviews
+10. His own collections (`dr_jorge_chahla_*`)
+
+---
+
+### Dr. Steven DeFroda (Sports Medicine)
+**Has access to 9 collections:**
+1. UCL RCT
+2. Rotator Cuff RCT
+3. Meniscus RCT
+4. ACL RCT
+5. Shoulder
+6. Hip and Thigh
+7. Shoulder Replacement Reviews
+8. FAI Reviews
+9. His own collections (`dr_steven_defroda_*`)
 
 ---
 
@@ -280,6 +350,7 @@ All document collections have been assigned according to your spreadsheet specif
 **Searches these collections:**
 - Rotator Cuff RCT
 - Shoulder
+- Shoulder Replacement Reviews
 - Any other shoulder-related collections
 
 ### CareGuide Elbow
@@ -295,6 +366,7 @@ All document collections have been assigned according to your spreadsheet specif
 ### CareGuide Hip
 **Searches these collections:**
 - Hip and Thigh
+- FAI Reviews
 - Any other hip-related collections
 
 ### CareGuide Knee

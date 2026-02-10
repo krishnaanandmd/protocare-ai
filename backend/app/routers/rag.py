@@ -259,6 +259,10 @@ COLLECTION_PERMISSIONS = {
 
     # AAOS Guidelines
     "dr_general_aaos_knee_oa": ["william_long"],
+
+    # Review / Evidence Collections
+    "dr_general_shoulder_replacement_reviews": ["joshua_dines", "asheesh_bedi", "steven_defroda", "ayoosh_pareek", "william_long", "khalid_alkhelaifi", "jorge_chahla"],
+    "dr_general_fai_reviews": ["joshua_dines", "asheesh_bedi", "steven_defroda", "ayoosh_pareek"],
 }
 
 PROCEDURES = {
@@ -273,7 +277,7 @@ BODY_PART_COLLECTION_KEYWORDS = {
     "elbow": ["ucl", "elbow"],
     "knee": ["acl", "meniscus", "knee", "aaos_knee", "lower_leg"],
     "shoulder": ["rotator_cuff", "shoulder"],
-    "hip": ["hip", "thigh"],
+    "hip": ["hip", "thigh", "fai"],
     "back": ["back"],
     "neck": ["neck"],
     "spine": ["back", "neck"],

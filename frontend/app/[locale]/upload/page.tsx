@@ -43,7 +43,7 @@ export default function UploadPage() {
   }
 
   const [uploadMode, setUploadMode] = useState<UploadMode>("doctor_protocol");
-  const [orgId, setOrgId] = useState("demo");
+  const [orgId, setOrgId] = useState("");
   const [items, setItems] = useState<Item[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -84,9 +84,11 @@ export default function UploadPage() {
   const effectiveOrgId =
     uploadMode === "doctor_protocol" && selectedDoctorId
       ? `dr_${slugify(selectedDoctorId)}_${slugify(protocolName)}`
-      : orgId;
+      : orgId
+        ? `dr_general_${slugify(orgId)}`
+        : "demo";
   const effectiveSourceType =
-    uploadMode === "doctor_protocol" ? "DOCTOR_PROTOCOL" : "AAOS";
+    uploadMode === "doctor_protocol" ? "DOCTOR_PROTOCOL" : "CLINICAL_GUIDELINE";
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -132,7 +134,7 @@ export default function UploadPage() {
   const canUpload =
     items.length > 0 &&
     !busy &&
-    (uploadMode === "general" || selectedDoctorId);
+    (uploadMode === "general" ? orgId.trim().length > 0 : !!selectedDoctorId);
 
   // Password gate screen
   if (!authenticated) {
@@ -312,13 +314,27 @@ export default function UploadPage() {
           {/* General Mode Fields */}
           {uploadMode === "general" && (
             <div className="space-y-3">
-              <label className="block text-sm font-bold text-white">Organization ID</label>
+              <label className="block text-sm font-bold text-white">Collection Name</label>
               <input
                 className="w-full rounded-xl bg-white/10 border-2 border-white/20 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-400 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 transition-all outline-none"
                 value={orgId}
                 onChange={(e) => setOrgId(e.target.value)}
-                placeholder="demo"
+                placeholder="e.g. Shoulder Replacement Reviews"
               />
+              <p className="text-xs text-slate-400">
+                Enter a descriptive name for this document set. It will be auto-formatted as a collection name.
+              </p>
+              {orgId && (
+                <div className="bg-white/5 rounded-xl border border-white/10 px-4 py-3">
+                  <p className="text-xs text-slate-400 mb-1">Documents will be uploaded to:</p>
+                  <p className="text-sm font-mono text-cyan-300">
+                    Collection: {effectiveOrgId}
+                  </p>
+                  <p className="text-sm font-mono text-teal-300">
+                    Source type: CLINICAL_GUIDELINE
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
