@@ -263,6 +263,9 @@ COLLECTION_PERMISSIONS = {
     # Review / Evidence Collections
     "dr_general_shoulder_replacement_reviews": ["joshua_dines", "asheesh_bedi", "steven_defroda", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla"],
     "dr_general_fai_reviews": ["asheesh_bedi", "steven_defroda", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla"],
+
+    # Research Papers
+    "dr_general_defroda_pubmed": ["steven_defroda"],
 }
 
 PROCEDURES = {
