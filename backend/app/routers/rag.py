@@ -261,8 +261,8 @@ COLLECTION_PERMISSIONS = {
     "dr_general_aaos_knee_oa": ["william_long"],
 
     # Review / Evidence Collections
-    "dr_general_shoulder_replacement_reviews": ["joshua_dines", "asheesh_bedi", "steven_defroda", "ayoosh_pareek", "william_long", "khalid_alkhelaifi", "jorge_chahla"],
-    "dr_general_fai_reviews": ["asheesh_bedi", "ayoosh_pareek", "william_long", "khalid_alkhelaifi", "jorge_chahla"],
+    "dr_general_shoulder_replacement_reviews": ["joshua_dines", "asheesh_bedi", "steven_defroda", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla"],
+    "dr_general_fai_reviews": ["asheesh_bedi", "steven_defroda", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla"],
 }
 
 PROCEDURES = {
