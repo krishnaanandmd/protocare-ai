@@ -219,5 +219,6 @@ These can be uploaded later:
 - Knee and Lower Leg
 - Foot and Ankle
 - Shoulder
+- Shoulder Replacement Reviews (TSA/RTSA rehabilitation protocols, clinical guidelines)
 - Elbow
 - AAOS Knee OA Guidelines

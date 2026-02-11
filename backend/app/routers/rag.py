@@ -279,7 +279,7 @@ PROCEDURES = {
 BODY_PART_COLLECTION_KEYWORDS = {
     "elbow": ["ucl", "elbow"],
     "knee": ["acl", "meniscus", "knee", "aaos_knee", "lower_leg"],
-    "shoulder": ["rotator_cuff", "shoulder"],
+    "shoulder": ["rotator_cuff", "shoulder", "shoulder_replacement"],
     "hip": ["hip", "thigh", "fai"],
     "back": ["back"],
     "neck": ["neck"],
