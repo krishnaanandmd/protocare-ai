@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Upload additional document sets from /Users/akris/Downloads/
-# This script handles: Foot_and_Ankle, AAOS_Knee_OA, Knee_LowerLeg, Shoulder
+# This script handles: Foot_and_Ankle, AAOS_Knee_OA, Knee_LowerLeg, Shoulder, Shoulder_Replacement_Reviews
 
 set -e  # Exit on error
 
@@ -14,7 +14,7 @@ echo "Documents directory: $DOCS_DIR"
 echo ""
 
 # Counter for tracking progress
-TOTAL_SETS=4
+TOTAL_SETS=5
 CURRENT=0
 
 # Function to upload a document set
@@ -68,6 +68,7 @@ echo "================================================"
 upload_set "Foot_and_Ankle" "General" "Foot_Ankle" "CLINICAL_GUIDELINE"
 upload_set "Knee_LowerLeg" "General" "Knee_Lower_Leg" "CLINICAL_GUIDELINE"
 upload_set "Shoulder" "General" "Shoulder" "CLINICAL_GUIDELINE"
+upload_set "Shoulder_Replacement_Reviews" "General" "Shoulder_Replacement_Reviews" "CLINICAL_GUIDELINE"
 
 # AAOS Guidelines (precedence: 100)
 echo ""
@@ -88,6 +89,7 @@ echo "Collections created:"
 echo "  - dr_general_foot_ankle"
 echo "  - dr_general_knee_lower_leg"
 echo "  - dr_general_shoulder"
+echo "  - dr_general_shoulder_replacement_reviews"
 echo "  - dr_general_aaos_knee_oa"
 echo ""
 echo "Next steps:"

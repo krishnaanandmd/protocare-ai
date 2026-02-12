@@ -208,7 +208,6 @@ All document collections have been assigned according to your spreadsheet specif
 - ✅ Dr. Asheesh Bedi
 - ✅ Dr. Steven DeFroda
 - ✅ Dr. Ayoosh Pareek
-- ✅ Dr. William Long
 - ✅ Dr. Khalid Alkhelaifi
 - ✅ Dr. Jorge Chahla
 
