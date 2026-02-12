@@ -4,11 +4,12 @@
     "tagline": "Inteligencia Clínica Personalizada",
     "version": "CareGuide v0.2",
     "poweredBy": "Impulsado por IA Avanzada",
-    "skipToApp": "Ir a la Aplicación →",
+    "skipToApp": "Ir a la Aplicación",
     "aboutUs": "Acerca de Nosotros",
     "backToHome": "Volver al Inicio",
     "getStarted": "Comenzar",
-    "back": "Atrás"
+    "back": "Atrás",
+    "requestDemo": "Solicitar una Demo"
   },
   "landing": {
     "screens": {
@@ -62,6 +63,26 @@
         }
       }
     },
+    "impact": {
+      "title": "Confianza en Todo el Sector Salud",
+      "subtitle": "Clínicos y pacientes confían en CareGuide cada día para obtener respuestas basadas en evidencia en el punto de atención.",
+      "providers": {
+        "label": "Proveedores Activos",
+        "desc": "Cirujanos ortopédicos y especialistas en la plataforma CareGuide"
+      },
+      "systems": {
+        "label": "Sistemas de Salud",
+        "desc": "Redes hospitalarias y consultorios integrados con CareGuide"
+      },
+      "regions": {
+        "label": "Estados y Países",
+        "desc": "Inteligencia clínica personalizada a través de fronteras"
+      }
+    },
+    "cta": {
+      "title": "¿Listo para Transformar Su Práctica?",
+      "description": "Únase a los sistemas de salud que ya usan CareGuide para entregar respuestas más rápidas y basadas en evidencia a sus pacientes y proveedores."
+    },
     "stats": {
       "instant": "Instantáneas",
       "responses": "Respuestas",
@@ -70,6 +91,56 @@
     },
     "footer": {
       "tagline": "Inteligencia Clínica Personalizada"
+    }
+  },
+  "demo": {
+    "badge": "Programe una Demostración",
+    "title": "Vea CareGuide en Acción",
+    "subtitle": "Descubra cómo la inteligencia clínica impulsada por IA puede ayudar a su equipo a entregar respuestas más rápidas y basadas en evidencia a pacientes y proveedores.",
+    "benefits": {
+      "evidence": {
+        "title": "Protocolos Basados en Evidencia",
+        "desc": "Cada respuesta está fundamentada en literatura revisada por pares y sus propias guías clínicas."
+      },
+      "instant": {
+        "title": "Respuestas Instantáneas, 24/7",
+        "desc": "Reduzca el volumen de llamadas y los tiempos de espera con inteligencia clínica bajo demanda."
+      },
+      "team": {
+        "title": "Diseñado para Su Equipo",
+        "desc": "Personalizado para cirujanos, enfermeros, PAs y pacientes — todo desde una sola plataforma."
+      }
+    },
+    "socialProof": "Confiado por proveedores en 6 sistemas de salud",
+    "form": {
+      "title": "Solicite Su Demo",
+      "subtitle": "Complete el formulario y nuestro equipo se comunicará con usted dentro de 24 horas.",
+      "name": "Nombre Completo",
+      "namePlaceholder": "Dra. María García",
+      "email": "Correo Laboral",
+      "emailPlaceholder": "maria.garcia@hospital.org",
+      "organization": "Organización",
+      "organizationPlaceholder": "Sistema de Salud Memorial",
+      "role": "Su Rol",
+      "rolePlaceholder": "Seleccione su rol",
+      "roles": {
+        "physician": "Médico / Cirujano",
+        "administrator": "Administrador de Salud",
+        "nurse": "Enfermero/a",
+        "paNp": "PA / Enfermero/a Practicante",
+        "it": "TI / Informática",
+        "other": "Otro"
+      },
+      "message": "Mensaje (opcional)",
+      "messagePlaceholder": "Cuéntenos sobre su caso de uso o cualquier pregunta específica...",
+      "submit": "Solicitar Demo",
+      "sending": "Enviando...",
+      "privacy": "Respetamos su privacidad. Su información solo se utilizará para programar su demostración."
+    },
+    "success": {
+      "title": "¡Gracias!",
+      "description": "Hemos recibido su solicitud. Un miembro de nuestro equipo se comunicará con usted dentro de 24 horas para programar su demostración personalizada.",
+      "cta": "Explorar CareGuide Ahora"
     }
   },
   "qa": {
