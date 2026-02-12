@@ -52,16 +52,28 @@ def anthropic_client() -> anthropic.Anthropic:
     return _anthropic
 
 def ensure_collection(collection_name: str = None):
+    """Create a collection if it genuinely does not exist.
+
+    Only catches Qdrant 404 (not-found) errors. Server errors (5xx) and other
+    unexpected exceptions are re-raised so callers can distinguish transient
+    failures from missing collections.
+    """
+    from qdrant_client.http.exceptions import UnexpectedResponse
+
     c = client()
     coll_name = collection_name or settings.collection
     try:
         c.get_collection(coll_name)
-    except Exception:
-        logger.info("creating_collection", name=coll_name)
-        c.recreate_collection(
-            collection_name=coll_name,
-            vectors_config=qmodels.VectorParams(size=1536, distance=qmodels.Distance.COSINE),
-        )
+    except UnexpectedResponse as e:
+        if e.status_code == 404:
+            logger.info("creating_collection", name=coll_name)
+            c.create_collection(
+                collection_name=coll_name,
+                vectors_config=qmodels.VectorParams(size=1536, distance=qmodels.Distance.COSINE),
+            )
+        else:
+            # Server error (500, 503, etc.) — do NOT silently recreate.
+            raise
 
 def embed(text: str) -> list[float]:
     """Return a single 1536-dim embedding using text-embedding-3-small."""
@@ -71,11 +83,20 @@ def embed(text: str) -> list[float]:
 
 def search(question: str, top_k: int = 6, collection_name: str = None):
     vec = embed(question)
+    return search_by_vector(vec, top_k=top_k, collection_name=collection_name)
+
+
+def search_by_vector(vector: list[float], top_k: int = 6, collection_name: str = None):
+    """Search Qdrant with a pre-computed embedding vector.
+
+    Use this when searching multiple collections with the same query to
+    avoid redundant OpenAI embedding calls.
+    """
     c = client()
     coll_name = collection_name or settings.collection
     return c.search(
         collection_name=coll_name,
-        query_vector=vec,
+        query_vector=vector,
         limit=top_k,
         with_payload=True,
     )

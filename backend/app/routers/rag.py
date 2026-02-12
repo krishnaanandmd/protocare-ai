@@ -1128,22 +1128,36 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
     # Deduplicate collections while preserving order
     collections_to_search = list(dict.fromkeys(collections_to_search))
 
+    # Embed the question once and reuse the vector across all collections.
+    try:
+        query_vector = retrieval.embed(q)
+    except Exception as e:
+        logger.error("embedding_failed", error=str(e))
+        raise HTTPException(status_code=502, detail="Failed to generate query embedding. Please try again.")
+
     # Search across all relevant collections and aggregate results
     all_hits = []
     hits_by_collection = {}
     for collection_name in collections_to_search:
-        try:
-            retrieval.ensure_collection(collection_name)
-            hits = retrieval.search(q, top_k=8, collection_name=collection_name)
-            hits_by_collection[collection_name] = len(hits)
-            # Tag each hit with its source collection for debugging
-            for h in hits:
-                if h.payload is None:
-                    h.payload = {}
-                h.payload["_source_collection"] = collection_name
-            all_hits.extend(hits)
-        except Exception as e:
-            logger.warning("collection_search_failed", collection=collection_name, error=str(e))
+        last_err = None
+        for attempt in range(3):
+            try:
+                hits = retrieval.search_by_vector(query_vector, top_k=8, collection_name=collection_name)
+                hits_by_collection[collection_name] = len(hits)
+                # Tag each hit with its source collection for debugging
+                for h in hits:
+                    if h.payload is None:
+                        h.payload = {}
+                    h.payload["_source_collection"] = collection_name
+                all_hits.extend(hits)
+                last_err = None
+                break
+            except Exception as e:
+                last_err = e
+                if attempt < 2:
+                    time.sleep(0.3 * (attempt + 1))
+        if last_err is not None:
+            logger.warning("collection_search_failed", collection=collection_name, error=str(last_err), attempts=3)
 
     # Tiered ranking: surgeon's own protocols are the primary source of truth,
     # followed by preferred literature collections, then supplementary evidence.
