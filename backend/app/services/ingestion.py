@@ -51,6 +51,7 @@ DOCTOR_SLUG_TO_NAME: Dict[str, str] = {
     "william_long": "Dr. William Long",
     "jorge_chahla": "Dr. Jorge Chahla",
     "steven_defroda": "Dr. Steven DeFroda",
+    "lafi_khalil": "Dr. Lafi Khalil",
 }
 
 # Source types that represent research / external evidence.
