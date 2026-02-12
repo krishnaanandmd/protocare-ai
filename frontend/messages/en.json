@@ -66,9 +66,9 @@
     "impact": {
       "title": "Trusted Across Healthcare",
       "subtitle": "Clinicians and patients rely on CareGuide every day for evidence-based answers at the point of care.",
-      "users": {
-        "label": "Active Users",
-        "desc": "Patients and providers using CareGuide for clinical guidance"
+      "providers": {
+        "label": "Active Providers",
+        "desc": "Orthopedic surgeons and specialists on the CareGuide platform"
       },
       "systems": {
         "label": "Healthcare Systems",
@@ -111,7 +111,7 @@
         "desc": "Customized for surgeons, nurses, PAs, and patients — all from a single platform."
       }
     },
-    "socialProof": "Trusted by 1,200+ users across 30+ healthcare systems",
+    "socialProof": "Trusted by providers across 6 healthcare systems",
     "form": {
       "title": "Request Your Demo",
       "subtitle": "Fill out the form and our team will be in touch within 24 hours.",

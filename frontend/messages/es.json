@@ -66,9 +66,9 @@
     "impact": {
       "title": "Confianza en Todo el Sector Salud",
       "subtitle": "Clínicos y pacientes confían en CareGuide cada día para obtener respuestas basadas en evidencia en el punto de atención.",
-      "users": {
-        "label": "Usuarios Activos",
-        "desc": "Pacientes y proveedores que usan CareGuide para orientación clínica"
+      "providers": {
+        "label": "Proveedores Activos",
+        "desc": "Cirujanos ortopédicos y especialistas en la plataforma CareGuide"
       },
       "systems": {
         "label": "Sistemas de Salud",
@@ -111,7 +111,7 @@
         "desc": "Personalizado para cirujanos, enfermeros, PAs y pacientes — todo desde una sola plataforma."
       }
     },
-    "socialProof": "Confiado por más de 1,200 usuarios en más de 30 sistemas de salud",
+    "socialProof": "Confiado por proveedores en 6 sistemas de salud",
     "form": {
       "title": "Solicite Su Demo",
       "subtitle": "Complete el formulario y nuestro equipo se comunicará con usted dentro de 24 horas.",

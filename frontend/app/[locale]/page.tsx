@@ -56,9 +56,19 @@ function AnimatedCounter({
 /* ------------------------------------------------------------------ */
 /*  Landing page                                                       */
 /* ------------------------------------------------------------------ */
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
+
 export default function LandingPage() {
   const t = useTranslations();
   const locale = useLocale();
+  const [providerCount, setProviderCount] = useState<number>(9);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/rag/doctors`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((doctors: unknown[]) => setProviderCount(doctors.length))
+      .catch(() => {/* keep fallback */});
+  }, []);
 
   const title = t("landing.screens.welcome.title");
 
@@ -226,13 +236,13 @@ export default function LandingPage() {
                     </svg>
                   </div>
                   <div className="text-5xl md:text-6xl font-black bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text">
-                    <AnimatedCounter end={1200} suffix="+" />
+                    <AnimatedCounter end={providerCount} suffix="" />
                   </div>
                   <div className="text-lg font-semibold text-white">
-                    {t("landing.impact.users.label")}
+                    {t("landing.impact.providers.label")}
                   </div>
                   <p className="text-sm text-slate-400">
-                    {t("landing.impact.users.desc")}
+                    {t("landing.impact.providers.desc")}
                   </p>
                 </div>
               </div>
@@ -257,7 +267,7 @@ export default function LandingPage() {
                     </svg>
                   </div>
                   <div className="text-5xl md:text-6xl font-black bg-gradient-to-r from-teal-400 to-blue-400 text-transparent bg-clip-text">
-                    <AnimatedCounter end={30} suffix="+" />
+                    <AnimatedCounter end={6} suffix="" />
                   </div>
                   <div className="text-lg font-semibold text-white">
                     {t("landing.impact.systems.label")}
@@ -288,7 +298,7 @@ export default function LandingPage() {
                     </svg>
                   </div>
                   <div className="text-5xl md:text-6xl font-black bg-gradient-to-r from-blue-400 to-cyan-400 text-transparent bg-clip-text">
-                    <AnimatedCounter end={14} suffix="" />
+                    <AnimatedCounter end={6} suffix="" />
                   </div>
                   <div className="text-lg font-semibold text-white">
                     {t("landing.impact.regions.label")}
