@@ -5,7 +5,7 @@ from fastapi.responses import ORJSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import init_db
-from app.routers import rag, documents, questions
+from app.routers import rag, documents, questions, demo_request
 
 
 @asynccontextmanager
@@ -42,3 +42,4 @@ async def healthz():
 app.include_router(documents.router, prefix="/documents", tags=["documents"])
 app.include_router(rag.router, prefix="/rag", tags=["rag"])
 app.include_router(questions.router, prefix="/rag/questions", tags=["questions"])
+app.include_router(demo_request.router, prefix="/demo", tags=["demo"])
