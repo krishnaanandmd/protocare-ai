@@ -227,6 +227,13 @@ SHARED_COLLECTIONS = {
     "asheesh_bedi": ["joshua_dines"]  # Dr. Bedi uses Dr. Dines' documents
 }
 
+# Preferred collections per doctor - these are prioritised immediately after the
+# surgeon's own protocol collections (dr_{id}_*) and before all other
+# supplementary / general-evidence collections.
+PREFERRED_COLLECTIONS = {
+    "lafi_khalil": ["dr_general_khalil_preferred_literature"],
+}
+
 # Explicit collection permissions - maps collections to allowed surgeons
 # This provides granular control over which surgeons can access which collections
 COLLECTION_PERMISSIONS = {
@@ -272,6 +279,9 @@ COLLECTION_PERMISSIONS = {
 
     # Research Papers
     "dr_general_defroda_pubmed": ["steven_defroda"],
+
+    # Preferred Literature
+    "dr_general_khalil_preferred_literature": ["lafi_khalil"],
 }
 
 PROCEDURES = {
@@ -1136,22 +1146,37 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
             logger.warning("collection_search_failed", collection=collection_name, error=str(e))
 
     # Tiered ranking: surgeon's own protocols are the primary source of truth,
-    # supplemented by shared collections and general evidence (RCTs, guidelines).
+    # followed by preferred literature collections, then supplementary evidence.
     if body.doctor_id:
         doctor_prefix = f"dr_{slugify(body.doctor_id)}_"
+        preferred_names = set(PREFERRED_COLLECTIONS.get(body.doctor_id, []))
+
         primary_hits = sorted(
             [h for h in all_hits if (h.payload or {}).get("_source_collection", "").startswith(doctor_prefix)],
             key=lambda h: h.score, reverse=True,
         )
-        supplementary_hits = sorted(
-            [h for h in all_hits if not (h.payload or {}).get("_source_collection", "").startswith(doctor_prefix)],
+        preferred_hits = sorted(
+            [h for h in all_hits
+             if (h.payload or {}).get("_source_collection", "") in preferred_names
+             and not (h.payload or {}).get("_source_collection", "").startswith(doctor_prefix)],
             key=lambda h: h.score, reverse=True,
         )
-        # Guarantee the surgeon's own protocols are represented, then fill with evidence.
+        supplementary_hits = sorted(
+            [h for h in all_hits
+             if not (h.payload or {}).get("_source_collection", "").startswith(doctor_prefix)
+             and (h.payload or {}).get("_source_collection", "") not in preferred_names],
+            key=lambda h: h.score, reverse=True,
+        )
+        # Guarantee the surgeon's own protocols are represented, then preferred
+        # literature, then fill remaining slots with general evidence.
         # Primary protocol chunks come first so the LLM sees them as Source 1, 2, 3...
         # This ensures the surgeon's own protocol is always the leading answer.
         primary_used = primary_hits[:8]
-        hits = primary_used + supplementary_hits[:7]
+        remaining_slots = max(0, 15 - len(primary_used))
+        preferred_used = preferred_hits[:min(len(preferred_hits), remaining_slots)]
+        remaining_slots -= len(preferred_used)
+        supplementary_used = supplementary_hits[:remaining_slots]
+        hits = primary_used + preferred_used + supplementary_used
         num_primary_hits = len(primary_used)
     else:
         # CareGuide path: flat ranking across general collections
