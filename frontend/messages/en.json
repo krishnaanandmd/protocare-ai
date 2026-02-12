@@ -4,11 +4,12 @@
     "tagline": "Personalized Clinical Intelligence",
     "version": "CareGuide v0.2",
     "poweredBy": "Powered by Advanced AI",
-    "skipToApp": "Skip to App →",
+    "skipToApp": "Skip to App",
     "aboutUs": "About Us",
     "backToHome": "Back to Home",
     "getStarted": "Get Started",
-    "back": "Back"
+    "back": "Back",
+    "requestDemo": "Request a Demo"
   },
   "landing": {
     "screens": {
@@ -62,6 +63,26 @@
         }
       }
     },
+    "impact": {
+      "title": "Trusted Across Healthcare",
+      "subtitle": "Clinicians and patients rely on CareGuide every day for evidence-based answers at the point of care.",
+      "users": {
+        "label": "Active Users",
+        "desc": "Patients and providers using CareGuide for clinical guidance"
+      },
+      "systems": {
+        "label": "Healthcare Systems",
+        "desc": "Hospital networks and practices integrated with CareGuide"
+      },
+      "regions": {
+        "label": "States & Countries",
+        "desc": "Delivering personalized clinical intelligence across borders"
+      }
+    },
+    "cta": {
+      "title": "Ready to Transform Your Practice?",
+      "description": "Join the healthcare systems already using CareGuide to deliver faster, evidence-based answers to their patients and providers."
+    },
     "stats": {
       "instant": "Instant",
       "responses": "Responses",
@@ -70,6 +91,56 @@
     },
     "footer": {
       "tagline": "Personalized Clinical Intelligence"
+    }
+  },
+  "demo": {
+    "badge": "Schedule a Walkthrough",
+    "title": "See CareGuide in Action",
+    "subtitle": "Discover how AI-powered clinical intelligence can help your team deliver faster, evidence-based answers to patients and providers.",
+    "benefits": {
+      "evidence": {
+        "title": "Evidence-Based Protocols",
+        "desc": "Every answer is grounded in peer-reviewed literature and your own clinical guidelines."
+      },
+      "instant": {
+        "title": "Instant Answers, 24/7",
+        "desc": "Reduce call volume and wait times with on-demand clinical intelligence."
+      },
+      "team": {
+        "title": "Built for Your Team",
+        "desc": "Customized for surgeons, nurses, PAs, and patients — all from a single platform."
+      }
+    },
+    "socialProof": "Trusted by 1,200+ users across 30+ healthcare systems",
+    "form": {
+      "title": "Request Your Demo",
+      "subtitle": "Fill out the form and our team will be in touch within 24 hours.",
+      "name": "Full Name",
+      "namePlaceholder": "Dr. Jane Smith",
+      "email": "Work Email",
+      "emailPlaceholder": "jane.smith@hospital.org",
+      "organization": "Organization",
+      "organizationPlaceholder": "Memorial Health System",
+      "role": "Your Role",
+      "rolePlaceholder": "Select your role",
+      "roles": {
+        "physician": "Physician / Surgeon",
+        "administrator": "Healthcare Administrator",
+        "nurse": "Nurse",
+        "paNp": "PA / Nurse Practitioner",
+        "it": "IT / Informatics",
+        "other": "Other"
+      },
+      "message": "Message (optional)",
+      "messagePlaceholder": "Tell us about your use case or any specific questions...",
+      "submit": "Request Demo",
+      "sending": "Sending...",
+      "privacy": "We respect your privacy. Your information will only be used to schedule your demo."
+    },
+    "success": {
+      "title": "Thank You!",
+      "description": "We've received your request. A member of our team will reach out within 24 hours to schedule your personalized demo.",
+      "cta": "Explore CareGuide Now"
     }
   },
   "qa": {
