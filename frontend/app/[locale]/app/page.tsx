@@ -147,86 +147,150 @@ export default function PatientQA() {
           <Disclaimer mode={mode} />
 
           {/* Selection Section */}
-          <div className="relative z-10 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-8">
+          <div className="relative z-10 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 space-y-6">
             <div className="space-y-2 text-center">
               <h3 className="text-2xl font-bold text-white">{t('qa.selection.title')}</h3>
               <p className="text-sm text-slate-400">{t('qa.selection.subtitle')}</p>
             </div>
 
-            {/* Surgeon Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Surgeon Section */}
+              <div
+                className={`relative rounded-2xl border-2 p-6 transition-all duration-300 ${
+                  selectedDoctor
+                    ? "border-cyan-400 bg-cyan-500/10 shadow-lg shadow-cyan-500/20"
+                    : selectedBodyPart
+                    ? "border-white/10 bg-white/5 opacity-40 pointer-events-none"
+                    : "border-white/20 bg-white/5 hover:border-white/30 hover:bg-white/[0.07]"
+                }`}
+              >
+                {/* Active indicator */}
+                {selectedDoctor && (
+                  <div className="absolute -top-3 left-4 px-3 py-0.5 rounded-full bg-cyan-500 text-white text-xs font-bold shadow-lg">
+                    Active
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      <h4 className="text-lg font-bold text-white">{t('qa.selection.surgeon.title')}</h4>
+                    </div>
+                    {selectedDoctor && (
+                      <button
+                        onClick={() => { handleDoctorSelect(null); }}
+                        className="text-xs text-slate-400 hover:text-white border border-white/20 hover:border-white/40 rounded-lg px-3 py-1.5 transition-all"
+                      >
+                        Change
+                      </button>
+                    )}
+                  </div>
+
+                  <DoctorAutocomplete
+                    doctors={doctors}
+                    selectedDoctorId={selectedDoctor}
+                    onSelect={handleDoctorSelect}
+                    disabled={!!selectedBodyPart}
+                  />
+
+                  {selectedDoctorName && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-teal-500/20 border border-white/20">
+                      <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm font-medium text-white">
+                        {t('qa.selection.surgeon.connected')} <span className="font-bold">{selectedDoctorName}</span> {t('qa.selection.surgeon.protocols')}
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <h4 className="text-lg font-bold text-white">{t('qa.selection.surgeon.title')}</h4>
               </div>
 
-              <DoctorAutocomplete
-                doctors={doctors}
-                selectedDoctorId={selectedDoctor}
-                onSelect={handleDoctorSelect}
-              />
+              {/* OR Divider - visible on mobile between the cards */}
+              <div className="flex md:hidden items-center justify-center -my-3">
+                <div className="flex-1 border-t border-white/20"></div>
+                <span className="px-4 text-sm font-bold text-slate-300 bg-transparent">{t('qa.selection.or')}</span>
+                <div className="flex-1 border-t border-white/20"></div>
+              </div>
 
-              {selectedDoctorName && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-teal-500/20 border border-white/20">
-                  <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="text-sm font-medium text-white">
-                    {t('qa.selection.surgeon.connected')} <span className="font-bold">{selectedDoctorName}</span> {t('qa.selection.surgeon.protocols')}
-                  </p>
+              {/* Body Part Section */}
+              <div
+                className={`relative rounded-2xl border-2 p-6 transition-all duration-300 ${
+                  selectedBodyPart
+                    ? "border-purple-400 bg-purple-500/10 shadow-lg shadow-purple-500/20"
+                    : selectedDoctor
+                    ? "border-white/10 bg-white/5 opacity-40 pointer-events-none"
+                    : "border-white/20 bg-white/5 hover:border-white/30 hover:bg-white/[0.07]"
+                }`}
+              >
+                {/* Active indicator */}
+                {selectedBodyPart && (
+                  <div className="absolute -top-3 left-4 px-3 py-0.5 rounded-full bg-purple-500 text-white text-xs font-bold shadow-lg">
+                    Active
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30 text-2xl">
+                        🦴
+                      </div>
+                      <h4 className="text-lg font-bold text-white">{t('qa.selection.bodyPart.title')}</h4>
+                    </div>
+                    {selectedBodyPart && (
+                      <button
+                        onClick={() => { setSelectedBodyPart(null); }}
+                        className="text-xs text-slate-400 hover:text-white border border-white/20 hover:border-white/40 rounded-lg px-3 py-1.5 transition-all"
+                      >
+                        Change
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {bodyParts.map((bodyPart) => (
+                      <button
+                        key={bodyPart.id}
+                        onClick={() => handleBodyPartSelect(bodyPart.id)}
+                        disabled={!!selectedDoctor}
+                        className={`p-3 rounded-xl border-2 transition-all text-left ${
+                          selectedBodyPart === bodyPart.id
+                            ? "bg-gradient-to-br from-purple-500/30 to-pink-500/30 border-purple-400 shadow-lg shadow-purple-500/30"
+                            : selectedDoctor
+                            ? "bg-white/5 border-white/10 cursor-not-allowed"
+                            : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
+                        }`}
+                      >
+                        <div className="font-semibold text-white text-sm">{bodyPart.name}</div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {selectedBodyPart && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-white/20">
+                      <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm font-medium text-white">
+                        {t('qa.selection.bodyPart.using')} <span className="font-bold">{bodyParts.find(b => b.id === selectedBodyPart)?.name}</span> {t('qa.selection.bodyPart.model')}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/20"></div>
+            {/* Desktop OR overlay - centered between the two cards */}
+            <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+              <div className="w-12 h-12 rounded-full bg-slate-800 border-2 border-white/20 flex items-center justify-center shadow-xl">
+                <span className="text-sm font-bold text-slate-300">{t('qa.selection.or')}</span>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-slate-900/50 text-slate-400 font-medium">{t('qa.selection.or')}</span>
-              </div>
-            </div>
-
-            {/* Body Part Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30 text-2xl">
-                  🦴
-                </div>
-                <h4 className="text-lg font-bold text-white">{t('qa.selection.bodyPart.title')}</h4>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {bodyParts.map((bodyPart) => (
-                  <button
-                    key={bodyPart.id}
-                    onClick={() => handleBodyPartSelect(bodyPart.id)}
-                    className={`p-4 rounded-xl border-2 transition-all text-left ${
-                      selectedBodyPart === bodyPart.id
-                        ? "bg-gradient-to-br from-purple-500/30 to-pink-500/30 border-purple-400 shadow-lg shadow-purple-500/30"
-                        : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
-                    }`}
-                  >
-                    <div className="font-semibold text-white text-sm">{bodyPart.name}</div>
-                  </button>
-                ))}
-              </div>
-
-              {selectedBodyPart && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-white/20">
-                  <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="text-sm font-medium text-white">
-                    {t('qa.selection.bodyPart.using')} <span className="font-bold">{bodyParts.find(b => b.id === selectedBodyPart)?.name}</span> {t('qa.selection.bodyPart.model')}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 
