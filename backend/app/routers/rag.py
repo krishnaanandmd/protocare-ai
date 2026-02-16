@@ -818,6 +818,125 @@ def slugify(text):
     """Convert text to slug."""
     return text.lower().replace(" ", "_").replace(".", "")
 
+
+# ---------------------------------------------------------------------------
+# Query-aware collection filtering
+# ---------------------------------------------------------------------------
+# When a surgeon has access to collections spanning multiple body parts
+# (e.g. ACL *and* hip arthroscopy), the semantic search can pull in results
+# from the wrong body part because the rehab protocols are semantically
+# similar.  These helpers detect the body-part focus of the user's question
+# and filter out clearly irrelevant collections so that, e.g., a hip
+# arthroscopy paper is not cited when the question is about ACL.
+# ---------------------------------------------------------------------------
+
+# Keywords in the user question that signal a specific body-part focus.
+_QUERY_BODY_PART_KEYWORDS: dict[str, list[str]] = {
+    "knee": [
+        "acl", "anterior cruciate", "meniscus", "meniscal", "knee",
+        "pcl", "posterior cruciate", "patella", "patellar", "hamstring graft",
+        "quadriceps tendon graft", "multiligament knee",
+    ],
+    "hip": [
+        "hip", "fai", "femoroacetabular", "acetabul", "femoral head",
+        "hip arthroscopy", "hip labr", "gluteal tendon", "sports hernia",
+        "athletic pubalgia",
+    ],
+    "shoulder": [
+        "shoulder", "rotator cuff", "bankart", "slap repair", "slap tear",
+        "supraspinatus", "infraspinatus", "subscapularis", "ac joint",
+        "acromioclavicular", "superior capsul",
+    ],
+    "elbow": [
+        "ucl", "ulnar collateral", "tommy john", "elbow", "epicondyl",
+        "olecranon",
+    ],
+    "spine": [
+        "spine", "spinal", "lumbar", "cervical", "thoracic",
+        "disc herniat", "stenosis", "spondyl", "vertebr",
+        "laminectomy", "laminoplasty", "discectomy",
+    ],
+    "foot_ankle": ["foot", "ankle", "achilles", "plantar"],
+    "hand_wrist": ["hand", "wrist", "carpal", "finger"],
+}
+
+# Substrings in collection names that indicate which body part the
+# collection belongs to.
+_COLLECTION_BODY_PART_MAP: dict[str, str] = {
+    "acl": "knee",
+    "meniscus": "knee",
+    "knee": "knee",
+    "lower_leg": "knee",
+    "aaos_knee": "knee",
+    "hip": "hip",
+    "thigh": "hip",
+    "fai": "hip",
+    "shoulder": "shoulder",
+    "rotator_cuff": "shoulder",
+    "shoulder_replacement": "shoulder",
+    "ucl": "elbow",
+    "elbow": "elbow",
+    "back": "spine",
+    "neck": "spine",
+    "foot": "foot_ankle",
+    "ankle": "foot_ankle",
+    "hand": "hand_wrist",
+    "wrist": "hand_wrist",
+}
+
+
+def _detect_query_body_parts(question: str) -> set[str]:
+    """Return the set of body-part tags the *question* is about.
+
+    Returns an empty set when no specific body part can be determined,
+    meaning all collections should be searched.
+    """
+    q_lower = question.lower()
+    detected: set[str] = set()
+    for body_part, keywords in _QUERY_BODY_PART_KEYWORDS.items():
+        for kw in keywords:
+            if kw in q_lower:
+                detected.add(body_part)
+                break
+    return detected
+
+
+def _get_collection_body_part(collection_name: str) -> str | None:
+    """Determine which body part a collection covers based on its name.
+
+    Returns ``None`` when the body part cannot be inferred (e.g.
+    ``dr_joshua_dines_clinic_protocols``), in which case the collection
+    should never be filtered out.
+    """
+    for keyword, body_part in _COLLECTION_BODY_PART_MAP.items():
+        if keyword in collection_name:
+            return body_part
+    return None
+
+
+def _filter_collections_by_relevance(
+    collections: list[str], question: str
+) -> list[str]:
+    """Keep only collections relevant to the question's body-part focus.
+
+    * If no body part is detected in the question, *all* collections are
+      returned unchanged (safe default).
+    * Collections whose body part cannot be determined from their name are
+      always kept (they may contain mixed or generic content).
+    * If filtering would remove *every* collection, the original list is
+      returned as a safety fallback.
+    """
+    detected = _detect_query_body_parts(question)
+    if not detected:
+        return collections
+
+    filtered = [
+        col for col in collections
+        if _get_collection_body_part(col) is None
+        or _get_collection_body_part(col) in detected
+    ]
+    return filtered if filtered else collections
+
 @router.get("/doctors", response_model=list[DoctorProfile])
 async def list_doctors():
     """Get list of available doctors."""
@@ -1098,7 +1217,17 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
             if body.doctor_id in allowed_doctors:
                 collections_to_search.append(collection_name)
 
-        logger.info("searching_doctor_collections", doctor=doctor_slug, shared_doctors=doctors_to_search, collections=collections_to_search)
+        # Filter out collections that are clearly about a different body part
+        # than the user's question (e.g. exclude hip collections for an ACL query).
+        pre_filter_count = len(collections_to_search)
+        collections_to_search = _filter_collections_by_relevance(collections_to_search, q)
+        logger.info(
+            "searching_doctor_collections",
+            doctor=doctor_slug,
+            shared_doctors=doctors_to_search,
+            collections=collections_to_search,
+            filtered_out=pre_filter_count - len(collections_to_search),
+        )
     elif body.body_part:
         # CareGuide MSK Model: body part selected without specific doctor
         # Search general collections and body-part specific collections
