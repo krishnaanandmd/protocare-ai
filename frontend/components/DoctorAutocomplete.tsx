@@ -12,12 +12,14 @@ type DoctorAutocompleteProps = {
   doctors: Doctor[];
   selectedDoctorId: string | null;
   onSelect: (doctorId: string | null) => void;
+  disabled?: boolean;
 };
 
 export function DoctorAutocomplete({
   doctors,
   selectedDoctorId,
   onSelect,
+  disabled = false,
 }: DoctorAutocompleteProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -122,13 +124,16 @@ export function DoctorAutocomplete({
       <input
         ref={inputRef}
         type="text"
-        className="w-full rounded-xl bg-white/10 border-2 border-white/20 backdrop-blur-sm px-4 py-4 text-white text-lg placeholder-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
+        className={`w-full rounded-xl bg-white/10 border-2 border-white/20 backdrop-blur-sm px-4 py-4 text-white text-lg placeholder-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none ${
+          disabled ? "opacity-50 cursor-not-allowed" : ""
+        }`}
         placeholder="Search for your surgeon..."
         value={searchTerm}
         onChange={handleInputChange}
-        onFocus={handleInputFocus}
+        onFocus={disabled ? undefined : handleInputFocus}
         onKeyDown={handleKeyDown}
         autoComplete="off"
+        disabled={disabled}
       />
 
       {/* Dropdown menu with high z-index to appear above everything */}
