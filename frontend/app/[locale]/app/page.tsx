@@ -327,7 +327,7 @@ export default function PatientQA() {
               <span className="text-xs text-slate-400">{t('qa.question.shortcut')}</span>
               <button
                 disabled={!canAsk}
-                onClick={ask}
+                onClick={() => ask()}
                 className={`group relative px-8 py-4 rounded-xl font-bold text-lg transition-all transform ${
                   canAsk
                     ? "bg-gradient-to-r from-cyan-500 to-teal-600 text-white shadow-2xl shadow-cyan-500/50 hover:shadow-cyan-500/70 hover:scale-105 active:scale-95"
