@@ -23,6 +23,11 @@ export default function PatientQA() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Clarification flow state: tracks the original question and which
+  // clarifying questions the user has selected so far.
+  const [originalQuestion, setOriginalQuestion] = useState<string | null>(null);
+  const [selectedClarifications, setSelectedClarifications] = useState<Set<string>>(new Set());
+
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
 
@@ -88,10 +93,69 @@ export default function PatientQA() {
       });
       if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
       const json: Answer = await res.json();
+
+      // If clarifying questions are returned, save the original question
+      // so we can preserve context when the user responds.
+      if (json.clarifying_questions && json.clarifying_questions.length > 0) {
+        setOriginalQuestion(question.trim());
+        setSelectedClarifications(new Set());
+      } else {
+        // Clear clarification state on a successful full answer
+        setOriginalQuestion(null);
+        setSelectedClarifications(new Set());
+      }
+
       setData(json);
     } catch (e: any) { setError(e?.message || "Something went wrong"); }
     finally { setLoading(false); }
   }, [question, mode, canAsk, selectedDoctor, selectedBodyPart]);
+
+  // Submit clarification responses: combines the original question with
+  // the selected clarifying details, then runs the full RAG pipeline.
+  const submitWithClarifications = useCallback(async (clarifications: Set<string>) => {
+    if (!originalQuestion) return;
+    const parts = [originalQuestion];
+    if (clarifications.size > 0) {
+      parts.push("\nAdditional details:");
+      clarifications.forEach((q) => parts.push(`- ${q}`));
+    }
+    const combined = parts.join("\n");
+    setQuestion(combined);
+    // We need to send the request directly since setQuestion is async
+    setLoading(true); setError(null); setData(null);
+    try {
+      const res = await fetch(`${API_BASE}/rag/query`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: combined,
+          actor: mode,
+          doctor_id: selectedDoctor,
+          body_part: selectedBodyPart,
+          skip_clarification: true,  // Already went through clarification
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
+      const json: Answer = await res.json();
+      setOriginalQuestion(null);
+      setSelectedClarifications(new Set());
+      setData(json);
+    } catch (e: any) { setError(e?.message || "Something went wrong"); }
+    finally { setLoading(false); }
+  }, [originalQuestion, mode, selectedDoctor, selectedBodyPart]);
+
+  // Toggle a clarifying question selection on/off
+  const toggleClarification = useCallback((q: string) => {
+    setSelectedClarifications((prev) => {
+      const next = new Set(prev);
+      if (next.has(q)) {
+        next.delete(q);
+      } else {
+        next.add(q);
+      }
+      return next;
+    });
+  }, []);
 
   const selectedDoctorName = doctors.find(d => d.id === selectedDoctor)?.name;
 
@@ -364,9 +428,12 @@ export default function PatientQA() {
           {data && data.clarifying_questions && data.clarifying_questions.length > 0 ? (
             <ClarifyingCard
               data={data}
+              originalQuestion={originalQuestion}
               doctorName={selectedDoctorName}
-              onSelectQuestion={(q) => { setQuestion(q); }}
-              onSkip={() => ask(true)}
+              selectedClarifications={selectedClarifications}
+              onToggleQuestion={toggleClarification}
+              onSubmitClarifications={submitWithClarifications}
+              onSkip={() => submitWithClarifications(new Set())}
               loading={loading}
             />
           ) : data ? (
@@ -447,11 +514,14 @@ function Disclaimer({ mode }: { mode: "PATIENT" | "PROVIDER" }) {
 }
 
 function ClarifyingCard({
-  data, doctorName, onSelectQuestion, onSkip, loading,
+  data, originalQuestion, doctorName, selectedClarifications, onToggleQuestion, onSubmitClarifications, onSkip, loading,
 }: {
   data: Answer;
+  originalQuestion: string | null;
   doctorName?: string;
-  onSelectQuestion: (question: string) => void;
+  selectedClarifications: Set<string>;
+  onToggleQuestion: (question: string) => void;
+  onSubmitClarifications: (clarifications: Set<string>) => void;
   onSkip: () => void;
   loading: boolean;
 }) {
@@ -459,6 +529,19 @@ function ClarifyingCard({
 
   return (
     <div className="bg-white/10 backdrop-blur-xl rounded-3xl border-2 border-amber-500/40 shadow-2xl p-8 space-y-6">
+      {/* Original question context */}
+      {originalQuestion && (
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+          <svg className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+          <div>
+            <p className="text-xs font-semibold text-slate-400 mb-1">Your question</p>
+            <p className="text-sm text-white">{originalQuestion}</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start gap-4">
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/30">
@@ -471,35 +554,76 @@ function ClarifyingCard({
             A few quick questions
           </h3>
           <p className="text-sm text-slate-300 mt-1">{answer}</p>
+          <p className="text-xs text-slate-400 mt-2">Select all that apply, then click &quot;Get my answer&quot; below.</p>
         </div>
       </div>
 
-      {/* Clarifying questions */}
+      {/* Clarifying questions — multi-select toggles */}
       <div className="space-y-3">
-        {clarifying_questions?.map((q, idx) => (
-          <button
-            key={idx}
-            onClick={() => onSelectQuestion(q)}
-            className="group w-full text-left px-5 py-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 hover:border-amber-400/50 hover:from-amber-500/20 hover:to-orange-500/20 transition-all"
-          >
-            <span className="flex items-center gap-3">
-              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-600 text-white text-sm font-bold flex-shrink-0">
-                {idx + 1}
+        {clarifying_questions?.map((q, idx) => {
+          const isSelected = selectedClarifications.has(q);
+          return (
+            <button
+              key={idx}
+              onClick={() => onToggleQuestion(q)}
+              className={`group w-full text-left px-5 py-4 rounded-xl border transition-all ${
+                isSelected
+                  ? "bg-gradient-to-r from-amber-500/25 to-orange-500/25 border-amber-400/60 shadow-lg shadow-amber-500/10"
+                  : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 hover:border-amber-400/50 hover:from-amber-500/20 hover:to-orange-500/20"
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <span className={`flex items-center justify-center w-7 h-7 rounded-lg border-2 flex-shrink-0 transition-all ${
+                  isSelected
+                    ? "bg-amber-500 border-amber-400 text-white"
+                    : "border-amber-500/50 text-transparent group-hover:border-amber-400/70"
+                }`}>
+                  {isSelected && (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </span>
+                <span className={`font-medium transition-colors ${
+                  isSelected ? "text-amber-100" : "text-white group-hover:text-amber-100"
+                }`}>{q}</span>
               </span>
-              <span className="text-white font-medium group-hover:text-amber-100 transition-colors">{q}</span>
-            </span>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Skip button */}
-      <div className="border-t border-white/20 pt-4">
+      {/* Action buttons */}
+      <div className="space-y-3 border-t border-white/20 pt-4">
+        <button
+          onClick={() => onSubmitClarifications(selectedClarifications)}
+          disabled={loading}
+          className={`w-full px-6 py-4 rounded-xl font-bold text-lg transition-all transform ${
+            loading
+              ? "bg-white/5 text-slate-600 cursor-not-allowed"
+              : "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-2xl shadow-amber-500/40 hover:shadow-amber-500/60 hover:scale-[1.02] active:scale-95"
+          }`}
+        >
+          {loading ? (
+            <span className="flex items-center justify-center gap-3">
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              Analyzing...
+            </span>
+          ) : (
+            selectedClarifications.size > 0
+              ? `Get my answer with ${selectedClarifications.size} detail${selectedClarifications.size > 1 ? "s" : ""}`
+              : "Get my answer"
+          )}
+        </button>
         <button
           onClick={onSkip}
           disabled={loading}
-          className="text-sm text-slate-400 hover:text-white transition-colors underline underline-offset-2 disabled:opacity-50"
+          className="w-full text-sm text-slate-400 hover:text-white transition-colors underline underline-offset-2 disabled:opacity-50"
         >
-          {loading ? "Analyzing..." : "Answer my question without these details"}
+          Answer my question without these details
         </button>
       </div>
     </div>
