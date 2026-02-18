@@ -937,6 +937,224 @@ def _filter_collections_by_relevance(
     ]
     return filtered if filtered else collections
 
+
+def _filter_hits_by_body_part_relevance(
+    hits: list, question: str
+) -> list:
+    """Remove individual hits whose *document title* indicates a different body part.
+
+    This complements ``_filter_collections_by_relevance`` (which operates on
+    collection **names**) by inspecting each retrieved chunk's document title.
+    Generic collections (e.g. ``dr_x_clinic_protocols``) may contain documents
+    spanning multiple body parts; this filter catches those at the hit level.
+
+    * Hits whose title has no detectable body part are always kept.
+    * If filtering would remove every hit, the original list is returned.
+    """
+    query_parts = _detect_query_body_parts(question)
+    if not query_parts:
+        return hits
+
+    filtered = []
+    removed_titles: list[str] = []
+    for h in hits:
+        title = (h.payload or {}).get("title", "")
+        title_lower = title.lower()
+        title_parts: set[str] = set()
+        for body_part, keywords in _QUERY_BODY_PART_KEYWORDS.items():
+            for kw in keywords:
+                if kw in title_lower:
+                    title_parts.add(body_part)
+                    break
+
+        if not title_parts or title_parts & query_parts:
+            # Title has no detectable body part, or overlaps with the question's
+            filtered.append(h)
+        else:
+            removed_titles.append(title)
+
+    if removed_titles:
+        logger.info(
+            "hit_body_part_filter",
+            query_body_parts=list(query_parts),
+            removed_count=len(removed_titles),
+            removed_titles=removed_titles[:5],  # log at most 5 for brevity
+        )
+
+    return filtered if filtered else hits
+
+
+# ---------------------------------------------------------------------------
+# Patient Socratic clarification — ask before answering
+# ---------------------------------------------------------------------------
+# When a patient mentions a surgical procedure but omits key details that
+# would change the protocol (graft type, concomitant procedures, timeline),
+# we return clarifying questions BEFORE producing an answer.  This avoids
+# giving a generic answer and then asking the patient to refine it.
+# ---------------------------------------------------------------------------
+
+_PROCEDURE_CLARIFICATIONS: list[dict] = [
+    {
+        "keywords": ["acl", "anterior cruciate"],
+        # If ANY of these appear in the question, consider the detail "present"
+        "detail_keywords": [
+            "graft", "autograft", "allograft", "hamstring", "patellar",
+            "quadriceps", "btb", "bone-patellar", "bone patellar",
+            "revision", "primary", "first time", "redo",
+            "meniscus", "meniscal", "cartilage", "chondral",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,  # need ≥2 details present to skip
+        "questions": [
+            "Did you have any other procedures done at the same time as your ACL reconstruction (for example, a meniscus repair or cartilage procedure)?",
+            "Do you know what type of graft was used (patellar tendon, hamstring, quadriceps tendon, or donor tissue)?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["meniscus", "meniscal"],
+        "detail_keywords": [
+            "repair", "meniscectomy", "removed", "stitched", "sutured",
+            "root", "transplant", "allograft",
+            "acl", "anterior cruciate", "ligament", "cartilage",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "Was your meniscus repaired (stitched/sutured) or was a portion removed (partial meniscectomy)?",
+            "Were any other procedures done at the same time (for example, an ACL reconstruction or cartilage procedure)?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["rotator cuff"],
+        "detail_keywords": [
+            "partial", "full thickness", "complete", "massive",
+            "revision", "primary", "first time", "redo",
+            "biceps", "tenodesis", "labr", "slap", "decompression",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "Was your rotator cuff tear a partial tear or a full-thickness tear?",
+            "Were any other procedures done at the same time (for example, a biceps tenodesis, labral repair, or subacromial decompression)?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["ucl", "ulnar collateral", "tommy john"],
+        "detail_keywords": [
+            "graft", "autograft", "allograft", "palmaris", "gracilis",
+            "revision", "primary", "first time", "redo",
+            "repair", "internal brace",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "Was this a UCL reconstruction (graft) or a UCL repair (with internal brace)?",
+            "Is this your first UCL surgery or a revision?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["hip arthroscopy", "hip scope"],
+        "detail_keywords": [
+            "labr", "labral", "labrum", "fai", "impingement",
+            "cam", "pincer", "cartilage", "microfracture",
+            "gluteal", "abductor",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "What procedures were done during your hip arthroscopy (for example, labral repair, cam/pincer reshaping, cartilage work)?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["shoulder replacement", "shoulder arthroplasty",
+                      "reverse shoulder", "total shoulder"],
+        "detail_keywords": [
+            "reverse", "total", "anatomic", "hemi",
+            "revision", "primary", "first time", "redo",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "Was your shoulder replacement a reverse total shoulder or an anatomic total shoulder?",
+            "Is this your first shoulder replacement or a revision?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["knee replacement", "total knee", "tkr", "tka",
+                      "knee arthroplasty"],
+        "detail_keywords": [
+            "total", "partial", "unicompartmental", "revision",
+            "primary", "first time", "redo",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "Was your knee replacement a total knee replacement or a partial (unicompartmental) replacement?",
+            "Is this your first knee replacement or a revision?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["hip replacement", "total hip", "thr", "tha",
+                      "hip arthroplasty"],
+        "detail_keywords": [
+            "anterior", "posterior", "lateral", "approach",
+            "revision", "primary", "first time", "redo",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "What surgical approach was used (anterior, posterior, or lateral)?",
+            "Is this your first hip replacement or a revision?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+]
+
+
+def _get_clarifying_questions(question: str, actor: str) -> list[str] | None:
+    """Return clarifying questions if the patient's query is too vague.
+
+    Only triggers for PATIENT mode when a known surgical procedure is
+    mentioned but key details are absent.  Returns ``None`` when no
+    clarification is needed (e.g. provider, or question already specific).
+    """
+    if actor != "PATIENT":
+        return None
+
+    q_lower = question.lower()
+
+    for proc in _PROCEDURE_CLARIFICATIONS:
+        # Does the question mention this procedure?
+        if not any(kw in q_lower for kw in proc["keywords"]):
+            continue
+
+        # How many clarifying details are already present?
+        details_present = sum(
+            1 for dk in proc["detail_keywords"]
+            if dk in q_lower
+        )
+
+        if details_present < proc["detail_threshold"]:
+            return proc["questions"]
+
+    return None
+
+
 @router.get("/doctors", response_model=list[DoctorProfile])
 async def list_doctors():
     """Get list of available doctors."""
@@ -1187,6 +1405,41 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
             detail="This service can't provide emergency advice. Call your local emergency number."
         )
 
+    # --- Patient Socratic clarification (ask before answering) ---
+    # For patient queries about surgical procedures, check if the question
+    # is too vague to give a procedure-specific answer.  If so, return
+    # clarifying questions immediately — skipping the full RAG pipeline.
+    # The patient can skip this by clicking "Answer my question anyway".
+    clarifying_qs = (
+        _get_clarifying_questions(q, body.actor)
+        if not body.skip_clarification
+        else None
+    )
+    if clarifying_qs:
+        latency_ms = int((time.time() - t0) * 1000)
+        doctor_name = DOCTORS.get(body.doctor_id, {}).get("name") if body.doctor_id else None
+        logger.info("clarifying_questions_returned", question=q, num_questions=len(clarifying_qs))
+        question_tracker.log_question(
+            db,
+            actor=body.actor,
+            question=q,
+            doctor_id=body.doctor_id,
+            doctor_name=doctor_name,
+            body_part=body.body_part,
+            session_id=body.session_id,
+            answer_snippet="[clarifying questions returned]",
+            citations_count=0,
+            latency_ms=latency_ms,
+            had_follow_up=False,
+        )
+        return Answer(
+            answer="To make sure I give you the most accurate information for your situation, could you help me with a few details?",
+            citations=[],
+            guardrails={"in_scope": True, "emergency": False},
+            latency_ms=latency_ms,
+            clarifying_questions=clarifying_qs,
+        )
+
     # Determine collection(s) to search
     doctor_name = None
     body_part_name = None
@@ -1273,6 +1526,20 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
             all_hits.extend(hits)
         except Exception as e:
             logger.warning("collection_search_failed", collection=collection_name, error=str(e))
+
+    # --- Hit-level body-part filter ---
+    # Even after collection-level filtering, generic/mixed collections may
+    # return documents about a different body part (e.g. a hip arthroscopy
+    # protocol inside a "clinic_protocols" collection when the question is
+    # about meniscus root repair).  Filter those out by inspecting titles.
+    pre_hit_filter_count = len(all_hits)
+    all_hits = _filter_hits_by_body_part_relevance(all_hits, q)
+    if len(all_hits) != pre_hit_filter_count:
+        logger.info(
+            "hit_level_filter_applied",
+            before=pre_hit_filter_count,
+            after=len(all_hits),
+        )
 
     # Tiered ranking: surgeon's own protocols are the primary source of truth,
     # followed by preferred literature collections, then supplementary evidence.
@@ -1391,7 +1658,36 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
         # CRITICAL: Every factual claim MUST have an inline (Source N) citation.
         citation_rule = "IMPORTANT: You MUST cite every factual claim with an inline (Source N) tag. For example: \"Patients should remain toe-touch weight-bearing for 6 weeks (Source 3).\" Every sentence with a factual claim needs a source tag. Do not write any claims without a citation. Cite each source INDIVIDUALLY — write (Source 1) (Source 2), NEVER (Source 1, Source 2)."
         accuracy_rule = "ACCURACY: When stating specific numbers, percentages, weight-bearing status, ROM restrictions, or timeframes from the source, quote them EXACTLY as written. Do NOT combine or confuse separate restrictions. For example, a flexion restriction (e.g., 'no knee flexion past 90 degrees for 6 weeks') is NOT a weight-bearing restriction (e.g., 'PWB 0-25%'). State each restriction separately and precisely as it appears in the source. If the source says 'PWB 0-25%', do NOT say 'no weight bearing'. If the source specifies instructions by time period (e.g., Days 1-7, Weeks 2-3), organize your answer by those same time periods."
-        follow_up_rule = "FOLLOW-UP: After your answer, if there is a natural follow-up question the user might want to ask that would let you give a more specific or helpful answer, add it on its own line at the very end in this exact format: FOLLOW_UP_QUESTION: <your question here>. The question should be relevant, concise, and help the user get more targeted information from the available sources. When the user asks about a surgical procedure (e.g., ACL reconstruction, rotator cuff repair, UCL reconstruction), the follow-up should guide them to specify details that would make the answer more personalized — for example, graft type (BTB patellar tendon autograft, hamstring autograft, quadriceps tendon autograft, or allograft), whether it was a revision or primary surgery, or any concomitant procedures (e.g., meniscus repair). Only include one follow-up question. If there is no useful follow-up, omit this line entirely."
+        procedure_scope_rule = "PROCEDURE SCOPE: When the user mentions a specific surgery (e.g., 'ACL reconstruction'), answer ONLY about that exact procedure. Do NOT assume additional concomitant procedures were performed unless the user explicitly states them. For example, if the user asks about 'ACL reconstruction' do NOT include meniscus repair, cartilage restoration, or other procedures in your answer unless the user says those were also done. Treat the stated surgery as the only surgery performed."
+        source_relevance_rule = "SOURCE RELEVANCE: Only cite sources that are directly relevant to the specific procedure or body part being asked about. If a source's title or content clearly pertains to a different body part or procedure (e.g., a hip arthroscopy protocol when the question is about knee meniscus surgery, or a shoulder protocol when the question is about an elbow procedure), do NOT cite it — even if the rehabilitation steps seem superficially similar. When in doubt, prefer to omit a questionable source rather than cite one about the wrong procedure."
+
+        # Follow-up rules differ by actor.  Providers get procedure-detail
+        # oriented follow-ups; patients get Socratic clarifying questions that
+        # probe for concomitant procedures and recovery context.
+        if body.actor == "PATIENT":
+            follow_up_rule = (
+                "FOLLOW-UP: After your answer, suggest ONE follow-up question that would help provide a more accurate or personalised answer. "
+                "Format it exactly as: FOLLOW_UP_QUESTION: <your question here>\n"
+                "When the patient mentions a specific surgery, prioritise follow-up questions in this order:\n"
+                "1. Ask whether any ADDITIONAL procedures were performed during the same surgery — phrase this as a gentle confirmation, e.g. "
+                "\"Did you also have any other procedures done at the same time as your ACL reconstruction, such as a meniscus repair or cartilage procedure?\"\n"
+                "2. Ask about specific surgical details that would change the protocol (graft type, primary vs. revision surgery, surgical approach).\n"
+                "3. Ask how far along they are in recovery (e.g. \"How many weeks post-op are you?\").\n"
+                "Choose whichever follow-up would most improve the specificity of the answer. "
+                "Only include one follow-up question. If there is no useful follow-up, omit this line entirely."
+            )
+        else:
+            follow_up_rule = (
+                "FOLLOW-UP: After your answer, if there is a natural follow-up question the user might want to ask "
+                "that would let you give a more specific or helpful answer, add it on its own line at the very end in "
+                "this exact format: FOLLOW_UP_QUESTION: <your question here>. The question should be relevant, concise, "
+                "and help the user get more targeted information from the available sources. When the user asks about a "
+                "surgical procedure (e.g., ACL reconstruction, rotator cuff repair, UCL reconstruction), the follow-up "
+                "should guide them to specify details that would make the answer more personalised — for example, graft "
+                "type (BTB patellar tendon autograft, hamstring autograft, quadriceps tendon autograft, or allograft), "
+                "whether it was a revision or primary surgery, or any concomitant procedures (e.g., meniscus repair). "
+                "Only include one follow-up question. If there is no useful follow-up, omit this line entirely."
+            )
 
         if body.actor == "PROVIDER":
             if doctor_name:
@@ -1404,6 +1700,8 @@ Rules:
 - Use appropriate medical terminology.
 - If the protocol does not address the specific question, say so clearly.
 - Never fabricate information or citations.
+- {procedure_scope_rule}
+- {source_relevance_rule}
 - {accuracy_rule}
 - {citation_rule}
 - {follow_up_rule}"""
@@ -1414,11 +1712,13 @@ Rules:
 - Provide evidence-based answers using ONLY the provided sources.
 - State findings directly — do not hedge when sources are clear.
 - Never fabricate information or citations.
+- {procedure_scope_rule}
+- {source_relevance_rule}
 - {accuracy_rule}
 - {citation_rule}
 - {follow_up_rule}"""
             else:
-                system_prompt = f"""You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. Never fabricate information or citations. {accuracy_rule} {citation_rule} {follow_up_rule}"""
+                system_prompt = f"""You are a clinical decision support assistant. Provide evidence-based answers using ONLY the provided sources. Never fabricate information or citations. {procedure_scope_rule} {source_relevance_rule} {accuracy_rule} {citation_rule} {follow_up_rule}"""
         else:
             if doctor_name:
                 system_prompt = f"""You are an office assistant for Dr. {doctor_name}'s practice, helping patients and their families understand the doctor's protocols and post-operative instructions.
@@ -1431,6 +1731,8 @@ Rules:
 - Include specific medication names, dosages, and timing instructions exactly as they appear in the protocol — do not withhold details that are in the source documents or tell patients to contact the office for information already available in the protocol.
 - Supplementary research may support the protocol but should not contradict or dilute it.
 - Never fabricate information or citations.
+- {procedure_scope_rule}
+- {source_relevance_rule}
 - {accuracy_rule}
 - {citation_rule}
 - {follow_up_rule}"""
@@ -1443,11 +1745,13 @@ Rules:
 - State findings directly — do not hedge when sources are clear.
 - Encourage patients to discuss specifics with their care team.
 - Never provide medical advice or fabricate information or citations.
+- {procedure_scope_rule}
+- {source_relevance_rule}
 - {accuracy_rule}
 - {citation_rule}
 - {follow_up_rule}"""
             else:
-                system_prompt = f"""You are a patient education assistant. Answer using ONLY the provided sources in clear language. Never provide medical advice or fabricate information or citations. {accuracy_rule} {citation_rule} {follow_up_rule}"""
+                system_prompt = f"""You are a patient education assistant. Answer using ONLY the provided sources in clear language. Never provide medical advice or fabricate information or citations. {procedure_scope_rule} {source_relevance_rule} {accuracy_rule} {citation_rule} {follow_up_rule}"""
 
         user_prompt = f"""Sources:
 {context}
@@ -1458,7 +1762,9 @@ Answer the question using the sources above. Rules:
 1. Every factual claim MUST include an inline (Source N) citation. Cite each source individually — write (Source 1) (Source 2), NEVER (Source 1, Source 2).
 2. Quote specific numbers, percentages, weight-bearing status, and timeframes EXACTLY as they appear in the source — do not paraphrase or combine different restrictions.
 3. If the source organizes instructions by time period, present your answer in the same time-period structure.
-4. Sources labelled as the surgeon's Protocol are the PRIMARY authority — cite and lead with those first. Supplementary research sources should only be used to support or add context, not to replace or contradict the surgeon's protocol."""
+4. Sources labelled as the surgeon's Protocol are the PRIMARY authority — cite and lead with those first. Supplementary research sources should only be used to support or add context, not to replace or contradict the surgeon's protocol.
+5. Only cite sources that match the procedure or body part being asked about. Skip any source whose title indicates a different procedure or body part (e.g., do not cite a hip arthroscopy study for a meniscus question).
+6. Answer ONLY about the specific surgery or procedure mentioned. Do not assume concomitant procedures were performed unless the user explicitly states them."""
 
         # Use Claude Sonnet 4.5 with prompt caching.
         # The system prompt is cached so repeated queries for the same doctor

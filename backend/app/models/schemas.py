@@ -17,6 +17,7 @@ class Answer(BaseModel):
     guardrails: dict
     latency_ms: int
     follow_up_question: Optional[str] = None
+    clarifying_questions: Optional[List[str]] = None  # Shown BEFORE the answer for patient mode
 
 class QueryRequest(BaseModel):
     question: str
@@ -25,6 +26,7 @@ class QueryRequest(BaseModel):
     body_part: Optional[str] = None  # e.g., "shoulder", "knee", "elbow"
     org_id: str = "demo"  # Legacy - will be replaced by doctor_id_procedure
     session_id: Optional[str] = None  # Browser session ID for grouping related questions
+    skip_clarification: bool = False  # When True, skip Socratic clarifying questions
 
 class UploadInitResponse(BaseModel):
     upload_url: str
