@@ -985,6 +985,113 @@ def _filter_hits_by_body_part_relevance(
 
 
 # ---------------------------------------------------------------------------
+# Procedure-level hit filtering
+# ---------------------------------------------------------------------------
+# Within the same body-part (e.g. "knee"), different procedures can have
+# very different protocols.  A document titled "ACL Reconstruction with
+# Meniscal Repair (All Inside)" is NOT relevant when the user asked only
+# about a standalone meniscus root repair.  The rules below define
+# which title-level procedure keywords should be excluded when the user
+# mentions a specific procedure but does NOT mention the other.
+# ---------------------------------------------------------------------------
+
+_PROCEDURE_EXCLUSION_RULES: list[dict] = [
+    {
+        # When user mentions meniscus but NOT ACL, exclude hits whose
+        # title is primarily about ACL reconstruction.
+        "query_includes": ["meniscus", "meniscal"],
+        "query_excludes": ["acl", "anterior cruciate"],
+        "title_exclude_patterns": [
+            "acl reconstruction", "acl rehab", "acl protocol",
+            "anterior cruciate ligament reconstruction",
+        ],
+    },
+    {
+        # When user mentions ACL but NOT meniscus, exclude hits whose
+        # title is primarily about standalone meniscus procedures.
+        # NOTE: we keep titles that mention both ACL and meniscus (e.g.
+        # "ACL Reconstruction with Meniscal Repair") because concomitant
+        # meniscus work is common with ACL surgery.
+        "query_includes": ["acl", "anterior cruciate"],
+        "query_excludes": ["meniscus", "meniscal"],
+        "title_exclude_patterns": [
+            "meniscus root repair", "meniscus transplant",
+            "meniscectomy protocol", "isolated meniscus",
+        ],
+    },
+    {
+        # When user mentions rotator cuff but NOT replacement, exclude
+        # shoulder replacement documents.
+        "query_includes": ["rotator cuff"],
+        "query_excludes": ["replacement", "arthroplasty"],
+        "title_exclude_patterns": [
+            "shoulder replacement", "shoulder arthroplasty",
+            "reverse total shoulder", "anatomic total shoulder",
+        ],
+    },
+    {
+        # When user mentions shoulder replacement but NOT rotator cuff,
+        # exclude rotator cuff repair documents.
+        "query_includes": ["shoulder replacement", "shoulder arthroplasty",
+                           "reverse shoulder", "total shoulder"],
+        "query_excludes": ["rotator cuff"],
+        "title_exclude_patterns": [
+            "rotator cuff repair", "rotator cuff protocol",
+        ],
+    },
+]
+
+
+def _filter_hits_by_procedure_relevance(
+    hits: list, question: str
+) -> list:
+    """Remove hits whose document title indicates a *different procedure*
+    within the same body part.
+
+    This is more granular than body-part filtering.  For example, when the
+    user asks about "meniscus root repair" and does NOT mention ACL, hits
+    titled "ACL Reconstruction with Meniscal Repair" are removed because
+    the primary procedure in that document is ACL reconstruction — not a
+    standalone meniscus root repair.
+
+    * If no exclusion rule matches the query, all hits are returned.
+    * If filtering would remove every hit, the original list is returned.
+    """
+    q_lower = question.lower()
+
+    # Collect all title patterns we should exclude for this query.
+    active_patterns: list[str] = []
+    for rule in _PROCEDURE_EXCLUSION_RULES:
+        if not any(kw in q_lower for kw in rule["query_includes"]):
+            continue
+        if any(kw in q_lower for kw in rule["query_excludes"]):
+            continue
+        active_patterns.extend(rule["title_exclude_patterns"])
+
+    if not active_patterns:
+        return hits
+
+    filtered = []
+    removed_titles: list[str] = []
+    for h in hits:
+        title = (h.payload or {}).get("title", "").lower()
+        if any(pat in title for pat in active_patterns):
+            removed_titles.append((h.payload or {}).get("title", ""))
+        else:
+            filtered.append(h)
+
+    if removed_titles:
+        logger.info(
+            "hit_procedure_filter",
+            active_patterns=active_patterns,
+            removed_count=len(removed_titles),
+            removed_titles=removed_titles[:5],
+        )
+
+    return filtered if filtered else hits
+
+
+# ---------------------------------------------------------------------------
 # Patient Socratic clarification — ask before answering
 # ---------------------------------------------------------------------------
 # When a patient mentions a surgical procedure but omits key details that
@@ -996,16 +1103,25 @@ def _filter_hits_by_body_part_relevance(
 _PROCEDURE_CLARIFICATIONS: list[dict] = [
     {
         "keywords": ["acl", "anterior cruciate"],
-        # If ANY of these appear in the question, consider the detail "present"
-        "detail_keywords": [
-            "graft", "autograft", "allograft", "hamstring", "patellar",
-            "quadriceps", "btb", "bone-patellar", "bone patellar",
-            "revision", "primary", "first time", "redo",
-            "meniscus", "meniscal", "cartilage", "chondral",
-            "weeks ago", "months ago", "days ago", "post-op", "postop",
-            "week post", "month post", "day post",
-        ],
-        "detail_threshold": 2,  # need ≥2 details present to skip
+        # Detail keywords are grouped into categories.  The patient must
+        # provide information in at least ``categories_needed`` distinct
+        # categories before we skip clarification.  This prevents a
+        # descriptive procedure name (e.g. "ACL reconstruction with
+        # hamstring autograft") from satisfying the threshold when the
+        # patient still hasn't mentioned concomitant procedures or timeline.
+        "detail_categories": {
+            "graft_type": [
+                "graft", "autograft", "allograft", "hamstring", "patellar",
+                "quadriceps", "btb", "bone-patellar", "bone patellar",
+            ],
+            "revision_status": ["revision", "primary", "first time", "redo"],
+            "concomitant": ["meniscus", "meniscal", "cartilage", "chondral"],
+            "timeline": [
+                "weeks ago", "months ago", "days ago", "post-op", "postop",
+                "week post", "month post", "day post",
+            ],
+        },
+        "categories_needed": 2,  # need ≥2 distinct categories to skip
         "questions": [
             "Did you have any other procedures done at the same time as your ACL reconstruction (for example, a meniscus repair or cartilage procedure)?",
             "Do you know what type of graft was used (patellar tendon, hamstring, quadriceps tendon, or donor tissue)?",
@@ -1014,14 +1130,18 @@ _PROCEDURE_CLARIFICATIONS: list[dict] = [
     },
     {
         "keywords": ["meniscus", "meniscal"],
-        "detail_keywords": [
-            "repair", "meniscectomy", "removed", "stitched", "sutured",
-            "root", "transplant", "allograft",
-            "acl", "anterior cruciate", "ligament", "cartilage",
-            "weeks ago", "months ago", "days ago", "post-op", "postop",
-            "week post", "month post", "day post",
-        ],
-        "detail_threshold": 2,
+        "detail_categories": {
+            "procedure_type": [
+                "repair", "meniscectomy", "removed", "stitched", "sutured",
+                "root", "transplant", "allograft",
+            ],
+            "concomitant": ["acl", "anterior cruciate", "ligament", "cartilage"],
+            "timeline": [
+                "weeks ago", "months ago", "days ago", "post-op", "postop",
+                "week post", "month post", "day post",
+            ],
+        },
+        "categories_needed": 2,
         "questions": [
             "Was your meniscus repaired (stitched/sutured) or was a portion removed (partial meniscectomy)?",
             "Were any other procedures done at the same time (for example, an ACL reconstruction or cartilage procedure)?",
@@ -1030,14 +1150,18 @@ _PROCEDURE_CLARIFICATIONS: list[dict] = [
     },
     {
         "keywords": ["rotator cuff"],
-        "detail_keywords": [
-            "partial", "full thickness", "complete", "massive",
-            "revision", "primary", "first time", "redo",
-            "biceps", "tenodesis", "labr", "slap", "decompression",
-            "weeks ago", "months ago", "days ago", "post-op", "postop",
-            "week post", "month post", "day post",
-        ],
-        "detail_threshold": 2,
+        "detail_categories": {
+            "tear_type": ["partial", "full thickness", "complete", "massive"],
+            "revision_status": ["revision", "primary", "first time", "redo"],
+            "concomitant": [
+                "biceps", "tenodesis", "labr", "slap", "decompression",
+            ],
+            "timeline": [
+                "weeks ago", "months ago", "days ago", "post-op", "postop",
+                "week post", "month post", "day post",
+            ],
+        },
+        "categories_needed": 2,
         "questions": [
             "Was your rotator cuff tear a partial tear or a full-thickness tear?",
             "Were any other procedures done at the same time (for example, a biceps tenodesis, labral repair, or subacromial decompression)?",
@@ -1046,14 +1170,18 @@ _PROCEDURE_CLARIFICATIONS: list[dict] = [
     },
     {
         "keywords": ["ucl", "ulnar collateral", "tommy john"],
-        "detail_keywords": [
-            "graft", "autograft", "allograft", "palmaris", "gracilis",
-            "revision", "primary", "first time", "redo",
-            "repair", "internal brace",
-            "weeks ago", "months ago", "days ago", "post-op", "postop",
-            "week post", "month post", "day post",
-        ],
-        "detail_threshold": 2,
+        "detail_categories": {
+            "procedure_type": [
+                "graft", "autograft", "allograft", "palmaris", "gracilis",
+                "repair", "internal brace",
+            ],
+            "revision_status": ["revision", "primary", "first time", "redo"],
+            "timeline": [
+                "weeks ago", "months ago", "days ago", "post-op", "postop",
+                "week post", "month post", "day post",
+            ],
+        },
+        "categories_needed": 2,
         "questions": [
             "Was this a UCL reconstruction (graft) or a UCL repair (with internal brace)?",
             "Is this your first UCL surgery or a revision?",
@@ -1062,14 +1190,18 @@ _PROCEDURE_CLARIFICATIONS: list[dict] = [
     },
     {
         "keywords": ["hip arthroscopy", "hip scope"],
-        "detail_keywords": [
-            "labr", "labral", "labrum", "fai", "impingement",
-            "cam", "pincer", "cartilage", "microfracture",
-            "gluteal", "abductor",
-            "weeks ago", "months ago", "days ago", "post-op", "postop",
-            "week post", "month post", "day post",
-        ],
-        "detail_threshold": 2,
+        "detail_categories": {
+            "procedure_type": [
+                "labr", "labral", "labrum", "fai", "impingement",
+                "cam", "pincer", "cartilage", "microfracture",
+                "gluteal", "abductor",
+            ],
+            "timeline": [
+                "weeks ago", "months ago", "days ago", "post-op", "postop",
+                "week post", "month post", "day post",
+            ],
+        },
+        "categories_needed": 2,
         "questions": [
             "What procedures were done during your hip arthroscopy (for example, labral repair, cam/pincer reshaping, cartilage work)?",
             "How far along are you in your recovery — how many weeks or months since your surgery?",
@@ -1078,13 +1210,15 @@ _PROCEDURE_CLARIFICATIONS: list[dict] = [
     {
         "keywords": ["shoulder replacement", "shoulder arthroplasty",
                       "reverse shoulder", "total shoulder"],
-        "detail_keywords": [
-            "reverse", "total", "anatomic", "hemi",
-            "revision", "primary", "first time", "redo",
-            "weeks ago", "months ago", "days ago", "post-op", "postop",
-            "week post", "month post", "day post",
-        ],
-        "detail_threshold": 2,
+        "detail_categories": {
+            "replacement_type": ["reverse", "total", "anatomic", "hemi"],
+            "revision_status": ["revision", "primary", "first time", "redo"],
+            "timeline": [
+                "weeks ago", "months ago", "days ago", "post-op", "postop",
+                "week post", "month post", "day post",
+            ],
+        },
+        "categories_needed": 2,
         "questions": [
             "Was your shoulder replacement a reverse total shoulder or an anatomic total shoulder?",
             "Is this your first shoulder replacement or a revision?",
@@ -1094,13 +1228,15 @@ _PROCEDURE_CLARIFICATIONS: list[dict] = [
     {
         "keywords": ["knee replacement", "total knee", "tkr", "tka",
                       "knee arthroplasty"],
-        "detail_keywords": [
-            "total", "partial", "unicompartmental", "revision",
-            "primary", "first time", "redo",
-            "weeks ago", "months ago", "days ago", "post-op", "postop",
-            "week post", "month post", "day post",
-        ],
-        "detail_threshold": 2,
+        "detail_categories": {
+            "replacement_type": ["total", "partial", "unicompartmental"],
+            "revision_status": ["revision", "primary", "first time", "redo"],
+            "timeline": [
+                "weeks ago", "months ago", "days ago", "post-op", "postop",
+                "week post", "month post", "day post",
+            ],
+        },
+        "categories_needed": 2,
         "questions": [
             "Was your knee replacement a total knee replacement or a partial (unicompartmental) replacement?",
             "Is this your first knee replacement or a revision?",
@@ -1110,13 +1246,15 @@ _PROCEDURE_CLARIFICATIONS: list[dict] = [
     {
         "keywords": ["hip replacement", "total hip", "thr", "tha",
                       "hip arthroplasty"],
-        "detail_keywords": [
-            "anterior", "posterior", "lateral", "approach",
-            "revision", "primary", "first time", "redo",
-            "weeks ago", "months ago", "days ago", "post-op", "postop",
-            "week post", "month post", "day post",
-        ],
-        "detail_threshold": 2,
+        "detail_categories": {
+            "approach_type": ["anterior", "posterior", "lateral", "approach"],
+            "revision_status": ["revision", "primary", "first time", "redo"],
+            "timeline": [
+                "weeks ago", "months ago", "days ago", "post-op", "postop",
+                "week post", "month post", "day post",
+            ],
+        },
+        "categories_needed": 2,
         "questions": [
             "What surgical approach was used (anterior, posterior, or lateral)?",
             "Is this your first hip replacement or a revision?",
@@ -1132,6 +1270,13 @@ def _get_clarifying_questions(question: str, actor: str) -> list[str] | None:
     Only triggers for PATIENT mode when a known surgical procedure is
     mentioned but key details are absent.  Returns ``None`` when no
     clarification is needed (e.g. provider, or question already specific).
+
+    Detail matching is **category-based**: keywords are grouped into
+    categories (e.g. procedure_type, concomitant, timeline) and we count
+    how many *distinct categories* the patient has addressed.  This
+    prevents a descriptive procedure name like "meniscus root repair"
+    (which contains two keywords—"root" and "repair"—in the *same*
+    category) from incorrectly satisfying the threshold.
     """
     if actor != "PATIENT":
         return None
@@ -1143,13 +1288,13 @@ def _get_clarifying_questions(question: str, actor: str) -> list[str] | None:
         if not any(kw in q_lower for kw in proc["keywords"]):
             continue
 
-        # How many clarifying details are already present?
-        details_present = sum(
-            1 for dk in proc["detail_keywords"]
-            if dk in q_lower
-        )
+        # Count how many distinct detail categories are represented.
+        categories_satisfied = 0
+        for _cat_name, cat_keywords in proc["detail_categories"].items():
+            if any(dk in q_lower for dk in cat_keywords):
+                categories_satisfied += 1
 
-        if details_present < proc["detail_threshold"]:
+        if categories_satisfied < proc["categories_needed"]:
             return proc["questions"]
 
     return None
@@ -1541,6 +1686,19 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
             after=len(all_hits),
         )
 
+    # Procedure-level filtering: within the same body part, different
+    # procedures have different protocols.  E.g. "ACL Reconstruction with
+    # Meniscal Repair" is not relevant for a standalone "meniscus root
+    # repair" query.  Filter out titles about a different primary procedure.
+    pre_proc_filter_count = len(all_hits)
+    all_hits = _filter_hits_by_procedure_relevance(all_hits, q)
+    if len(all_hits) != pre_proc_filter_count:
+        logger.info(
+            "procedure_level_filter_applied",
+            before=pre_proc_filter_count,
+            after=len(all_hits),
+        )
+
     # Tiered ranking: surgeon's own protocols are the primary source of truth,
     # followed by preferred literature collections, then supplementary evidence.
     if body.doctor_id:
@@ -1659,7 +1817,7 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
         citation_rule = "IMPORTANT: You MUST cite every factual claim with an inline (Source N) tag. For example: \"Patients should remain toe-touch weight-bearing for 6 weeks (Source 3).\" Every sentence with a factual claim needs a source tag. Do not write any claims without a citation. Cite each source INDIVIDUALLY — write (Source 1) (Source 2), NEVER (Source 1, Source 2)."
         accuracy_rule = "ACCURACY: When stating specific numbers, percentages, weight-bearing status, ROM restrictions, or timeframes from the source, quote them EXACTLY as written. Do NOT combine or confuse separate restrictions. For example, a flexion restriction (e.g., 'no knee flexion past 90 degrees for 6 weeks') is NOT a weight-bearing restriction (e.g., 'PWB 0-25%'). State each restriction separately and precisely as it appears in the source. If the source says 'PWB 0-25%', do NOT say 'no weight bearing'. If the source specifies instructions by time period (e.g., Days 1-7, Weeks 2-3), organize your answer by those same time periods."
         procedure_scope_rule = "PROCEDURE SCOPE: When the user mentions a specific surgery (e.g., 'ACL reconstruction'), answer ONLY about that exact procedure. Do NOT assume additional concomitant procedures were performed unless the user explicitly states them. For example, if the user asks about 'ACL reconstruction' do NOT include meniscus repair, cartilage restoration, or other procedures in your answer unless the user says those were also done. Treat the stated surgery as the only surgery performed."
-        source_relevance_rule = "SOURCE RELEVANCE: Only cite sources that are directly relevant to the specific procedure or body part being asked about. If a source's title or content clearly pertains to a different body part or procedure (e.g., a hip arthroscopy protocol when the question is about knee meniscus surgery, or a shoulder protocol when the question is about an elbow procedure), do NOT cite it — even if the rehabilitation steps seem superficially similar. When in doubt, prefer to omit a questionable source rather than cite one about the wrong procedure."
+        source_relevance_rule = "SOURCE RELEVANCE: Only cite sources that are directly relevant to the specific procedure or body part being asked about. If a source's title or content clearly pertains to a different body part or procedure (e.g., a hip arthroscopy protocol when the question is about knee meniscus surgery, or a shoulder protocol when the question is about an elbow procedure), do NOT cite it — even if the rehabilitation steps seem superficially similar. CRITICAL: A document about a combined procedure (e.g., 'ACL Reconstruction with Meniscal Repair') is NOT relevant when the user only asked about one of those procedures in isolation (e.g., standalone 'meniscus root repair'). Similarly, a general surgical booklet or operative guide is NOT a substitute for a procedure-specific protocol — do not cite it unless it specifically addresses the procedure the user asked about. When in doubt, prefer to omit a questionable source rather than cite one about the wrong procedure."
 
         # Follow-up rules differ by actor.  Providers get procedure-detail
         # oriented follow-ups; patients get Socratic clarifying questions that
