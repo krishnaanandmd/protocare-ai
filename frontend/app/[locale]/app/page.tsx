@@ -10,7 +10,7 @@ import remarkGfm from "remark-gfm";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
 
 type Citation = { title: string; document_id: string; page?: number; section?: string; author?: string; publication_year?: number; document_url?: string; display_label?: string; };
-type Answer = { answer: string; citations: Citation[]; guardrails: Record<string, any>; latency_ms: number; follow_up_question?: string; };
+type Answer = { answer: string; citations: Citation[]; guardrails: Record<string, any>; latency_ms: number; follow_up_question?: string; clarifying_questions?: string[]; };
 type Doctor = { id: string; name: string; specialty: string; };
 type BodyPart = { id: string; name: string; description: string; };
 
@@ -71,7 +71,7 @@ export default function PatientQA() {
     [question, loading, selectedDoctor, selectedBodyPart]
   );
 
-  const ask = useCallback(async () => {
+  const ask = useCallback(async (skipClarification = false) => {
     if (!canAsk) return;
     setLoading(true); setError(null); setData(null);
     try {
@@ -82,7 +82,8 @@ export default function PatientQA() {
           question: question.trim(),
           actor: mode,
           doctor_id: selectedDoctor,
-          body_part: selectedBodyPart
+          body_part: selectedBodyPart,
+          skip_clarification: skipClarification,
         }),
       });
       if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
@@ -360,7 +361,17 @@ export default function PatientQA() {
             </div>
           )}
 
-          {data && <AnswerCard mode={mode} data={data} doctorName={selectedDoctorName} onFollowUp={(q) => { setQuestion(q); }} />}
+          {data && data.clarifying_questions && data.clarifying_questions.length > 0 ? (
+            <ClarifyingCard
+              data={data}
+              doctorName={selectedDoctorName}
+              onSelectQuestion={(q) => { setQuestion(q); }}
+              onSkip={() => ask(true)}
+              loading={loading}
+            />
+          ) : data ? (
+            <AnswerCard mode={mode} data={data} doctorName={selectedDoctorName} onFollowUp={(q) => { setQuestion(q); }} />
+          ) : null}
 
         </div>
 
@@ -430,6 +441,66 @@ function Disclaimer({ mode }: { mode: "PATIENT" | "PROVIDER" }) {
         <p className="text-sm text-cyan-200">
           {t('qa.disclaimer.provider.description')}
         </p>
+      </div>
+    </div>
+  );
+}
+
+function ClarifyingCard({
+  data, doctorName, onSelectQuestion, onSkip, loading,
+}: {
+  data: Answer;
+  doctorName?: string;
+  onSelectQuestion: (question: string) => void;
+  onSkip: () => void;
+  loading: boolean;
+}) {
+  const { answer, clarifying_questions } = data;
+
+  return (
+    <div className="bg-white/10 backdrop-blur-xl rounded-3xl border-2 border-amber-500/40 shadow-2xl p-8 space-y-6">
+      {/* Header */}
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/30">
+          <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="text-2xl font-bold text-white">
+            A few quick questions
+          </h3>
+          <p className="text-sm text-slate-300 mt-1">{answer}</p>
+        </div>
+      </div>
+
+      {/* Clarifying questions */}
+      <div className="space-y-3">
+        {clarifying_questions?.map((q, idx) => (
+          <button
+            key={idx}
+            onClick={() => onSelectQuestion(q)}
+            className="group w-full text-left px-5 py-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 hover:border-amber-400/50 hover:from-amber-500/20 hover:to-orange-500/20 transition-all"
+          >
+            <span className="flex items-center gap-3">
+              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-600 text-white text-sm font-bold flex-shrink-0">
+                {idx + 1}
+              </span>
+              <span className="text-white font-medium group-hover:text-amber-100 transition-colors">{q}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Skip button */}
+      <div className="border-t border-white/20 pt-4">
+        <button
+          onClick={onSkip}
+          disabled={loading}
+          className="text-sm text-slate-400 hover:text-white transition-colors underline underline-offset-2 disabled:opacity-50"
+        >
+          {loading ? "Analyzing..." : "Answer my question without these details"}
+        </button>
       </div>
     </div>
   );

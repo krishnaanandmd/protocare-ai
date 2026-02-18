@@ -984,6 +984,177 @@ def _filter_hits_by_body_part_relevance(
     return filtered if filtered else hits
 
 
+# ---------------------------------------------------------------------------
+# Patient Socratic clarification — ask before answering
+# ---------------------------------------------------------------------------
+# When a patient mentions a surgical procedure but omits key details that
+# would change the protocol (graft type, concomitant procedures, timeline),
+# we return clarifying questions BEFORE producing an answer.  This avoids
+# giving a generic answer and then asking the patient to refine it.
+# ---------------------------------------------------------------------------
+
+_PROCEDURE_CLARIFICATIONS: list[dict] = [
+    {
+        "keywords": ["acl", "anterior cruciate"],
+        # If ANY of these appear in the question, consider the detail "present"
+        "detail_keywords": [
+            "graft", "autograft", "allograft", "hamstring", "patellar",
+            "quadriceps", "btb", "bone-patellar", "bone patellar",
+            "revision", "primary", "first time", "redo",
+            "meniscus", "meniscal", "cartilage", "chondral",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,  # need ≥2 details present to skip
+        "questions": [
+            "Did you have any other procedures done at the same time as your ACL reconstruction (for example, a meniscus repair or cartilage procedure)?",
+            "Do you know what type of graft was used (patellar tendon, hamstring, quadriceps tendon, or donor tissue)?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["meniscus", "meniscal"],
+        "detail_keywords": [
+            "repair", "meniscectomy", "removed", "stitched", "sutured",
+            "root", "transplant", "allograft",
+            "acl", "anterior cruciate", "ligament", "cartilage",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "Was your meniscus repaired (stitched/sutured) or was a portion removed (partial meniscectomy)?",
+            "Were any other procedures done at the same time (for example, an ACL reconstruction or cartilage procedure)?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["rotator cuff"],
+        "detail_keywords": [
+            "partial", "full thickness", "complete", "massive",
+            "revision", "primary", "first time", "redo",
+            "biceps", "tenodesis", "labr", "slap", "decompression",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "Was your rotator cuff tear a partial tear or a full-thickness tear?",
+            "Were any other procedures done at the same time (for example, a biceps tenodesis, labral repair, or subacromial decompression)?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["ucl", "ulnar collateral", "tommy john"],
+        "detail_keywords": [
+            "graft", "autograft", "allograft", "palmaris", "gracilis",
+            "revision", "primary", "first time", "redo",
+            "repair", "internal brace",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "Was this a UCL reconstruction (graft) or a UCL repair (with internal brace)?",
+            "Is this your first UCL surgery or a revision?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["hip arthroscopy", "hip scope"],
+        "detail_keywords": [
+            "labr", "labral", "labrum", "fai", "impingement",
+            "cam", "pincer", "cartilage", "microfracture",
+            "gluteal", "abductor",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "What procedures were done during your hip arthroscopy (for example, labral repair, cam/pincer reshaping, cartilage work)?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["shoulder replacement", "shoulder arthroplasty",
+                      "reverse shoulder", "total shoulder"],
+        "detail_keywords": [
+            "reverse", "total", "anatomic", "hemi",
+            "revision", "primary", "first time", "redo",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "Was your shoulder replacement a reverse total shoulder or an anatomic total shoulder?",
+            "Is this your first shoulder replacement or a revision?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["knee replacement", "total knee", "tkr", "tka",
+                      "knee arthroplasty"],
+        "detail_keywords": [
+            "total", "partial", "unicompartmental", "revision",
+            "primary", "first time", "redo",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "Was your knee replacement a total knee replacement or a partial (unicompartmental) replacement?",
+            "Is this your first knee replacement or a revision?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+    {
+        "keywords": ["hip replacement", "total hip", "thr", "tha",
+                      "hip arthroplasty"],
+        "detail_keywords": [
+            "anterior", "posterior", "lateral", "approach",
+            "revision", "primary", "first time", "redo",
+            "weeks ago", "months ago", "days ago", "post-op", "postop",
+            "week post", "month post", "day post",
+        ],
+        "detail_threshold": 2,
+        "questions": [
+            "What surgical approach was used (anterior, posterior, or lateral)?",
+            "Is this your first hip replacement or a revision?",
+            "How far along are you in your recovery — how many weeks or months since your surgery?",
+        ],
+    },
+]
+
+
+def _get_clarifying_questions(question: str, actor: str) -> list[str] | None:
+    """Return clarifying questions if the patient's query is too vague.
+
+    Only triggers for PATIENT mode when a known surgical procedure is
+    mentioned but key details are absent.  Returns ``None`` when no
+    clarification is needed (e.g. provider, or question already specific).
+    """
+    if actor != "PATIENT":
+        return None
+
+    q_lower = question.lower()
+
+    for proc in _PROCEDURE_CLARIFICATIONS:
+        # Does the question mention this procedure?
+        if not any(kw in q_lower for kw in proc["keywords"]):
+            continue
+
+        # How many clarifying details are already present?
+        details_present = sum(
+            1 for dk in proc["detail_keywords"]
+            if dk in q_lower
+        )
+
+        if details_present < proc["detail_threshold"]:
+            return proc["questions"]
+
+    return None
+
+
 @router.get("/doctors", response_model=list[DoctorProfile])
 async def list_doctors():
     """Get list of available doctors."""
@@ -1232,6 +1403,41 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=400,
             detail="This service can't provide emergency advice. Call your local emergency number."
+        )
+
+    # --- Patient Socratic clarification (ask before answering) ---
+    # For patient queries about surgical procedures, check if the question
+    # is too vague to give a procedure-specific answer.  If so, return
+    # clarifying questions immediately — skipping the full RAG pipeline.
+    # The patient can skip this by clicking "Answer my question anyway".
+    clarifying_qs = (
+        _get_clarifying_questions(q, body.actor)
+        if not body.skip_clarification
+        else None
+    )
+    if clarifying_qs:
+        latency_ms = int((time.time() - t0) * 1000)
+        doctor_name = DOCTORS.get(body.doctor_id, {}).get("name") if body.doctor_id else None
+        logger.info("clarifying_questions_returned", question=q, num_questions=len(clarifying_qs))
+        question_tracker.log_question(
+            db,
+            actor=body.actor,
+            question=q,
+            doctor_id=body.doctor_id,
+            doctor_name=doctor_name,
+            body_part=body.body_part,
+            session_id=body.session_id,
+            answer_snippet="[clarifying questions returned]",
+            citations_count=0,
+            latency_ms=latency_ms,
+            had_follow_up=False,
+        )
+        return Answer(
+            answer="To make sure I give you the most accurate information for your situation, could you help me with a few details?",
+            citations=[],
+            guardrails={"in_scope": True, "emergency": False},
+            latency_ms=latency_ms,
+            clarifying_questions=clarifying_qs,
         )
 
     # Determine collection(s) to search
