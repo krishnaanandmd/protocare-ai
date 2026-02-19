@@ -1475,12 +1475,93 @@ _PROCEDURE_CLARIFICATIONS: list[dict] = [
 ]
 
 
+# Keywords that indicate the patient is asking about post-operative care,
+# recovery, or rehabilitation — contexts where surgical-detail clarifying
+# questions are helpful.
+_POSTOP_SIGNALS: list[str] = [
+    "after my surgery", "after surgery", "after the surgery",
+    "after my operation", "after the operation",
+    "post-op", "postop", "post op", "post operative", "postoperative",
+    "recovery", "recovering", "rehab", "rehabilitation",
+    "i had", "i've had", "i just had", "i recently had",
+    "i underwent", "i got",
+    "weeks ago", "months ago", "days ago",
+    "week post", "month post", "day post",
+    "weeks since", "months since", "days since",
+    "surgery was", "my surgery",
+    "when can i", "can i start", "am i allowed",
+    "return to sport", "return to work", "back to normal",
+    "weight bearing", "weight-bearing",
+    "physical therapy", "pt exercises",
+    "how long until", "how long before",
+    "swelling", "sling", "brace", "crutches", "immobilizer",
+    "follow up appointment", "follow-up appointment",
+    "stitches", "incision", "wound",
+    "pain after", "still hurts",
+]
+
+# Keywords that indicate the patient is asking about treatment options,
+# diagnosis, or condition management — contexts where post-op clarifying
+# questions are NOT relevant.
+_TREATMENT_INQUIRY_SIGNALS: list[str] = [
+    "how do you treat", "how would you treat", "how is it treated",
+    "how do you recommend", "what do you recommend",
+    "treatment option", "treatment for", "treat a", "treat my",
+    "what are my options", "what are the options",
+    "should i get surgery", "do i need surgery", "is surgery necessary",
+    "conservative", "non-surgical", "nonsurgical", "non surgical",
+    "what is a", "what is the", "what are",
+    "how is a", "how do you fix", "how do you repair",
+    "manage", "management of",
+    "diagnos", "torn", "tear", "tearing", "injury",
+    "what causes", "why does",
+    "can it heal", "will it heal", "heal on its own",
+    "injection", "cortisone", "prp", "platelet",
+    "therapy for", "exercises for",
+]
+
+
+def _is_postop_or_recovery_context(question: str) -> bool:
+    """Determine whether a patient question is about post-op/recovery.
+
+    Returns ``True`` when the question signals post-operative care,
+    recovery, or rehabilitation — i.e. the patient has already had (or
+    is about to have) surgery and wants protocol-specific guidance.
+
+    Returns ``False`` when the question is about treatment options,
+    diagnosis, or condition management — i.e. the patient is exploring
+    whether or how to treat a condition, making surgical-detail
+    clarifying questions irrelevant.
+    """
+    q_lower = question.lower()
+
+    has_postop = any(sig in q_lower for sig in _POSTOP_SIGNALS)
+    has_treatment = any(sig in q_lower for sig in _TREATMENT_INQUIRY_SIGNALS)
+
+    # If the question has clear treatment-inquiry language and no post-op
+    # language, it's a treatment question — don't ask surgical details.
+    if has_treatment and not has_postop:
+        return False
+
+    # If the question has post-op language, it's a recovery question.
+    if has_postop:
+        return True
+
+    # Ambiguous — default to not asking clarifying questions.  A generic
+    # mention of a procedure (e.g. "rotator cuff tear") without any
+    # post-op or treatment signal is more likely an informational query
+    # than a post-op one.
+    return False
+
+
 def _get_clarifying_questions(question: str, actor: str) -> list[str] | None:
     """Return clarifying questions if the patient's query is too vague.
 
     Only triggers for PATIENT mode when a known surgical procedure is
-    mentioned but key details are absent.  Returns ``None`` when no
-    clarification is needed (e.g. provider, or question already specific).
+    mentioned but key details are absent, AND the patient appears to be
+    asking about post-operative care or recovery (not treatment options).
+    Returns ``None`` when no clarification is needed (e.g. provider,
+    treatment inquiry, or question already specific).
 
     Detail matching is **category-based**: keywords are grouped into
     categories (e.g. procedure_type, concomitant, timeline) and we count
@@ -1493,6 +1574,14 @@ def _get_clarifying_questions(question: str, actor: str) -> list[str] | None:
         return None
 
     q_lower = question.lower()
+
+    # Only ask surgical-detail clarifying questions when the patient is
+    # in a post-op / recovery context.  Treatment inquiries (e.g. "how
+    # do you recommend treating a rotator cuff tear?") should go straight
+    # to the answer without asking about tear type, concomitant
+    # procedures, or recovery timeline.
+    if not _is_postop_or_recovery_context(question):
+        return None
 
     for proc in _PROCEDURE_CLARIFICATIONS:
         # Does the question mention this procedure?
@@ -2031,20 +2120,38 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
         source_relevance_rule = "SOURCE RELEVANCE: Only cite sources that are directly relevant to the specific procedure or body part being asked about. If a source's title or content clearly pertains to a different body part or procedure (e.g., a hip arthroscopy protocol when the question is about knee meniscus surgery, or a shoulder protocol when the question is about an elbow procedure), do NOT cite it — even if the rehabilitation steps seem superficially similar. CRITICAL: A document about a combined procedure (e.g., 'ACL Reconstruction with Meniscal Repair') is NOT relevant when the user only asked about one of those procedures in isolation (e.g., standalone 'meniscus root repair'). Similarly, a general surgical booklet or operative guide is NOT a substitute for a procedure-specific protocol — do not cite it unless it specifically addresses the procedure the user asked about. When in doubt, prefer to omit a questionable source rather than cite one about the wrong procedure."
 
         # Follow-up rules differ by actor.  Providers get procedure-detail
-        # oriented follow-ups; patients get Socratic clarifying questions that
-        # probe for concomitant procedures and recovery context.
+        # oriented follow-ups; patients get context-adaptive follow-ups:
+        # post-op patients get Socratic questions about surgical details &
+        # recovery, while treatment-inquiry patients get questions about
+        # their condition, goals, and what they've already tried.
         if body.actor == "PATIENT":
-            follow_up_rule = (
-                "FOLLOW-UP: After your answer, suggest ONE follow-up question that would help provide a more accurate or personalised answer. "
-                "Format it exactly as: FOLLOW_UP_QUESTION: <your question here>\n"
-                "When the patient mentions a specific surgery, prioritise follow-up questions in this order:\n"
-                "1. Ask whether any ADDITIONAL procedures were performed during the same surgery — phrase this as a gentle confirmation, e.g. "
-                "\"Did you also have any other procedures done at the same time as your ACL reconstruction, such as a meniscus repair or cartilage procedure?\"\n"
-                "2. Ask about specific surgical details that would change the protocol (graft type, primary vs. revision surgery, surgical approach).\n"
-                "3. Ask how far along they are in recovery (e.g. \"How many weeks post-op are you?\").\n"
-                "Choose whichever follow-up would most improve the specificity of the answer. "
-                "Only include one follow-up question. If there is no useful follow-up, omit this line entirely."
-            )
+            is_postop = _is_postop_or_recovery_context(q)
+            if is_postop:
+                follow_up_rule = (
+                    "FOLLOW-UP: After your answer, suggest ONE follow-up question that would help provide a more accurate or personalised answer. "
+                    "Format it exactly as: FOLLOW_UP_QUESTION: <your question here>\n"
+                    "The patient appears to be asking about post-operative care or recovery. Prioritise follow-up questions in this order:\n"
+                    "1. Ask whether any ADDITIONAL procedures were performed during the same surgery — phrase this as a gentle confirmation, e.g. "
+                    "\"Did you also have any other procedures done at the same time as your ACL reconstruction, such as a meniscus repair or cartilage procedure?\"\n"
+                    "2. Ask about specific surgical details that would change the protocol (graft type, primary vs. revision surgery, surgical approach).\n"
+                    "3. Ask how far along they are in recovery (e.g. \"How many weeks post-op are you?\").\n"
+                    "Choose whichever follow-up would most improve the specificity of the answer. "
+                    "Only include one follow-up question. If there is no useful follow-up, omit this line entirely."
+                )
+            else:
+                follow_up_rule = (
+                    "FOLLOW-UP: After your answer, suggest ONE follow-up question that would help the patient explore their situation further. "
+                    "Format it exactly as: FOLLOW_UP_QUESTION: <your question here>\n"
+                    "The patient appears to be asking about treatment options or their condition (NOT post-operative recovery). "
+                    "Do NOT ask about surgical details, concomitant procedures, graft types, or recovery timelines — those are not relevant here. "
+                    "Instead, choose a follow-up from these categories:\n"
+                    "1. Ask about what treatments or therapies they have already tried (e.g. \"Have you tried any conservative treatments like physical therapy or injections?\").\n"
+                    "2. Ask about their goals or activity level to tailor recommendations (e.g. \"What activities or sports are you hoping to get back to?\").\n"
+                    "3. Ask about the severity or duration of their symptoms to help narrow the advice.\n"
+                    "4. Ask whether they've had imaging or a formal diagnosis to clarify the condition.\n"
+                    "Choose whichever follow-up is most natural given your answer. "
+                    "Only include one follow-up question. If there is no useful follow-up, omit this line entirely."
+                )
         else:
             follow_up_rule = (
                 "FOLLOW-UP: After your answer, if there is a natural follow-up question the user might want to ask "
