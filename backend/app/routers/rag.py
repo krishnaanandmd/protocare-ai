@@ -985,108 +985,216 @@ def _filter_hits_by_body_part_relevance(
 
 
 # ---------------------------------------------------------------------------
-# Procedure-level hit filtering
+# Procedure-level hit filtering (keyword-presence + text inspection)
 # ---------------------------------------------------------------------------
-# Within the same body-part (e.g. "knee"), different procedures can have
-# very different protocols.  A document titled "ACL Reconstruction with
-# Meniscal Repair (All Inside)" is NOT relevant when the user asked only
-# about a standalone meniscus root repair.  The rules below define
-# which title-level procedure keywords should be excluded when the user
-# mentions a specific procedure but does NOT mention the other.
+# Previous approach used exact phrase matching on titles only, which missed
+# documents with non-standard titles (e.g., a filename-derived title like
+# "Chahla ACL Meniscus Protocol" lacks the phrase "acl reconstruction" and
+# would slip through).
+#
+# New approach:
+# 1. Classify hits by procedure using keyword PRESENCE in title + text
+# 2. Compare against the query's procedure focus
+# 3. Filter out clear mismatches deterministically — before the LLM sees them
+# 4. Demote generic booklets / guides when procedure-specific hits exist
+#
+# This is the primary line of defence.  The LLM prompt also instructs the
+# model to ignore irrelevant sources, but that is a backup — the LLM should
+# never see clearly wrong sources in the first place.
 # ---------------------------------------------------------------------------
 
-_PROCEDURE_EXCLUSION_RULES: list[dict] = [
-    {
-        # When user mentions meniscus but NOT ACL, exclude hits whose
-        # title is primarily about ACL reconstruction.
-        "query_includes": ["meniscus", "meniscal"],
-        "query_excludes": ["acl", "anterior cruciate"],
-        "title_exclude_patterns": [
-            "acl reconstruction", "acl rehab", "acl protocol",
-            "anterior cruciate ligament reconstruction",
-        ],
-    },
-    {
-        # When user mentions ACL but NOT meniscus, exclude hits whose
-        # title is primarily about standalone meniscus procedures.
-        # NOTE: we keep titles that mention both ACL and meniscus (e.g.
-        # "ACL Reconstruction with Meniscal Repair") because concomitant
-        # meniscus work is common with ACL surgery.
-        "query_includes": ["acl", "anterior cruciate"],
-        "query_excludes": ["meniscus", "meniscal"],
-        "title_exclude_patterns": [
-            "meniscus root repair", "meniscus transplant",
-            "meniscectomy protocol", "isolated meniscus",
-        ],
-    },
-    {
-        # When user mentions rotator cuff but NOT replacement, exclude
-        # shoulder replacement documents.
-        "query_includes": ["rotator cuff"],
-        "query_excludes": ["replacement", "arthroplasty"],
-        "title_exclude_patterns": [
-            "shoulder replacement", "shoulder arthroplasty",
-            "reverse total shoulder", "anatomic total shoulder",
-        ],
-    },
-    {
-        # When user mentions shoulder replacement but NOT rotator cuff,
-        # exclude rotator cuff repair documents.
-        "query_includes": ["shoulder replacement", "shoulder arthroplasty",
-                           "reverse shoulder", "total shoulder"],
-        "query_excludes": ["rotator cuff"],
-        "title_exclude_patterns": [
-            "rotator cuff repair", "rotator cuff protocol",
-        ],
-    },
+# Keywords that signal a hit is about a specific procedure.
+# Checked against the lowercased title; if the title yields no signal,
+# the first 500 chars of chunk text are checked as a fallback.
+_PROCEDURE_INDICATORS: dict[str, list[str]] = {
+    "acl": ["acl", "anterior cruciate", "aclr", "acl-r"],
+    "meniscus_root": [
+        "meniscus root", "meniscal root", "root repair", "root tear",
+    ],
+    "meniscus": ["meniscus", "meniscal", "meniscectomy"],
+    "rotator_cuff": [
+        "rotator cuff", "supraspinatus repair", "cuff repair",
+    ],
+    "shoulder_replacement": [
+        "shoulder replacement", "shoulder arthroplasty",
+        "reverse total shoulder", "anatomic total shoulder",
+        "reverse shoulder", "total shoulder",
+    ],
+    "ucl": ["ucl", "ulnar collateral", "tommy john"],
+    "hip_arthroscopy": [
+        "hip arthroscopy", "hip scope", "fai",
+        "femoroacetabular", "hip labr",
+    ],
+    "total_hip": ["total hip", "hip replacement", "hip arthroplasty"],
+    "total_knee": ["total knee", "knee replacement", "knee arthroplasty"],
+}
+
+# Title substrings that indicate a generic / non-procedure-specific document.
+# When procedure-specific hits are available, generic hits are removed so the
+# LLM does not cite them.
+_GENERIC_DOC_PATTERNS: list[str] = [
+    "surgical booklet", "surgery booklet",
+    "operative booklet",
+    "operative guide", "operation guide",
+    "patient handbook", "clinical handbook",
+    "surgical handbook",
+    "general guide", "general instructions",
+    "general surgical", "general information",
+    "pre-operative packet", "pre op packet",
+    "surgical packet", "surgery packet",
 ]
+
+
+def _detect_hit_procedures(title: str, text: str) -> set[str]:
+    """Identify which procedure(s) a hit is about from title and text.
+
+    Title is checked first.  Only when the title yields zero procedure
+    signals do we fall back to the first 500 characters of chunk text.
+    This prevents incidental keyword mentions in the body from overriding
+    a clear, procedure-specific title.
+    """
+    t = title.lower()
+    procs: set[str] = set()
+    for proc_key, keywords in _PROCEDURE_INDICATORS.items():
+        if any(kw in t for kw in keywords):
+            procs.add(proc_key)
+
+    # Fallback: title was generic / uninformative — inspect chunk text.
+    if not procs and text:
+        snippet = text[:500].lower()
+        for proc_key, keywords in _PROCEDURE_INDICATORS.items():
+            if any(kw in snippet for kw in keywords):
+                procs.add(proc_key)
+
+    return procs
+
+
+def _detect_query_procedures(question: str) -> set[str]:
+    """Identify which procedure(s) the user is asking about."""
+    q = question.lower()
+    procs: set[str] = set()
+    for proc_key, keywords in _PROCEDURE_INDICATORS.items():
+        if any(kw in q for kw in keywords):
+            procs.add(proc_key)
+    return procs
+
+
+def _is_generic_document(title: str) -> bool:
+    """Return ``True`` if the title looks like a generic booklet / guide."""
+    t = title.lower()
+    return any(pat in t for pat in _GENERIC_DOC_PATTERNS)
 
 
 def _filter_hits_by_procedure_relevance(
     hits: list, question: str
 ) -> list:
-    """Remove hits whose document title indicates a *different procedure*
-    within the same body part.
+    """Remove hits about a different procedure within the same body part.
 
-    This is more granular than body-part filtering.  For example, when the
-    user asks about "meniscus root repair" and does NOT mention ACL, hits
-    titled "ACL Reconstruction with Meniscal Repair" are removed because
-    the primary procedure in that document is ACL reconstruction — not a
-    standalone meniscus root repair.
+    Uses keyword *presence* in both title and text (not just exact title
+    phrases) to classify what procedure each hit is about, then filters
+    based on the query's procedure focus.
 
-    * If no exclusion rule matches the query, all hits are returned.
+    Also removes generic booklet / guide hits when procedure-specific hits
+    are available.
+
+    * If no procedure is detected in the query, all hits are returned.
     * If filtering would remove every hit, the original list is returned.
     """
-    q_lower = question.lower()
-
-    # Collect all title patterns we should exclude for this query.
-    active_patterns: list[str] = []
-    for rule in _PROCEDURE_EXCLUSION_RULES:
-        if not any(kw in q_lower for kw in rule["query_includes"]):
-            continue
-        if any(kw in q_lower for kw in rule["query_excludes"]):
-            continue
-        active_patterns.extend(rule["title_exclude_patterns"])
-
-    if not active_patterns:
+    query_procs = _detect_query_procedures(question)
+    if not query_procs:
         return hits
 
-    filtered = []
+    filtered: list = []
     removed_titles: list[str] = []
+
     for h in hits:
-        title = (h.payload or {}).get("title", "").lower()
-        if any(pat in title for pat in active_patterns):
-            removed_titles.append((h.payload or {}).get("title", ""))
+        p = h.payload or {}
+        title = p.get("title", "")
+        text = p.get("text", "")
+        hit_procs = _detect_hit_procedures(title, text)
+
+        should_exclude = False
+
+        # --- Meniscus (any kind) without ACL → exclude ACL-primary hits ---
+        # "Meniscus root repair" and "meniscus repair" are distinct from
+        # "ACL reconstruction with meniscal repair".  If the user did not
+        # mention ACL, any hit that is (even partly) about ACL is excluded.
+        if (
+            ("meniscus" in query_procs or "meniscus_root" in query_procs)
+            and "acl" not in query_procs
+        ):
+            if "acl" in hit_procs:
+                should_exclude = True
+
+        # --- ACL without meniscus → exclude standalone meniscus hits ---
+        # Combined ACL + meniscus docs are kept (concomitant work is common).
+        if (
+            "acl" in query_procs
+            and "meniscus" not in query_procs
+            and "meniscus_root" not in query_procs
+        ):
+            if (
+                ("meniscus_root" in hit_procs or "meniscus" in hit_procs)
+                and "acl" not in hit_procs
+            ):
+                should_exclude = True
+
+        # --- Rotator cuff ↔ shoulder replacement ---
+        if "rotator_cuff" in query_procs and "shoulder_replacement" not in query_procs:
+            if "shoulder_replacement" in hit_procs and "rotator_cuff" not in hit_procs:
+                should_exclude = True
+        if "shoulder_replacement" in query_procs and "rotator_cuff" not in query_procs:
+            if "rotator_cuff" in hit_procs and "shoulder_replacement" not in hit_procs:
+                should_exclude = True
+
+        # --- Hip arthroscopy ↔ total hip replacement ---
+        if "hip_arthroscopy" in query_procs and "total_hip" not in query_procs:
+            if "total_hip" in hit_procs and "hip_arthroscopy" not in hit_procs:
+                should_exclude = True
+        if "total_hip" in query_procs and "hip_arthroscopy" not in query_procs:
+            if "hip_arthroscopy" in hit_procs and "total_hip" not in hit_procs:
+                should_exclude = True
+
+        # --- Total knee ↔ ACL/meniscus ---
+        if "total_knee" in query_procs:
+            if ("acl" in hit_procs or "meniscus_root" in hit_procs) and "total_knee" not in hit_procs:
+                should_exclude = True
+        if ("acl" in query_procs or "meniscus" in query_procs) and "total_knee" not in query_procs:
+            if "total_knee" in hit_procs and not (hit_procs & query_procs):
+                should_exclude = True
+
+        if should_exclude:
+            removed_titles.append(title)
         else:
             filtered.append(h)
 
     if removed_titles:
         logger.info(
             "hit_procedure_filter",
-            active_patterns=active_patterns,
+            query_procedures=list(query_procs),
             removed_count=len(removed_titles),
             removed_titles=removed_titles[:5],
         )
+
+    # --- Demote generic booklets / guides ---
+    # If we have procedure-specific hits, remove generic ones so the LLM
+    # cannot cite an irrelevant "Surgical Booklet" when real protocols exist.
+    if filtered:
+        specific = [
+            h for h in filtered
+            if not _is_generic_document((h.payload or {}).get("title", ""))
+        ]
+        generic = [
+            h for h in filtered
+            if _is_generic_document((h.payload or {}).get("title", ""))
+        ]
+        if specific and generic:
+            logger.info(
+                "generic_doc_demotion",
+                demoted_count=len(generic),
+                demoted_titles=[(h.payload or {}).get("title", "") for h in generic][:5],
+            )
+            filtered = specific
 
     return filtered if filtered else hits
 
