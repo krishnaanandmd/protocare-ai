@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { DoctorAutocomplete } from "@/components/DoctorAutocomplete";
@@ -23,10 +23,10 @@ export default function PatientQA() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Clarification flow state: tracks the original question and which
-  // clarifying questions the user has selected so far.
+  // Clarification flow state: tracks the original question and the user's
+  // inline answers to each selected clarifying question (question -> answer text).
   const [originalQuestion, setOriginalQuestion] = useState<string | null>(null);
-  const [selectedClarifications, setSelectedClarifications] = useState<Set<string>>(new Set());
+  const [selectedClarifications, setSelectedClarifications] = useState<Map<string, string>>(new Map());
 
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
@@ -98,11 +98,11 @@ export default function PatientQA() {
       // so we can preserve context when the user responds.
       if (json.clarifying_questions && json.clarifying_questions.length > 0) {
         setOriginalQuestion(question.trim());
-        setSelectedClarifications(new Set());
+        setSelectedClarifications(new Map());
       } else {
         // Clear clarification state on a successful full answer
         setOriginalQuestion(null);
-        setSelectedClarifications(new Set());
+        setSelectedClarifications(new Map());
       }
 
       setData(json);
@@ -111,13 +111,19 @@ export default function PatientQA() {
   }, [question, mode, canAsk, selectedDoctor, selectedBodyPart]);
 
   // Submit clarification responses: combines the original question with
-  // the selected clarifying details, then runs the full RAG pipeline.
-  const submitWithClarifications = useCallback(async (clarifications: Set<string>) => {
+  // the selected clarifying details and their inline answers, then runs the full RAG pipeline.
+  const submitWithClarifications = useCallback(async (clarifications: Map<string, string>) => {
     if (!originalQuestion) return;
     const parts = [originalQuestion];
     if (clarifications.size > 0) {
       parts.push("\nAdditional details:");
-      clarifications.forEach((q) => parts.push(`- ${q}`));
+      clarifications.forEach((answer, question) => {
+        if (answer.trim()) {
+          parts.push(`- ${question}: ${answer.trim()}`);
+        } else {
+          parts.push(`- ${question}`);
+        }
+      });
     }
     const combined = parts.join("\n");
     setQuestion(combined);
@@ -138,7 +144,7 @@ export default function PatientQA() {
       if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
       const json: Answer = await res.json();
       setOriginalQuestion(null);
-      setSelectedClarifications(new Set());
+      setSelectedClarifications(new Map());
       setData(json);
     } catch (e: any) { setError(e?.message || "Something went wrong"); }
     finally { setLoading(false); }
@@ -147,12 +153,21 @@ export default function PatientQA() {
   // Toggle a clarifying question selection on/off
   const toggleClarification = useCallback((q: string) => {
     setSelectedClarifications((prev) => {
-      const next = new Set(prev);
+      const next = new Map(prev);
       if (next.has(q)) {
         next.delete(q);
       } else {
-        next.add(q);
+        next.set(q, "");
       }
+      return next;
+    });
+  }, []);
+
+  // Update the inline answer for a selected clarifying question
+  const updateClarificationAnswer = useCallback((q: string, answer: string) => {
+    setSelectedClarifications((prev) => {
+      const next = new Map(prev);
+      next.set(q, answer);
       return next;
     });
   }, []);
@@ -432,8 +447,9 @@ export default function PatientQA() {
               doctorName={selectedDoctorName}
               selectedClarifications={selectedClarifications}
               onToggleQuestion={toggleClarification}
+              onUpdateAnswer={updateClarificationAnswer}
               onSubmitClarifications={submitWithClarifications}
-              onSkip={() => submitWithClarifications(new Set())}
+              onSkip={() => submitWithClarifications(new Map())}
               loading={loading}
             />
           ) : data ? (
@@ -514,18 +530,20 @@ function Disclaimer({ mode }: { mode: "PATIENT" | "PROVIDER" }) {
 }
 
 function ClarifyingCard({
-  data, originalQuestion, doctorName, selectedClarifications, onToggleQuestion, onSubmitClarifications, onSkip, loading,
+  data, originalQuestion, doctorName, selectedClarifications, onToggleQuestion, onUpdateAnswer, onSubmitClarifications, onSkip, loading,
 }: {
   data: Answer;
   originalQuestion: string | null;
   doctorName?: string;
-  selectedClarifications: Set<string>;
+  selectedClarifications: Map<string, string>;
   onToggleQuestion: (question: string) => void;
-  onSubmitClarifications: (clarifications: Set<string>) => void;
+  onUpdateAnswer: (question: string, answer: string) => void;
+  onSubmitClarifications: (clarifications: Map<string, string>) => void;
   onSkip: () => void;
   loading: boolean;
 }) {
   const { answer, clarifying_questions } = data;
+  const inputRefs = useRef<Map<number, HTMLTextAreaElement>>(new Map());
 
   return (
     <div className="bg-white/10 backdrop-blur-xl rounded-3xl border-2 border-amber-500/40 shadow-2xl p-8 space-y-6">
@@ -554,41 +572,65 @@ function ClarifyingCard({
             A few quick questions
           </h3>
           <p className="text-sm text-slate-300 mt-1">{answer}</p>
-          <p className="text-xs text-slate-400 mt-2">Select all that apply, then click &quot;Get my answer&quot; below.</p>
+          <p className="text-xs text-slate-400 mt-2">Select a question to answer it inline, then click &quot;Get my answer&quot; below.</p>
         </div>
       </div>
 
-      {/* Clarifying questions — multi-select toggles */}
+      {/* Clarifying questions — multi-select toggles with inline answer inputs */}
       <div className="space-y-3">
         {clarifying_questions?.map((q, idx) => {
           const isSelected = selectedClarifications.has(q);
+          const currentAnswer = selectedClarifications.get(q) ?? "";
           return (
-            <button
-              key={idx}
-              onClick={() => onToggleQuestion(q)}
-              className={`group w-full text-left px-5 py-4 rounded-xl border transition-all ${
-                isSelected
-                  ? "bg-gradient-to-r from-amber-500/25 to-orange-500/25 border-amber-400/60 shadow-lg shadow-amber-500/10"
-                  : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 hover:border-amber-400/50 hover:from-amber-500/20 hover:to-orange-500/20"
-              }`}
-            >
-              <span className="flex items-center gap-3">
-                <span className={`flex items-center justify-center w-7 h-7 rounded-lg border-2 flex-shrink-0 transition-all ${
+            <div key={idx} className="space-y-0">
+              <button
+                onClick={() => {
+                  onToggleQuestion(q);
+                  // Auto-focus the input when selecting
+                  if (!isSelected) {
+                    setTimeout(() => inputRefs.current.get(idx)?.focus(), 50);
+                  }
+                }}
+                className={`group w-full text-left px-5 py-4 border transition-all ${
                   isSelected
-                    ? "bg-amber-500 border-amber-400 text-white"
-                    : "border-amber-500/50 text-transparent group-hover:border-amber-400/70"
-                }`}>
-                  {isSelected && (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
+                    ? "bg-gradient-to-r from-amber-500/25 to-orange-500/25 border-amber-400/60 shadow-lg shadow-amber-500/10 rounded-t-xl rounded-b-none border-b-0"
+                    : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 hover:border-amber-400/50 hover:from-amber-500/20 hover:to-orange-500/20 rounded-xl"
+                }`}
+              >
+                <span className="flex items-center gap-3">
+                  <span className={`flex items-center justify-center w-7 h-7 rounded-lg border-2 flex-shrink-0 transition-all ${
+                    isSelected
+                      ? "bg-amber-500 border-amber-400 text-white"
+                      : "border-amber-500/50 text-transparent group-hover:border-amber-400/70"
+                  }`}>
+                    {isSelected && (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </span>
+                  <span className={`font-medium transition-colors ${
+                    isSelected ? "text-amber-100" : "text-white group-hover:text-amber-100"
+                  }`}>{q}</span>
                 </span>
-                <span className={`font-medium transition-colors ${
-                  isSelected ? "text-amber-100" : "text-white group-hover:text-amber-100"
-                }`}>{q}</span>
-              </span>
-            </button>
+              </button>
+              {/* Inline answer input — appears when question is selected */}
+              {isSelected && (
+                <div className="bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-400/60 border-t-0 rounded-b-xl px-5 pb-4 pt-2">
+                  <textarea
+                    ref={(el) => {
+                      if (el) inputRefs.current.set(idx, el);
+                      else inputRefs.current.delete(idx);
+                    }}
+                    value={currentAnswer}
+                    onChange={(e) => onUpdateAnswer(q, e.target.value)}
+                    placeholder="Type your answer here..."
+                    rows={2}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/60 resize-none transition-all"
+                  />
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
