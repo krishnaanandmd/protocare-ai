@@ -218,6 +218,12 @@ DOCTORS = {
         "name": "Dr. Lafi Khalil",
         "specialty": "Orthopedic Surgery - Sports Medicine",
         "procedures": ["ucl", "acl", "rotator_cuff", "meniscus"]
+    },
+    "matt_fury": {
+        "id": "matt_fury",
+        "name": "Dr. Matt Fury",
+        "specialty": "Orthopedic Surgery - Sports Medicine",
+        "procedures": ["ucl", "acl", "rotator_cuff", "meniscus"]
     }
 }
 
@@ -238,10 +244,10 @@ PREFERRED_COLLECTIONS = {
 # This provides granular control over which surgeons can access which collections
 COLLECTION_PERMISSIONS = {
     # RCT Documents
-    "dr_general_ucl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "steven_defroda", "lafi_khalil"],
-    "dr_general_rotator_cuff_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "steven_defroda", "lafi_khalil"],
-    "dr_general_meniscus_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "steven_defroda", "lafi_khalil"],
-    "dr_general_acl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "steven_defroda", "lafi_khalil"],
+    "dr_general_ucl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "steven_defroda", "lafi_khalil", "matt_fury"],
+    "dr_general_rotator_cuff_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "steven_defroda", "lafi_khalil", "matt_fury"],
+    "dr_general_meniscus_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "steven_defroda", "lafi_khalil", "matt_fury"],
+    "dr_general_acl_rct": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "steven_defroda", "lafi_khalil", "matt_fury"],
 
     # Dines-specific protocols
     "dr_joshua_dines_clinic_protocols": ["joshua_dines", "asheesh_bedi"],
@@ -262,11 +268,11 @@ COLLECTION_PERMISSIONS = {
     "dr_general_hss_protocols": ["joshua_dines", "ayoosh_pareek", "sheeraz_qureshi", "william_long"],
 
     # Body part specific collections
-    "dr_general_knee_lower_leg": ["william_long", "khalid_alkhelaifi", "jorge_chahla", "lafi_khalil"],
+    "dr_general_knee_lower_leg": ["william_long", "khalid_alkhelaifi", "jorge_chahla", "lafi_khalil", "matt_fury"],
     "dr_general_foot_ankle": [],  # CareGuide only
-    "dr_general_shoulder": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "steven_defroda"],
-    "dr_general_elbow": ["joshua_dines", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "lafi_khalil"],
-    "dr_general_hip_thigh": ["asheesh_bedi", "william_long", "jorge_chahla", "steven_defroda", "lafi_khalil"],
+    "dr_general_shoulder": ["joshua_dines", "asheesh_bedi", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "steven_defroda", "matt_fury"],
+    "dr_general_elbow": ["joshua_dines", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "lafi_khalil", "matt_fury"],
+    "dr_general_hip_thigh": ["asheesh_bedi", "william_long", "jorge_chahla", "steven_defroda", "lafi_khalil", "matt_fury"],
     "dr_general_neck": ["sheeraz_qureshi"],
     "dr_general_back": ["sheeraz_qureshi"],
 
@@ -274,11 +280,15 @@ COLLECTION_PERMISSIONS = {
     "dr_general_aaos_knee_oa": ["william_long"],
 
     # Review / Evidence Collections
-    "dr_general_shoulder_replacement_reviews": ["joshua_dines", "asheesh_bedi", "steven_defroda", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "lafi_khalil"],
+    "dr_general_shoulder_replacement_reviews": ["joshua_dines", "asheesh_bedi", "steven_defroda", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "lafi_khalil", "matt_fury"],
     "dr_general_fai_reviews": ["asheesh_bedi", "steven_defroda", "ayoosh_pareek", "khalid_alkhelaifi", "jorge_chahla", "lafi_khalil"],
+
+    # Shoulder Replacement RCTs
+    "dr_general_shoulder_replacement_rct": ["joshua_dines", "lafi_khalil", "asheesh_bedi", "steven_defroda", "ayoosh_pareek", "khalid_alkhelaifi", "matt_fury"],
 
     # Research Papers
     "dr_general_defroda_pubmed": ["steven_defroda"],
+    "dr_general_long_pubmed": ["william_long"],
 
     # Preferred Literature
     "dr_general_khalil_preferred_literature": ["lafi_khalil"],
@@ -791,6 +801,99 @@ SURGEON_SPECIALTIES = {
             },
             {
                 "name": "Hip",
+                "icon": "hip",
+                "conditions": [
+                    {
+                        "name": "Hip Labral Tears",
+                        "description": "Tears of the hip labrum",
+                        "procedures": ["Hip Arthroscopy", "Labral Repair"]
+                    },
+                    {
+                        "name": "FAI (Femoroacetabular Impingement)",
+                        "description": "Hip impingement syndrome",
+                        "procedures": ["Hip Arthroscopy", "Cam/Pincer Resection"]
+                    },
+                    {
+                        "name": "Hip Cartilage Damage",
+                        "description": "Damage to hip articular cartilage",
+                        "procedures": ["Microfracture", "Cartilage Restoration"]
+                    }
+                ]
+            }
+        ]
+    },
+    "matt_fury": {
+        "categories": [
+            {
+                "name": "Shoulder",
+                "icon": "shoulder",
+                "conditions": [
+                    {
+                        "name": "Rotator Cuff Tears",
+                        "description": "Partial or complete tears of the rotator cuff tendons",
+                        "procedures": ["Rotator Cuff Repair", "Rotator Cuff Reconstruction"]
+                    },
+                    {
+                        "name": "Shoulder Instability",
+                        "description": "Recurrent shoulder dislocations or subluxations",
+                        "procedures": ["Bankart Repair", "Latarjet Procedure"]
+                    },
+                    {
+                        "name": "Labral Tears (SLAP)",
+                        "description": "Superior labrum anterior-posterior tears",
+                        "procedures": ["SLAP Repair", "Biceps Tenodesis"]
+                    },
+                    {
+                        "name": "AC Joint Injuries",
+                        "description": "Acromioclavicular joint separations",
+                        "procedures": ["AC Joint Reconstruction", "Distal Clavicle Excision"]
+                    }
+                ]
+            },
+            {
+                "name": "Elbow",
+                "icon": "elbow",
+                "conditions": [
+                    {
+                        "name": "UCL Injuries",
+                        "description": "Ulnar collateral ligament tears common in throwing athletes",
+                        "procedures": ["UCL Reconstruction (Tommy John)", "UCL Repair"]
+                    },
+                    {
+                        "name": "Tennis Elbow",
+                        "description": "Lateral epicondylitis causing outer elbow pain",
+                        "procedures": ["Lateral Epicondyle Release", "PRP Injection"]
+                    },
+                    {
+                        "name": "Elbow Instability",
+                        "description": "Recurrent elbow dislocations or laxity",
+                        "procedures": ["Ligament Reconstruction", "Elbow Arthroscopy"]
+                    }
+                ]
+            },
+            {
+                "name": "Knee and Lower Leg",
+                "icon": "knee",
+                "conditions": [
+                    {
+                        "name": "ACL Tears",
+                        "description": "Anterior cruciate ligament injuries",
+                        "procedures": ["ACL Reconstruction", "ACL Repair"]
+                    },
+                    {
+                        "name": "Meniscus Tears",
+                        "description": "Tears of the knee meniscus cartilage",
+                        "procedures": ["Meniscus Repair", "Partial Meniscectomy", "Meniscal Transplant"]
+                    },
+                    {
+                        "name": "Cartilage Injuries",
+                        "description": "Damage to knee articular cartilage",
+                        "procedures": ["Microfracture", "Cartilage Restoration"]
+                    }
+                ]
+            },
+            {
+                "name": "Hip and Thigh",
                 "icon": "hip",
                 "conditions": [
                     {
