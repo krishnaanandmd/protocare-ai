@@ -2,6 +2,22 @@ const createNextIntlPlugin = require('next-intl/plugin');
 
 const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
+// Build CSP connect-src dynamically so it always includes the configured API
+// base URL, regardless of deployment platform (Railway, Render, EC2, etc.).
+const connectSrcOrigins = new Set([
+  "'self'",
+  "https://api.care-guide.ai",
+  "https://*.vercel.app",
+]);
+const apiBase = process.env.NEXT_PUBLIC_API_BASE;
+if (apiBase) {
+  try {
+    connectSrcOrigins.add(new URL(apiBase).origin);
+  } catch {
+    connectSrcOrigins.add(apiBase);
+  }
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async headers() {
@@ -41,7 +57,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://api.care-guide.ai https://*.vercel.app",
+              `connect-src ${[...connectSrcOrigins].join(' ')}`,
               "frame-ancestors 'self'",
               "base-uri 'self'",
               "form-action 'self' https://forms.gle",
