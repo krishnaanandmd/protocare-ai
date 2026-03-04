@@ -114,6 +114,12 @@ export default function LandingPage() {
                   {t("common.requestDemo")}
                 </Link>
                 <Link
+                  href={`/${locale}/consent`}
+                  className="px-4 py-2 rounded-xl text-sm font-bold border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400/50 transition-all"
+                >
+                  Informed Consent
+                </Link>
+                <Link
                   href={`/${locale}/upload`}
                   className="text-sm font-semibold text-slate-400 hover:text-slate-200 transition-colors"
                 >
