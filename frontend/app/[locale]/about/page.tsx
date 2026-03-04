@@ -45,6 +45,13 @@ const getTeamMembers = (t: any): TeamMember[] => [
     image: '/team/joshua-dines.jpg',
     linkedin: 'https://www.linkedin.com/in/joshua-dines-md-7233b75/',
     bio: t('about.team.members.joshua.bio')
+  },
+  {
+    name: t('about.team.members.asheesh.name'),
+    role: t('about.team.members.asheesh.role'),
+    title: t('about.team.members.asheesh.title'),
+    image: '/team/asheesh-bedi.jpg',
+    bio: t('about.team.members.asheesh.bio')
   }
 ];
 
@@ -56,17 +63,6 @@ const clinicalAdvisors: ClinicalAdvisor[] = [
     affiliations: [
       'Associate Attending Orthopaedic Surgeon HSS',
       'Associate Professor Orthopaedic Surgery, Weill Cornell'
-    ]
-  },
-  {
-    name: 'Asheesh Bedi',
-    title: 'Director of Sports Medicine',
-    image: '/team/asheesh-bedi.jpg',
-    affiliations: [
-      'Executive Director and Division Chief of Sports Medicine at University of Michigan',
-      'Former Team Physician, Chicago Bears',
-      'Former Team Physician, Detroit Lions',
-      'Medical Director for NBA Players Association'
     ]
   },
   {
@@ -143,7 +139,7 @@ export default function AboutUs() {
                 {t('about.team.title')} <span className="bg-gradient-to-r from-cyan-400 to-teal-400 text-transparent bg-clip-text">{t('about.team.subtitle')}</span>
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {teamMembers.map((member) => (
                   <div
                     key={member.name}
@@ -206,7 +202,7 @@ export default function AboutUs() {
                 {t('about.advisors.description')}
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {clinicalAdvisors.map((advisor) => (
                   <div
                     key={advisor.name}

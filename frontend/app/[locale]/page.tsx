@@ -267,7 +267,7 @@ export default function LandingPage() {
                     </svg>
                   </div>
                   <div className="text-5xl md:text-6xl font-black bg-gradient-to-r from-teal-400 to-blue-400 text-transparent bg-clip-text">
-                    <AnimatedCounter end={6} suffix="" />
+                    <AnimatedCounter end={9} suffix="" />
                   </div>
                   <div className="text-lg font-semibold text-white">
                     {t("landing.impact.systems.label")}
@@ -298,7 +298,7 @@ export default function LandingPage() {
                     </svg>
                   </div>
                   <div className="text-5xl md:text-6xl font-black bg-gradient-to-r from-blue-400 to-cyan-400 text-transparent bg-clip-text">
-                    <AnimatedCounter end={6} suffix="" />
+                    <AnimatedCounter end={9} suffix="" />
                   </div>
                   <div className="text-lg font-semibold text-white">
                     {t("landing.impact.regions.label")}
