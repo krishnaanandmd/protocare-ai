@@ -111,7 +111,7 @@
         "desc": "Personalizado para cirujanos, enfermeros, PAs y pacientes — todo desde una sola plataforma."
       }
     },
-    "socialProof": "Confiado por proveedores en 6 sistemas de salud",
+    "socialProof": "Confiado por proveedores en 9 sistemas de salud",
     "form": {
       "title": "Solicite Su Demo",
       "subtitle": "Complete el formulario y nuestro equipo se comunicará con usted dentro de 24 horas.",
@@ -255,6 +255,12 @@
           "role": "CSO",
           "title": "Director Científico, Cofundador",
           "bio": "El Dr. Joshua Dines aporta sus más de 20 años como líder en cirugía ortopédica, médico de equipo de múltiples equipos deportivos profesionales y ex CMO de ViewFi para enraizar la misión de CareGuide en las manos de sus pacientes. Lidera la junta asesora clínica y garantiza que todos los documentos médicos utilizados para construir CareGuide estén arraigados en la medicina basada en evidencia."
+        },
+        "asheesh": {
+          "name": "Asheesh Bedi, M.D.",
+          "role": "CMO",
+          "title": "Director Médico, Cofundador",
+          "bio": "El Dr. Asheesh Bedi es el Director Ejecutivo y Jefe de División de Medicina Deportiva en la Universidad de Michigan. Ex médico de equipo de los Chicago Bears y Detroit Lions, y Director Médico de la Asociación de Jugadores de la NBA, el Dr. Bedi aporta una experiencia clínica sin igual en medicina deportiva a CareGuide."
         }
       }
     },
