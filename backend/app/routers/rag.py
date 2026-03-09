@@ -217,7 +217,8 @@ DOCTORS = {
         "id": "lafi_khalil",
         "name": "Dr. Lafi Khalil",
         "specialty": "Orthopedic Surgery - Sports Medicine",
-        "procedures": ["ucl", "acl", "rotator_cuff", "meniscus"]
+        "procedures": ["ucl", "acl", "rotator_cuff", "meniscus"],
+        "website": "https://lafikhalilmd.com"
     },
     "matt_fury": {
         "id": "matt_fury",
@@ -2187,6 +2188,7 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
 
     # Determine collection(s) to search
     doctor_name = None
+    doctor_website = None
     body_part_name = None
     collections_to_search = []
 
@@ -2194,6 +2196,7 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
         # Path 1: Specific Surgeon — search ALL of this doctor's collections
         doctor_slug = slugify(body.doctor_id)
         doctor_name = DOCTORS.get(body.doctor_id, {}).get("name", body.doctor_id)
+        doctor_website = DOCTORS.get(body.doctor_id, {}).get("website")
 
         # Include shared doctors (e.g. Bedi also searches Dines' collections)
         doctors_to_search = [body.doctor_id]
@@ -2465,6 +2468,14 @@ async def rag_query(body: QueryRequest, db: Session = Depends(get_db)):
                 "Only include one follow-up question. If there is no useful follow-up, omit this line entirely."
             )
 
+        website_rule = ""
+        if doctor_name and doctor_website:
+            website_rule = (
+                f"When relevant, you may reference Dr. {doctor_name.replace('Dr. ', '')}'s website "
+                f"({doctor_website}) as an additional resource for patients or providers seeking more "
+                f"information about the practice."
+            )
+
         if body.actor == "PROVIDER":
             if doctor_name:
                 system_prompt = f"""You are a clinical assistant presenting Dr. {doctor_name}'s protocols.
@@ -2480,7 +2491,8 @@ Rules:
 - {source_relevance_rule}
 - {accuracy_rule}
 - {citation_rule}
-- {follow_up_rule}"""
+- {follow_up_rule}
+- {website_rule}"""
             elif body_part_name:
                 system_prompt = f"""You are a clinical decision support assistant for {body_part_name} conditions.
 
@@ -2511,7 +2523,8 @@ Rules:
 - {source_relevance_rule}
 - {accuracy_rule}
 - {citation_rule}
-- {follow_up_rule}"""
+- {follow_up_rule}
+- {website_rule}"""
             elif body_part_name:
                 system_prompt = f"""You are a patient education assistant for {body_part_name} conditions.
 
