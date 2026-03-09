@@ -284,6 +284,9 @@ COLLECTION_PERMISSIONS = {
 
     # HSS protocols
     "dr_general_hss_protocols": ["joshua_dines", "ayoosh_pareek", "sheeraz_qureshi", "william_long"],
+    "dr_general_hss_spine": ["sheeraz_qureshi"],
+    "dr_general_hss_joints_hip": ["william_long"],
+    "dr_general_hss_joints_knee": ["william_long"],
 
     # Body part specific collections
     "dr_general_knee_lower_leg": ["william_long", "khalid_alkhelaifi", "jorge_chahla", "lafi_khalil", "matt_fury", "nicholas_colyvas", "shane_nho", "joshua_wright_chisem"],
@@ -327,7 +330,7 @@ BODY_PART_COLLECTION_KEYWORDS = {
     "hip": ["hip", "thigh", "fai"],
     "back": ["back"],
     "neck": ["neck"],
-    "spine": ["back", "neck"],
+    "spine": ["back", "neck", "spine"],
     "foot": ["foot", "ankle"],
     "ankle": ["foot", "ankle"],
     "hand": ["hand", "wrist"],
